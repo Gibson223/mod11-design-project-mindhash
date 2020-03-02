@@ -1,9 +1,7 @@
 package LidarData
 
-import java.nio.ByteBuffer
 import java.sql.*
 import java.util.*
-import kotlin.math.pow
 import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
@@ -149,7 +147,7 @@ class Database() {
         st.setInt(1, frame.frameId)
         st.setInt(2, recordingId)
         val points =
-                frame.coords.map { lc -> arrayOf(lc.coords.first, lc.coords.second, lc.coords.third) }.toTypedArray()
+                frame.coords.map { lc -> arrayOf(lc.x, lc.y, lc.z) }.toTypedArray()
         st.setArray(3, conn!!.createArrayOf("float4", points))
 
         st.executeUpdate()
@@ -210,12 +208,12 @@ class Database() {
                 // Update the frame id that is being constructed and create a new list of coords.
                 lastFrame = fid
                 currPoints = reader.azimuthBlockToLidarCoords(az).filter(filterFun).map {
-                    arrayOf(it.coords.first, it.coords.second, it.coords.third)
+                    arrayOf(it.x, it.y, it.z)
                 }.toMutableList()
             } else if (fid == lastFrame) {
                 // If the current frame is being constructed then just add the points to that.
                 currPoints!!.addAll(reader.azimuthBlockToLidarCoords(az).filter(filterFun).map {
-                    arrayOf(it.coords.first, it.coords.second, it.coords.third)
+                    arrayOf(it.x, it.y, it.z)
                 })
             }
         })
@@ -256,7 +254,7 @@ class Database() {
             val f = LidarFrame(rsx.getInt("frameid"))
             frames.add(f)
             (rsx.getArray("points").array as Array<Array<Float>>).forEach { a ->
-                f.coords.add(LidarCoord(Triple(a[0], a[1], a[2])))
+                f.coords.add(LidarCoord(a[0], a[1], a[2]))
             }
         }
         rsx.close()
@@ -295,12 +293,14 @@ fun main() {
     db.connect("nyx", "lidar")
     db.initTables()
 
-    val nFrames = 50
-    val time = measureTimeMillis {
-        db.getFrames(3, 2000, nFrames, framerate = Framerate.FIVE)
-    }
+    for (i in 0 until 20) {
+        val nFrames = 50
+        val time = measureTimeMillis {
+            db.getFrames(3, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+        }
 
-    println("Time to take $nFrames frames: $time")
+        println("Time to take $nFrames frames: $time")
+    }
 
     // Create reading with default LidarReader
     //db.recordingFromFile(

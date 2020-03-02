@@ -7,11 +7,9 @@ import com.github.swrirobotics.bags.reader.exceptions.BagReaderException
 import com.github.swrirobotics.bags.reader.messages.serialization.ArrayType
 import com.github.swrirobotics.bags.reader.messages.serialization.MessageType
 import com.github.swrirobotics.bags.reader.records.Connection
-import com.sun.xml.internal.ws.developer.Serialization
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileSystems
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.system.measureTimeMillis
@@ -36,24 +34,24 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
         fun DefaultReader(): LidarReader {
             // Default angles from https://github.com/ouster-lidar/ouster_example/blob/master/ouster_client/src/os1_util.cpp
             val altitudeAngles = arrayOf(
-                16.611, 16.084, 15.557, 15.029, 14.502, 13.975, 13.447, 12.920,
-                12.393, 11.865, 11.338, 10.811, 10.283, 9.756, 9.229, 8.701,
-                8.174, 7.646, 7.119, 6.592, 6.064, 5.537, 5.010, 4.482,
-                3.955, 3.428, 2.900, 2.373, 1.846, 1.318, 0.791, 0.264,
-                -0.264, -0.791, -1.318, -1.846, -2.373, -2.900, -3.428, -3.955,
-                -4.482, -5.010, -5.537, -6.064, -6.592, -7.119, -7.646, -8.174,
-                -8.701, -9.229, -9.756, -10.283, -10.811, -11.338, -11.865, -12.393,
-                -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611
+                    16.611, 16.084, 15.557, 15.029, 14.502, 13.975, 13.447, 12.920,
+                    12.393, 11.865, 11.338, 10.811, 10.283, 9.756, 9.229, 8.701,
+                    8.174, 7.646, 7.119, 6.592, 6.064, 5.537, 5.010, 4.482,
+                    3.955, 3.428, 2.900, 2.373, 1.846, 1.318, 0.791, 0.264,
+                    -0.264, -0.791, -1.318, -1.846, -2.373, -2.900, -3.428, -3.955,
+                    -4.482, -5.010, -5.537, -6.064, -6.592, -7.119, -7.646, -8.174,
+                    -8.701, -9.229, -9.756, -10.283, -10.811, -11.338, -11.865, -12.393,
+                    -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611
             )
             val azimuthAngles = arrayOf(
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164
             )
             return LidarReader(azimuthAngles, altitudeAngles)
         }
@@ -219,15 +217,13 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
             val phi = 2 * Math.PI * (beamAltitudeAngles[i] / 360)
 
             LidarCoord(
-                Triple(
                     (range * Math.cos(theta) * Math.cos(phi)).toFloat() + 0f,
                     (-1 * range * Math.sin(theta) * Math.cos(phi)).toFloat() + 0f,
                     (range * Math.sin(phi)).toFloat() + 0f
-                )
             )
         }
 
-        return arr.filter { lc -> lc.coords != Triple(0f, 0f, 0f) }
+        return arr.filter { lc -> lc != LidarCoord.ZeroCoord }
     }
 }
 
@@ -239,8 +235,14 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
  * @property frameId The ID of the frame this coordinate belongs to. A frame is a single 360 degrees rotation.
  */
 data class LidarCoord(
-    val coords: Triple<Float, Float, Float>
-)
+        val x: Float,
+        val y: Float,
+        val z: Float
+) {
+    companion object {
+        val ZeroCoord = LidarCoord(0f, 0f, 0f)
+    }
+}
 
 /**
  * Represents a single frame captured. It contains all non zero coordinates and meta data about the frame.
@@ -251,7 +253,7 @@ data class LidarCoord(
  * @property timeEnd Capture time of the last point in nanoseconds.
  */
 data class LidarFrame(
-    val frameId: Int
+        val frameId: Int
 ) {
     val coords: MutableList<LidarCoord> = mutableListOf()
     var timestamp: ULong = 0UL
@@ -266,10 +268,10 @@ data class LidarFrame(
  * @property filePath Path to the file where the measurements got read from.
  */
 data class LidarMetaData(
-    val numberOfPoints: Int,
-    val timeInterval: Pair<ULong, ULong>,
-    val frameInterval: Pair<Int, Int>,
-    val filePath: String
+        val numberOfPoints: Int,
+        val timeInterval: Pair<ULong, ULong>,
+        val frameInterval: Pair<Int, Int>,
+        val filePath: String
 )
 
 // Generate a ply file for debugging purposes
@@ -277,18 +279,18 @@ fun generatePly(coords: List<LidarCoord>, target: String) {
     val logFile = File(target)
     val data = ArrayList<String>()
     coords.forEach { lc ->
-        data.add("${lc.coords.first} ${lc.coords.second} ${-lc.coords.third}")
+        data.add("${lc.x} ${lc.y} ${-lc.z}")
     }
 
     val writer = logFile.bufferedWriter()
     writer.use { out ->
         out.append(
-            data.joinToString(
-                separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
+                data.joinToString(
+                        separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
                         "element vertex ${data.size}\nproperty float x\n" +
                         "property float y\n" +
                         "property float z\nend_header\n"
-            )
+                )
         )
         out.newLine()
     }
