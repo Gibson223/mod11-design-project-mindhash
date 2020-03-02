@@ -7,7 +7,6 @@ import com.github.swrirobotics.bags.reader.exceptions.BagReaderException
 import com.github.swrirobotics.bags.reader.messages.serialization.ArrayType
 import com.github.swrirobotics.bags.reader.messages.serialization.MessageType
 import com.github.swrirobotics.bags.reader.records.Connection
-import com.sun.xml.internal.ws.developer.Serialization
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileSystems
