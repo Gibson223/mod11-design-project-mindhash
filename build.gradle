@@ -46,6 +46,8 @@ project(":desktop") {
         api "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+        compile "com.github.swri-robotics:bag-reader-java:1.10.2"
+        compile "org.postgresql:postgresql:42.1.4"
         
     }
 }
