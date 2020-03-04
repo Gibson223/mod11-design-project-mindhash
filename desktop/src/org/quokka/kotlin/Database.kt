@@ -6,13 +6,13 @@ import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
 const val CREATE_DB_QUERY =
-        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frames (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points real[3][], PRIMARY KEY (frameid, recid));"
-const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frames CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
-const val INSERT_FRAME = "INSERT INTO frames (frameid, recid, points) VALUES (?, ?, ?);"
+        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points real[3][], PRIMARY KEY (frameid, recid));"
+const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
+const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
 const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
 const val SELECT_RECORDINGS =
-        "SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording, frames WHERE recid = id GROUP BY id;"
-const val SELECT_POINTS = "SELECT frameid, points FROM frames WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
+        "SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording, frame WHERE recid = id GROUP BY id;"
+const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
 
 /**
  * The database class is used to communicate with the backend database which provides lidar recordings.
