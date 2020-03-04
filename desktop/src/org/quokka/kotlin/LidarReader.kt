@@ -249,6 +249,11 @@ data class LidarFrame(
     val coords: MutableList<LidarCoord> = mutableListOf()
     var timestamp: ULong = 0UL
 
+    /**
+     * Create a ply file which contains a point cloud of the points in the frame.
+     *
+     * @param file Path to the file to be created.
+     */
     fun generatePly(file: String) {
         val logFile = File(file)
         val data = ArrayList<String>()

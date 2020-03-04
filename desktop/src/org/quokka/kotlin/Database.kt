@@ -24,6 +24,8 @@ const val FLOATS_PER_POINT = 3
  *
  * First connect to the database and then use the appropriate methods to insert/retrieve data.
  *
+ * Most important methods: connect, recordings, getFrames, recordingFromFile
+ *
  * Example for setting up the schema.
  * <pre>
  * {@code
@@ -64,6 +66,7 @@ class Database() {
 
     /**
      * Returns a list of all recordings and their meta data.
+     * Refer to the RecordingMeta class for more info on fields and data about recordings.
      */
     val recordings: List<RecordingMeta>
         get() {
@@ -165,7 +168,7 @@ class Database() {
     }
 
     /**
-     * Insert an array of array of doubles as a frame.
+     * Insert an array of array of floats as a frame.
      *
      * @param frameId The id of the frame.
      * @param recordingId The id of the recording the frame should belong to.
