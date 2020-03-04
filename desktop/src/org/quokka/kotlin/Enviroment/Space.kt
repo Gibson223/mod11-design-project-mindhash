@@ -153,7 +153,9 @@ class Space : InputAdapter(), ApplicationListener {
         val aux = frames!!.poll()
         if(frames!!.isEmpty()){
             result.add(ModelInstance(proxi,0f,0f,0f))
+            println("empty frame")
             return result
+
         }
         aux.coords.forEach { f ->
             val model = ModelInstance(
@@ -164,7 +166,7 @@ class Space : InputAdapter(), ApplicationListener {
             )
             result.add(model)
         }
-        println("new frame loaded")
+//        println("new frame loaded")
         return  result
     }
 
@@ -172,7 +174,7 @@ class Space : InputAdapter(), ApplicationListener {
         timer("Array Creator", period = 100,initialDelay = 100) {
             Gdx.graphics.requestRendering();
 //            render()
-            println("render requested")
+//            println("render requested")
             }
     }
 
@@ -182,13 +184,13 @@ class Space : InputAdapter(), ApplicationListener {
         timer("Array Creator", period = 1000,initialDelay = 0) {
 
             val ldrrdr = LidarReader.DefaultReader()
-            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 10)
-            framesIndex += 11
+            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 12)
+            framesIndex += 12
             intermetidate.forEach { f ->
                 frames!!.add(f)
             }
         }
-        println("New batch loaded")
+//        println("New batch loaded")
     }
 
 
