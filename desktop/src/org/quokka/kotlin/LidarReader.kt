@@ -23,38 +23,29 @@ import kotlin.system.measureTimeMillis
  *
  * See section 3.3. of https://data.ouster.io/downloads/v1.12.0-sw-user-guide.pdf for more information.
  */
-data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val beamAltitudeAngles: Array<Double>) {
+data class LidarReader(private val beamAzimuthAngles: Array<Double> = arrayOf(
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164
+), private val beamAltitudeAngles: Array<Double> = arrayOf(
+        16.611, 16.084, 15.557, 15.029, 14.502, 13.975, 13.447, 12.920,
+        12.393, 11.865, 11.338, 10.811, 10.283, 9.756, 9.229, 8.701,
+        8.174, 7.646, 7.119, 6.592, 6.064, 5.537, 5.010, 4.482,
+        3.955, 3.428, 2.900, 2.373, 1.846, 1.318, 0.791, 0.264,
+        -0.264, -0.791, -1.318, -1.846, -2.373, -2.900, -3.428, -3.955,
+        -4.482, -5.010, -5.537, -6.064, -6.592, -7.119, -7.646, -8.174,
+        -8.701, -9.229, -9.756, -10.283, -10.811, -11.338, -11.865, -12.393,
+        -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611
+)) {
     init {
         // Verify that the size of the arrays is correct
         assert(beamAzimuthAngles.size == 64)
         assert(beamAltitudeAngles.size == 64)
-    }
-
-    companion object {
-        fun DefaultReader(): LidarReader {
-            // Default angles from https://github.com/ouster-lidar/ouster_example/blob/master/ouster_client/src/os1_util.cpp
-            val altitudeAngles = arrayOf(
-                    16.611, 16.084, 15.557, 15.029, 14.502, 13.975, 13.447, 12.920,
-                    12.393, 11.865, 11.338, 10.811, 10.283, 9.756, 9.229, 8.701,
-                    8.174, 7.646, 7.119, 6.592, 6.064, 5.537, 5.010, 4.482,
-                    3.955, 3.428, 2.900, 2.373, 1.846, 1.318, 0.791, 0.264,
-                    -0.264, -0.791, -1.318, -1.846, -2.373, -2.900, -3.428, -3.955,
-                    -4.482, -5.010, -5.537, -6.064, -6.592, -7.119, -7.646, -8.174,
-                    -8.701, -9.229, -9.756, -10.283, -10.811, -11.338, -11.865, -12.393,
-                    -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611
-            )
-            val azimuthAngles = arrayOf(
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                    3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164
-            )
-            return LidarReader(azimuthAngles, altitudeAngles)
-        }
     }
 
     private var file: BagFile? = null
@@ -257,6 +248,32 @@ data class LidarFrame(
 ) {
     val coords: MutableList<LidarCoord> = mutableListOf()
     var timestamp: ULong = 0UL
+
+    /**
+     * Create a ply file which contains a point cloud of the points in the frame.
+     *
+     * @param file Path to the file to be created.
+     */
+    fun generatePly(file: String) {
+        val logFile = File(file)
+        val data = ArrayList<String>()
+        coords.forEach { lc ->
+            data.add("${lc.x} ${lc.y} ${lc.z}")
+        }
+
+        val writer = logFile.bufferedWriter()
+        writer.use { out ->
+            out.append(
+                    data.joinToString(
+                            separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
+                            "element vertex ${data.size}\nproperty float x\n" +
+                            "property float y\n" +
+                            "property float z\nend_header\n"
+                    )
+            )
+            out.newLine()
+        }
+    }
 }
 
 /**
@@ -274,28 +291,6 @@ data class LidarMetaData(
         val filePath: String
 )
 
-// Generate a ply file for debugging purposes
-fun generatePly(coords: List<LidarCoord>, target: String) {
-    val logFile = File(target)
-    val data = ArrayList<String>()
-    coords.forEach { lc ->
-        data.add("${lc.x} ${lc.y} ${-lc.z}")
-    }
-
-    val writer = logFile.bufferedWriter()
-    writer.use { out ->
-        out.append(
-                data.joinToString(
-                        separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
-                        "element vertex ${data.size}\nproperty float x\n" +
-                        "property float y\n" +
-                        "property float z\nend_header\n"
-                )
-        )
-        out.newLine()
-    }
-}
-
 // Parse a file and puts the frames into individual ply files
 fun main(args: Array<String>) {
     if (args.size < 4) {
@@ -303,7 +298,7 @@ fun main(args: Array<String>) {
         return
     }
 
-    val reader = LidarReader.DefaultReader()
+    val reader = LidarReader()
 
     val filePath = args[0]
     val baseDirectory = args[1]
@@ -322,7 +317,7 @@ fun main(args: Array<String>) {
 
     var c = 0
     frames?.forEach { f ->
-        generatePly(f.coords, "${baseDirectory}/${c}.ply")
+        f.generatePly("${baseDirectory}/${c}.ply")
         c++
     }
 }
