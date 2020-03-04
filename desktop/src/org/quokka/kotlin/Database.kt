@@ -1,18 +1,23 @@
 package LidarData
 
+import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
 import java.sql.*
 import java.util.*
 import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
 const val CREATE_DB_QUERY =
-        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points real[3][], PRIMARY KEY (frameid, recid));"
+        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));"
 const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
 const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
 const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
 const val SELECT_RECORDINGS =
         "SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording, frame WHERE recid = id GROUP BY id;"
 const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
+
+const val FLOAT_BYTE_SIZE = 4
+const val FLOATS_PER_POINT = 3
 
 /**
  * The database class is used to communicate with the backend database which provides lidar recordings.
@@ -146,9 +151,14 @@ class Database() {
         val st = conn!!.prepareStatement(INSERT_FRAME)
         st.setInt(1, frame.frameId)
         st.setInt(2, recordingId)
-        val points =
-                frame.coords.map { lc -> arrayOf(lc.x, lc.y, lc.z) }.toTypedArray()
-        st.setArray(3, conn!!.createArrayOf("float4", points))
+
+        val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * frame.coords.size * FLOATS_PER_POINT)
+        frame.coords.forEach {
+            bb.putFloat(it.x)
+            bb.putFloat(it.y)
+            bb.putFloat(it.z)
+        }
+        st.setBinaryStream(3, ByteArrayInputStream(bb.array()))
 
         st.executeUpdate()
         st.close()
@@ -161,11 +171,19 @@ class Database() {
      * @param recordingId The id of the recording the frame should belong to.
      * @param points The raw point data. The array format has to be Double[3][].
      */
-    fun insertPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
+    fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
         val st = conn!!.prepareStatement(INSERT_FRAME)
         st.setInt(1, frameId)
         st.setInt(2, recordingId)
-        st.setArray(3, conn!!.createArrayOf("float4", points))
+
+        val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * points.size * FLOATS_PER_POINT)
+        points.forEach {
+            bb.putFloat(it[0])
+            bb.putFloat(it[1])
+            bb.putFloat(it[2])
+        }
+
+        st.setBinaryStream(3, ByteArrayInputStream(bb.array()))
 
         st.executeUpdate()
         st.close()
@@ -201,7 +219,7 @@ class Database() {
                     // If the last frame existed, insert it into the database.
                     println("Inserted frame $lastFrame with ${currPoints!!.size} points")
                     if (!currPoints!!.isEmpty()) {
-                        insertPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+                        insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
                     }
                 }
 
@@ -220,7 +238,7 @@ class Database() {
 
         // Insert last frame
         if (currPoints != null) {
-            insertPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+            insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
         }
     }
 
@@ -253,8 +271,12 @@ class Database() {
         while (rsx.next()) {
             val f = LidarFrame(rsx.getInt("frameid"))
             frames.add(f)
-            (rsx.getArray("points").array as Array<Array<Float>>).forEach { a ->
-                f.coords.add(LidarCoord(a[0], a[1], a[2]))
+            val points = rsx.getBinaryStream("points").buffered()
+            val buff = ByteArray(FLOAT_BYTE_SIZE * FLOATS_PER_POINT)
+            val off = 0
+            while (points.read(buff, off, buff.size) == buff.size) {
+                val bb = ByteBuffer.wrap(buff)
+                f.coords.add(LidarCoord(bb.float, bb.float, bb.float))
             }
         }
         rsx.close()
@@ -296,7 +318,7 @@ fun main() {
     for (i in 0 until 20) {
         val nFrames = 50
         val time = measureTimeMillis {
-            db.getFrames(3, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+            db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
         }
 
         println("Time to take $nFrames frames: $time")
@@ -305,8 +327,8 @@ fun main() {
     // Create reading with default LidarReader
     //db.recordingFromFile(
     //    path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-    //    title = "every point within a 32m radius"
-    //    ,filterFun = { lc -> (Math.sqrt(lc.coords.first.pow(2.0) + lc.coords.second.pow(2.0))) < 32 }
+    //    title = "everything in bytea"
+    //    //,filterFun = { lc -> (Math.sqrt(lc.coords.first.pow(2.0) + lc.coords.second.pow(2.0))) < 32 }
     //)
     db.close()
 }

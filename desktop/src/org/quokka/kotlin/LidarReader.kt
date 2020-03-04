@@ -248,6 +248,27 @@ data class LidarFrame(
 ) {
     val coords: MutableList<LidarCoord> = mutableListOf()
     var timestamp: ULong = 0UL
+
+    fun generatePly(file: String) {
+        val logFile = File(file)
+        val data = ArrayList<String>()
+        coords.forEach { lc ->
+            data.add("${lc.x} ${lc.y} ${lc.z}")
+        }
+
+        val writer = logFile.bufferedWriter()
+        writer.use { out ->
+            out.append(
+                    data.joinToString(
+                            separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
+                            "element vertex ${data.size}\nproperty float x\n" +
+                            "property float y\n" +
+                            "property float z\nend_header\n"
+                    )
+            )
+            out.newLine()
+        }
+    }
 }
 
 /**
@@ -264,28 +285,6 @@ data class LidarMetaData(
         val frameInterval: Pair<Int, Int>,
         val filePath: String
 )
-
-// Generate a ply file for debugging purposes
-fun generatePly(coords: List<LidarCoord>, target: String) {
-    val logFile = File(target)
-    val data = ArrayList<String>()
-    coords.forEach { lc ->
-        data.add("${lc.x} ${lc.y} ${-lc.z}")
-    }
-
-    val writer = logFile.bufferedWriter()
-    writer.use { out ->
-        out.append(
-                data.joinToString(
-                        separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
-                        "element vertex ${data.size}\nproperty float x\n" +
-                        "property float y\n" +
-                        "property float z\nend_header\n"
-                )
-        )
-        out.newLine()
-    }
-}
 
 // Parse a file and puts the frames into individual ply files
 fun main(args: Array<String>) {
@@ -313,7 +312,7 @@ fun main(args: Array<String>) {
 
     var c = 0
     frames?.forEach { f ->
-        generatePly(f.coords, "${baseDirectory}/${c}.ply")
+        f.generatePly("${baseDirectory}/${c}.ply")
         c++
     }
 }
