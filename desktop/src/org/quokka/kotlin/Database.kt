@@ -182,7 +182,7 @@ class Database() {
     fun recordingFromFile(
             path: String,
             title: String,
-            reader: LidarReader = LidarReader.DefaultReader(),
+            reader: LidarReader = LidarReader(),
             filterFun: (LidarCoord) -> Boolean = { true }
     ) {
         // Create a new recording first
