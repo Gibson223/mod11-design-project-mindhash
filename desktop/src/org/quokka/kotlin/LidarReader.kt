@@ -12,6 +12,8 @@ import java.io.IOException
 import java.nio.file.FileSystems
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.system.measureTimeMillis
 
 /**
@@ -136,16 +138,17 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double> = arrayOf(
      * @return A list of LidarFrames.
      */
     fun readLidarFramesInterval(path: String, start: Int, end: Int): List<LidarFrame> {
-        val frames = HashMap<Int, LidarFrame>()
+        val frames = HashMap<Int, MutableList<LidarCoord>>()
+
         readAzimuthBlocks(path, { az ->
             if (az.frameId.toInt() >= start && az.frameId.toInt() <= end) {
                 // Create a new frame or use an existing one
-                val frame = frames.getOrPut(az.frameId.toInt()) { LidarFrame(az.frameId.toInt()) }
-                frame.coords.addAll(azimuthBlockToLidarCoords(az))
-                if (frame.timestamp == 0UL) frame.timestamp = az.timestamp
+                val l = frames.getOrPut(az.frameId.toInt()) { mutableListOf() }
+                l.addAll(azimuthBlockToLidarCoords(az))
             }
         }, cond = { az -> az.frameId.toInt() < end })
-        return frames.values.sortedBy { it.frameId }
+
+        return frames.entries.map { e -> LidarFrame(e.key, e.value) }
     }
 
     /**
@@ -157,17 +160,17 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double> = arrayOf(
      * @return A list of LidarFrames.
      */
     fun readLidarTimeInterval(path: String, start: ULong, end: ULong): List<LidarFrame> {
-        val frames = HashMap<Int, LidarFrame>()
+        val frames = HashMap<Int, MutableList<LidarCoord>>()
 
         readAzimuthBlocks(path, { az ->
             if (az.timestamp >= start && az.timestamp <= end) {
                 // Create a new frame or use an existing one
-                val frame = frames.getOrPut(az.frameId.toInt()) { LidarFrame(az.frameId.toInt()) }
-                frame.coords.addAll(azimuthBlockToLidarCoords(az))
-                if (frame.timestamp == 0UL) frame.timestamp = az.timestamp
+                val l = frames.getOrPut(az.frameId.toInt()) { mutableListOf() }
+                l.addAll(azimuthBlockToLidarCoords(az))
             }
         })
-        return frames.values.sortedBy { it.frameId }
+
+        return frames.entries.map { e -> LidarFrame(e.key, e.value) }
     }
 
     /**
@@ -201,16 +204,16 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double> = arrayOf(
      * @return
      */
     fun azimuthBlockToLidarCoords(az: Azimuth): List<LidarCoord> {
-        var arr = Array(64) { i ->
+        val arr = Array(64) { i ->
             val range = az.data[i].range.toFloat() / 1000
             val encoderCount = az.encoderCount
             val theta = 2 * Math.PI * (encoderCount.toDouble() / 90112 + beamAzimuthAngles[i] / 360)
             val phi = 2 * Math.PI * (beamAltitudeAngles[i] / 360)
 
             LidarCoord(
-                    (range * Math.cos(theta) * Math.cos(phi)).toFloat() + 0f,
-                    (-1 * range * Math.sin(theta) * Math.cos(phi)).toFloat() + 0f,
-                    (range * Math.sin(phi)).toFloat() + 0f
+                    (range * cos(theta) * cos(phi)).toFloat() + 0f,
+                    (-1 * range * sin(theta) * cos(phi)).toFloat() + 0f,
+                    (range * sin(phi)).toFloat() + 0f
             )
         }
 
@@ -240,15 +243,12 @@ data class LidarCoord(
  *
  * @property coords A list of all non zero points captured.
  * @property frameId The ID of the frame.
- * @property timeStart Capture time of the first point in nanoseconds.
- * @property timeEnd Capture time of the last point in nanoseconds.
+ * @property timestamp Capture time of the frame in ns.
  */
 data class LidarFrame(
-        val frameId: Int
+        val frameId: Int,
+        val coords: List<LidarCoord>
 ) {
-    val coords: MutableList<LidarCoord> = mutableListOf()
-    var timestamp: ULong = 0UL
-
     /**
      * Create a ply file which contains a point cloud of the points in the frame.
      *
@@ -308,12 +308,12 @@ fun main(args: Array<String>) {
     println("Reading frames in '$filePath'")
 
     var frames: List<LidarFrame>? = null
-    var time = measureTimeMillis {
+    val time = measureTimeMillis {
         frames = reader.readLidarFramesInterval(filePath, baseFrame, baseFrame + numberOfFrames - 1)
     }
     println("Time taken: ${time}ms")
     println("Number of frames in interval: ${frames?.size}")
-    println("Total number of points: ${frames?.map({ f -> f.coords.size })?.sum()}")
+    println("Total number of points: ${frames?.map { f -> f.coords.size }?.sum()}")
 
     var c = 0
     frames?.forEach { f ->

@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
 import java.util.*
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
@@ -61,7 +63,7 @@ const val FLOATS_PER_POINT = 3
  * db.close()
  * }
  */
-class Database() {
+class Database {
     private var conn: Connection? = null
 
     /**
@@ -221,7 +223,7 @@ class Database() {
                 if (currPoints != null) {
                     // If the last frame existed, insert it into the database.
                     println("Inserted frame $lastFrame with ${currPoints!!.size} points")
-                    if (!currPoints!!.isEmpty()) {
+                    if (currPoints!!.isNotEmpty()) {
                         insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
                     }
                 }
@@ -272,15 +274,16 @@ class Database() {
         stx.setInt(3, numberOfFrames)
         val rsx = stx.executeQuery()
         while (rsx.next()) {
-            val f = LidarFrame(rsx.getInt("frameid"))
-            frames.add(f)
             val points = rsx.getBinaryStream("points").buffered()
             val buff = ByteArray(FLOAT_BYTE_SIZE * FLOATS_PER_POINT)
             val off = 0
+            val frameList = mutableListOf<LidarCoord>()
             while (points.read(buff, off, buff.size) == buff.size) {
                 val bb = ByteBuffer.wrap(buff)
-                f.coords.add(LidarCoord(bb.float, bb.float, bb.float))
+                frameList.add(LidarCoord(bb.float, bb.float, bb.float))
             }
+
+            frames.add(LidarFrame(rsx.getInt("frameid"), frameList.toList()))
         }
         rsx.close()
         stx.close()
@@ -318,20 +321,24 @@ fun main() {
     db.connect("nyx", "lidar")
     db.initTables()
 
-    for (i in 0 until 20) {
-        val nFrames = 50
-        val time = measureTimeMillis {
-            db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
-        }
-
-        println("Time to take $nFrames frames: $time")
+    db.getFrames(2, 2500, 1).forEach {
+        it.generatePly("/home/nyx/downloads/test3.ply")
     }
+
+    //for (i in 0 until 20) {
+    //    val nFrames = 50
+    //    val time = measureTimeMillis {
+    //        db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+    //    }
+
+    //    println("Time to take $nFrames frames: $time")
+    //}
 
     // Create reading with default LidarReader
     //db.recordingFromFile(
     //    path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-    //    title = "everything in bytea"
-    //    //,filterFun = { lc -> (Math.sqrt(lc.coords.first.pow(2.0) + lc.coords.second.pow(2.0))) < 32 }
+    //    title = "everything within 24m range"
+    //    ,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
     //)
     db.close()
 }
