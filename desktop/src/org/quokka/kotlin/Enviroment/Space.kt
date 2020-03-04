@@ -1,6 +1,7 @@
 package com.mygdx.game.desktop
 
 import LidarData.LidarCoord
+import LidarData.LidarFrame
 import LidarData.LidarReader
 import com.badlogic.gdx.*
 import com.badlogic.gdx.assets.AssetManager
@@ -22,7 +23,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.kotlin.Enviroment.Populator
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.collections.ArrayList
+import kotlin.concurrent.timer
 
 
 class Space : InputAdapter(), ApplicationListener {
@@ -34,12 +37,14 @@ var camController: CameraInputController? = null
 var modelBatch: ModelBatch? = null
 
 
-var array: ArrayList<ModelInstance>? = null
+var spaceObjects: ArrayList<ModelInstance>? = null
 var instance: ModelInstance? = null
 
 var bottomBlock: Model? = null
 var proxi: Model? = null
 var pink: Texture? = null
+
+var frames: ConcurrentLinkedQueue<LidarFrame>? = null
 
 
 var environment: Environment? = null
@@ -68,7 +73,7 @@ override fun create() {
 
 
 
-    array = ArrayList<ModelInstance>(1)
+   spaceObjects = ArrayList<ModelInstance>(1)
 
     val populator = Populator(this)
 
@@ -89,12 +94,9 @@ override fun create() {
         (VertexAttributes.Usage.Position or  VertexAttributes.Usage.Normal.toLong().toInt()).toLong())
 
 
-    proxi = modelBuilder.createBox(.5f, .5f, .5f,
+    proxi = modelBuilder.createBox(.1f, .1f, .1f,
         Material(ColorAttribute.createDiffuse(Color.ORANGE)),
         (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong())
-
-
-    randpop()
 
 
 
@@ -114,6 +116,7 @@ override fun create() {
     Gdx.input.inputProcessor = plexer
 
 
+    filepop(1850,1860)
 
     Gdx.graphics.setContinuousRendering(false);
     Gdx.graphics.requestRendering();
@@ -129,7 +132,7 @@ override fun render() {
 
     modelBatch!!.begin(cam)
     pink!!.bind()
-    modelBatch!!.render(array, environment)
+    modelBatch!!.render(spaceObjects, environment)
     modelBatch!!.end()
 
 
@@ -142,65 +145,42 @@ override fun render() {
 
 }
 
-fun randpop(){
-    array = ArrayList(53000)
-    instance = ModelInstance(bottomBlock,0f,0f,0f)
-    array!!.add(instance!!)
-//        for (i in 0..53000){
-//            var rand = (0..53000).shuffled()
-//            instance = ModelInstance(proxi,randx.get(i)*1F,randy.get(i)*1F,randz.get(i)*1F)
-//            array!!.add(instance!!)
-//        }
-    for (i in -50..50)
-        for(j in -25..25)
-            for (k in -5..5) {
-                instance = ModelInstance(proxi, i * 1f, j * 1f, k * 1f)
-                array!!.add(instance!!)
+
+    fun filepop(start: Int, end: Int){
+        val ldrrdr = LidarReader.DefaultReader()
+        var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", start, end)
+
+
+        timer("Array Creator", period = 10000){
+            intermetidate.first().coords.forEach { f ->
+                var instance = ModelInstance(
+                        proxi,
+                        1f * f.coords.first,
+                        1f * f.coords.second,
+                        1f * f.coords.third
+                )
+                spaceObjects!!.add(instance!!)
+                intermetidate.drop(0)
             }
-}
-
-
-    fun filepop(){
-    array = ArrayList(53000)
-    val ldrrdr =  LidarReader.DefaultReader()
-    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag",2000,2010)
-
-
-    intermetidate.first().coords.forEach { f ->
-        instance = ModelInstance(proxi,
-            1f * f.coords.first,
-            1f * f.coords.second,
-            1f * f.coords.third)
-        array!!.add(instance!!)
-             }
+            Gdx.graphics.requestRendering();
+            println("render requested")
+        }
     }
+
+    
+
+
+
+
+
+
 
 
     fun changeArray(x: ArrayList<ModelInstance>){
-        this.array = x
+        this.spaceObjects = x
     }
 
-    fun populate(){
-        array = ArrayList(1001)
 
-        instance = ModelInstance(bottomBlock,0f,0f,0f)
-        array!!.add(instance!!)
-        for(i in -25..25){
-            for (j in -25..25){
-//                for (k in -25..25) {
-                instance = ModelInstance(proxi, i * 1F, j * 1F, 1F)
-                array!!.add(instance!!)
-//                }
-            }
-//            instance = ModelInstance(proxi,randx+offzet+i,randy+i,10f)
-//            array!!.add(instance!!)
-        }
-//        if(randx + offzet>50){
-//            offzet = 0
-//        }
-//        offzet++
-
-    }
     override fun dispose() {
         modelBatch!!.dispose()
         bottomBlock!!.dispose()
