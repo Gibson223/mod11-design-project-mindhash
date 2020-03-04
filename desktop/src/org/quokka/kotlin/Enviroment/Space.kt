@@ -30,153 +30,169 @@ import kotlin.concurrent.timer
 
 class Space : InputAdapter(), ApplicationListener {
 
-var cam: PerspectiveCamera? = null
-var plexer: InputMultiplexer? = null
-var camController: CameraInputController? = null
+    var cam: PerspectiveCamera? = null
+    var plexer: InputMultiplexer? = null
+    var camController: CameraInputController? = null
 
-var modelBatch: ModelBatch? = null
-
-
-var spaceObjects: ArrayList<ModelInstance>? = null
-var instance: ModelInstance? = null
-
-var bottomBlock: Model? = null
-var proxi: Model? = null
-var pink: Texture? = null
-
-var frames: ConcurrentLinkedQueue<LidarFrame>? = null
+    var modelBatch: ModelBatch? = null
 
 
-var environment: Environment? = null
+    var spaceObjects: ArrayList<ModelInstance>? = null
+    var instance: ModelInstance? = null
 
-var stage: Stage? = null
-var font: BitmapFont? = null
-var label: Label? = null
-var string: StringBuilder? = null
+    var bottomBlock: Model? = null
+    var proxi: Model? = null
+    var pink: Texture? = null
 
-override fun create() {
-    modelBatch = ModelBatch()
-    //-----------Camera Creation------------------
-    cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-    cam!!.position[30f, 30f] = 30f
-    cam!!.lookAt(0f, 0f, 0f)
-    cam!!.near = 1f
-    cam!!.far = 100f
-    cam!!.update()
-
-    //---------Camera controls--------
-    camController = CameraInputController(cam)
-    Gdx.input.inputProcessor = camController
-    environment = Environment()
-    environment!!.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
-    environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
+    var frames: ConcurrentLinkedQueue<LidarFrame>? = null
+    var framesIndex = 1800
 
 
+    var environment: Environment? = null
 
-   spaceObjects = ArrayList<ModelInstance>(1)
+    var stage: Stage? = null
+    var font: BitmapFont? = null
+    var label: Label? = null
+    var string: StringBuilder? = null
 
-    val populator = Populator(this)
+    override fun create() {
+        modelBatch = ModelBatch()
+        //-----------Camera Creation------------------
+        cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
+        cam!!.position[30f, 30f] = 30f
+        cam!!.lookAt(0f, 0f, 0f)
+        cam!!.near = 1f
+        cam!!.far = 100f
+        cam!!.update()
 
-    //---------Model Population----------
-    var modelBuilder = ModelBuilder()
-
-    modelBuilder.begin()
-    modelBuilder.node().id = "Floor"
-    pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"),false)
-    pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
-    pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
-    var material = Material(TextureAttribute.createDiffuse(pink))
-    modelBuilder.end()
-
-
-    bottomBlock = modelBuilder.createBox(10f, 10f, .5f,
-        material,
-        (VertexAttributes.Usage.Position or  VertexAttributes.Usage.Normal.toLong().toInt()).toLong())
-
-
-    proxi = modelBuilder.createBox(.1f, .1f, .1f,
-        Material(ColorAttribute.createDiffuse(Color.ORANGE)),
-        (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong())
+        //---------Camera controls--------
+        camController = CameraInputController(cam)
+        Gdx.input.inputProcessor = camController
+        environment = Environment()
+        environment!!.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
+        environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
 
 
+        spaceObjects = ArrayList<ModelInstance>(1)
 
-    // -----------Bottom Text--------
-    stage = Stage()
-    font = BitmapFont()
-    label = Label(" ", LabelStyle(font, Color.WHITE))
-    stage!!.addActor(label)
-    val act = Actor()
-    act.color = Color.BROWN
-    stage!!.addActor(act)
-    string = StringBuilder()
+        val populator = Populator(this)
 
+        frames = ConcurrentLinkedQueue<LidarFrame>()
+        //---------Model Population----------
+        var modelBuilder = ModelBuilder()
 
-    plexer = InputMultiplexer(this as InputProcessor, camController)
-    Gdx.input.inputProcessor = plexer
-
-
-    filepop(1850,1860)
-
-    Gdx.graphics.setContinuousRendering(false);
-    Gdx.graphics.requestRendering();
-}
+        modelBuilder.begin()
+        modelBuilder.node().id = "Floor"
+        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
+        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
+        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+        var material = Material(TextureAttribute.createDiffuse(pink))
+        modelBuilder.end()
 
 
-
-override fun render() {
-    camController!!.update()
-
-    Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
-    Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
-
-    modelBatch!!.begin(cam)
-    pink!!.bind()
-    modelBatch!!.render(spaceObjects, environment)
-    modelBatch!!.end()
+        bottomBlock = modelBuilder.createBox(
+            10f, 10f, .5f,
+            material,
+            (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+        )
 
 
-    string!!.setLength(0)
-    string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
-    // string.append(" Visible: ").append(cam.position);
-//        string!!.append(cam!!.combined)
-    label!!.setText(string)
-    stage!!.draw()
-
-}
+        proxi = modelBuilder.createBox(
+            .1f, .1f, .1f,
+            Material(ColorAttribute.createDiffuse(Color.ORANGE)),
+            (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+        )
 
 
-    fun filepop(start: Int, end: Int){
-        val ldrrdr = LidarReader.DefaultReader()
-        var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", start, end)
+        // -----------Bottom Text--------
+        stage = Stage()
+        font = BitmapFont()
+        label = Label(" ", LabelStyle(font, Color.WHITE))
+        stage!!.addActor(label)
+        val act = Actor()
+        act.color = Color.BROWN
+        stage!!.addActor(act)
+        string = StringBuilder()
 
 
-        timer("Array Creator", period = 10000){
-            intermetidate.first().coords.forEach { f ->
-                var instance = ModelInstance(
-                        proxi,
-                        1f * f.coords.first,
-                        1f * f.coords.second,
-                        1f * f.coords.third
-                )
-                spaceObjects!!.add(instance!!)
-                intermetidate.drop(0)
-            }
-            Gdx.graphics.requestRendering();
-            println("render requested")
-        }
+        plexer = InputMultiplexer(this as InputProcessor, camController)
+        Gdx.input.inputProcessor = plexer
+
+
+
+        Gdx.graphics.setContinuousRendering(false);
+
+        filepop()
+        newFrame()
     }
 
-    
+
+    override fun render() {
+        camController!!.update()
+
+        Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
+
+        modelBatch!!.begin(cam)
+        pink!!.bind()
+        modelBatch!!.render(getNewCoord(), environment)
+        modelBatch!!.end()
+
+
+        string!!.setLength(0)
+        string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
+        label!!.setText(string)
+        stage!!.draw()
+
+    }
+
+
+    fun getNewCoord(): ArrayList<ModelInstance>{
+        var result= ArrayList<ModelInstance>()
+        val aux = frames!!.poll()
+        if(frames!!.isEmpty()){
+            result.add(ModelInstance(proxi,0f,0f,0f))
+            return result
+        }
+        aux.coords.forEach { f ->
+            val model = ModelInstance(
+            proxi,
+            1f * f.coords.first,
+            1f * f.coords.second,
+            1f * f.coords.third
+            )
+            result.add(model)
+        }
+        println("new frame loaded")
+        return  result
+    }
+
+    fun newFrame() {
+        timer("Array Creator", period = 100,initialDelay = 100) {
+            Gdx.graphics.requestRendering();
+//            render()
+            println("render requested")
+            }
+    }
 
 
 
+    fun filepop() {
+        timer("Array Creator", period = 1000,initialDelay = 0) {
+
+            val ldrrdr = LidarReader.DefaultReader()
+            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 10)
+            framesIndex += 11
+            intermetidate.forEach { f ->
+                frames!!.add(f)
+            }
+        }
+        println("New batch loaded")
+    }
 
 
-
-
-
-    fun changeArray(x: ArrayList<ModelInstance>){
+    fun changeArray(x: ArrayList<ModelInstance>) {
         this.spaceObjects = x
     }
 
@@ -190,5 +206,6 @@ override fun render() {
     override fun resize(width: Int, height: Int) {}
     override fun pause() {}
 }
+
 
 
