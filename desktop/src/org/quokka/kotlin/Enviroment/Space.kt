@@ -170,6 +170,11 @@ class Space : InputAdapter(), ApplicationListener {
         return  result
     }
 
+    fun shave(){
+
+    }
+
+
     fun newFrame() {
         timer("Array Creator", period = 100,initialDelay = 100) {
             Gdx.graphics.requestRendering();
@@ -177,7 +182,6 @@ class Space : InputAdapter(), ApplicationListener {
 //            println("render requested")
             }
     }
-
 
 
     fun filepop() {
