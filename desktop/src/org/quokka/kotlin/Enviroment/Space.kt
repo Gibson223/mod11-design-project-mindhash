@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.kotlin.Enviroment.Populator
+import java.lang.Error
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
@@ -42,6 +43,7 @@ class Space : InputAdapter(), ApplicationListener {
     var fiveeightPoint: Model? = null
     var ninetwelvePoint: Model? = null
     var thirteensixteenPoint: Model? = null
+    var seventeentwenteyPoint: Model? = null
     var morePoint: Model? = null
     var pink: Texture? = null
 
@@ -55,6 +57,7 @@ class Space : InputAdapter(), ApplicationListener {
     var font: BitmapFont? = null
     var label: Label? = null
     var string: StringBuilder? = null
+    var errMessage = " "
     var renderedCount = 0
 
     override fun create() {
@@ -92,6 +95,7 @@ class Space : InputAdapter(), ApplicationListener {
         var material = Material(TextureAttribute.createDiffuse(pink))
         modelBuilder.end()
 
+        val boxsize = .25f
 
         bottomBlock = modelBuilder.createBox(
             10f, 10f, .5f,
@@ -105,25 +109,23 @@ class Space : InputAdapter(), ApplicationListener {
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
-        onefourPointt = modelBuilder.createBox(
-            .1f, .1f, .1f,
-            Material(ColorAttribute.createDiffuse(Color.BLUE)),
+        onefourPointt = modelBuilder.createBox(boxsize,boxsize,boxsize,
+            Material(ColorAttribute.createDiffuse(Color.YELLOW)),
             (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
-        fiveeightPoint = modelBuilder.createBox(
-                .15f, .15f, .15f,
+        fiveeightPoint = modelBuilder.createBox(boxsize,boxsize,boxsize,
                 Material(ColorAttribute.createDiffuse(Color.GREEN)),
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
         ninetwelvePoint = modelBuilder.createBox(
-                .2f, .2f, .2f,
+                boxsize,boxsize,boxsize,
                 Material(ColorAttribute.createDiffuse(Color.YELLOW)),
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
         ninetwelvePoint = modelBuilder.createBox(
-                .25f, .25f, .25f,
+                boxsize,boxsize,boxsize,
                 Material(ColorAttribute.createDiffuse(Color.CORAL)),
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
@@ -133,8 +135,14 @@ class Space : InputAdapter(), ApplicationListener {
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
-        morePoint = modelBuilder.createBox(
+        seventeentwenteyPoint = modelBuilder.createBox(
                 .35f, .35f, .35f,
+                Material(ColorAttribute.createDiffuse(Color.GOLD)),
+                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+        )
+
+        morePoint = modelBuilder.createBox(
+                .4f, .4f, .4f,
                 Material(ColorAttribute.createDiffuse(Color.RED)),
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
@@ -174,6 +182,7 @@ class Space : InputAdapter(), ApplicationListener {
         modelBatch!!.begin(cam)
         pink!!.bind()
         val standIn = shave()
+//        val standIn = getNewCoord()
         for (inst in standIn) {
             if(isVisible(inst)) {
                 modelBatch!!.render(inst, environment)
@@ -184,13 +193,15 @@ class Space : InputAdapter(), ApplicationListener {
 
 
         string!!.setLength(0)
+        string!!.append(errMessage)
         string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
         string!!.append(" Rendered: ").append(renderedCount)
         string!!.append(" out of: ").append(standIn.size)
         label!!.setText(string)
         stage!!.draw()
+        errMessage = ""
 
-    }
+}
 
     fun isVisible(inst:ModelInstance):Boolean{
         var position = Vector3()
@@ -204,7 +215,7 @@ class Space : InputAdapter(), ApplicationListener {
         val aux = frames!!.poll()
         if(frames!!.isEmpty()){
             result.add(ModelInstance(proxi,0f,0f,0f))
-            println("empty frame")
+            errMessage="empty frame"
             return result
 
         }
@@ -235,70 +246,135 @@ class Space : InputAdapter(), ApplicationListener {
 
         aux.coords.forEach { c ->
 
-            var crtX = c.x-c.x.toInt()* sign(c.x)
-            var crtY = c.y-c.y.toInt()* sign(c.y)
-            var crtZ = c.z-c.z.toInt()* sign(c.z)
-
-
-            when (crtX){
-                in 0f..0.5f -> crtX = c.x.toInt() *1f
-                in 0.5f..0.99f -> crtX = c.x.toInt()+0.5f* sign(c.x)
-//                in 0f..0.25f -> crtX = c.x.toInt()*1f
-//                in 0.26f..0.5f -> crtX = c.x.toInt()+0.25f* sign(c.x)
-//                in 0.51f..0.75f -> crtX = c.x.toInt()+0.5f* sign(c.x)
-//                in 0.76f..0.99f -> crtX = c.x.toInt()+0.75f* sign(c.x)
-            }
-            when (crtY){
-                in 0f..0.5f -> crtY = c.y.toInt() *1f
-                in 0.5f..0.99f -> crtY = c.y.toInt() + 0.5f* sign(c.y)
-//                in 0f..0.25f -> crtY = c.y.toInt() *1f
-//                in 0.26f..0.5f -> crtY = c.y.toInt()+0.25f* sign(c.y)
-//                in 0.51f..0.75f -> crtY = c.y.toInt()+0.5f* sign(c.y)
-//                in 0.76f..0.99f -> crtY = c.y.toInt()+0.75f* sign(c.y)
-            }
-            when (crtZ) {
-                in 0f..0.5f -> crtZ = c.z.toInt() * 1f
-                in 0.5f..0.99f -> crtZ = c.z.toInt() + 0.5f* sign(c.z)
-//                in 0f..0.25f -> crtZ = c.z.toInt() *1f
-//                in 0.26f..0.5f -> crtZ = c.z.toInt()+0.25f* sign(c.z)
-//                in 0.51f..0.75f -> crtZ = c.z.toInt()+0.5f* sign(c.z)
-//                in 0.76f..0.99f -> crtZ = c.z.toInt()+0.75f* sign(c.z)
-            }
+            val divisions = 3
 
             val tripp
-                    = Triple(crtX,crtY,crtZ)
+                    = Triple(
+                    decideCPR(c.x,divisions),
+                    decideCPR(c.y,divisions),
+                    decideCPR(c.z,divisions))
             if(map.keys.contains(tripp)){
                 map.set(tripp,map.getValue(tripp)+1)
             } else {
-                map.set(tripp,0)
+                map.set(tripp,1)
             }
         }
 
-        for (key in map.keys)
-            when (map.get(key)){
-                1,2,3,4 -> objects.add(ModelInstance(onefourPointt,
+        val margin = 5
+
+        for (key in map.keys){
+            if(map.get(key) in margin/2..margin){
+                objects.add(ModelInstance(onefourPointt,
                         key.first
                         ,key.second
                         ,key.third))
-                5,6,7,8 -> objects.add(ModelInstance(fiveeightPoint,
+
+            } else if (map.get(key) in 1*margin..2*margin) {
+                objects.add(ModelInstance(fiveeightPoint,
                         key.first
                         ,key.second,
                         key.third))
-                9,10,11,12 -> objects.add(ModelInstance(ninetwelvePoint,
+
+            } else if (map.get(key) in 3*margin..4*margin) {
+                objects.add(ModelInstance(ninetwelvePoint,
                         key.first
                         ,key.second
                         ,key.third))
-                13,14,15,16 -> objects.add(ModelInstance(thirteensixteenPoint,
+            } else if (map.get(key) in 4*margin..5*margin) {
+                objects.add(ModelInstance(thirteensixteenPoint,
                         key.first
-                        ,key.second
-                        ,key.third))
-                else -> objects.add(ModelInstance(morePoint,
+                        , key.second
+                        , key.third))
+            } else if (map.get(key) in 5*margin..6*margin) {
+                objects.add(ModelInstance(seventeentwenteyPoint,
                         key.first
-                        ,key.second
-                        ,key.third))
+                        , key.second
+                        , key.third))
+            } else if (map.get(key) in 6*margin..7*margin) {
+                objects.add(ModelInstance(morePoint,
+                        key.first
+                        , key.second
+                        , key.third))
+            }
+
+//            when (map.get(key)) {
+//                1, 2, 3, 4, 5, 6, 7, 8 -> objects.add(ModelInstance(onefourPointt,
+//                        key.first
+//                        , key.second
+//                        , key.third))
+//                9, 10, 11, 12, 13, 14, 15, 16 -> objects.add(ModelInstance(fiveeightPoint,
+//                        key.first
+//                        , key.second,
+//                        key.third))
+//                17, 18, 19, 20, 21, 22, 23, 24 -> objects.add(ModelInstance(ninetwelvePoint,
+//                        key.first
+//                        , key.second
+//                        , key.third))
+//                13, 14, 15, 16 -> objects.add(ModelInstance(thirteensixteenPoint,
+//                        key.first
+//                        , key.second
+//                        , key.third))
+//                17, 18, 19, 20 -> objects.add(ModelInstance(seventeentwenteyPoint,
+//                        key.first
+//                        , key.second
+//                        , key.third))
+//                else -> objects.add(ModelInstance(morePoint,
+//                        key.first
+//                        , key.second
+//                        , key.third))
+//            }
             }
         return  objects
     }
+
+
+    fun decideCPR(a:Float,divisions:Int):Float{
+        var result = 0f
+        var auxxx = 0f
+        if(a > -1 && a < 1){
+            auxxx = a
+        } else {
+            auxxx = a - a.toInt()
+        }
+        val margin:Float
+        if(divisions == 2) {
+            margin = .5f
+            when (auxxx) {
+                in 0f..margin -> result = a.toInt() * 1f
+                in margin..1f -> result = a.toInt() + margin * sign(a)
+
+                in -1f..margin*-1 -> result = a.toInt() + margin * sign(a)
+                in margin*-1..0f -> result = a.toInt() * 1f
+            }
+        } else if(divisions == 3){
+            margin = .33f
+            when (auxxx) {
+                in 0f..margin -> result = a.toInt() * 1f
+                in margin..margin*2 -> result = a.toInt() + margin * sign(a)
+                in margin*2..1f -> result = a.toInt() + margin *2* sign(a)
+
+                in margin*-1..0f -> result = a.toInt() * 1f
+                in margin*-2..margin*-1 -> result = a.toInt() + margin * sign(a)
+                in -1f..margin*-2 -> result = a.toInt() + margin *2* sign(a)
+            }
+
+        } else if(divisions == 4) {
+            margin = .25f
+            when (auxxx) {
+                in 0f..margin -> result = a.toInt() * 1f
+                in margin..margin * 2 -> result = a.toInt() + margin * sign(a)
+                in margin * 2..margin * 3 -> result = a.toInt() + margin * 2 * sign(a)
+                in margin * 3..1f -> result = a.toInt() + margin * 3 * sign(a)
+
+                in margin*-1..0f -> result = a.toInt() * 1f
+                in -1f..margin * -3 -> result = a.toInt() + margin *3* sign(a)
+                in margin * -2..margin * -1 -> result = a.toInt() + margin * 1 * sign(a)
+                in margin * -3..margin * -2 -> result = a.toInt() + margin * 2 * sign(a)
+            }
+        } else throw Error("Divisions not prepared for that ")
+        return result
+    }
+
 
 
     fun newFrame() {
@@ -313,9 +389,11 @@ class Space : InputAdapter(), ApplicationListener {
     fun filepop() {
         timer("Array Creator", period = 1000,initialDelay = 0) {
 
+            val fps = 30
+
             val ldrrdr = LidarReader()
-            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 30)
-            framesIndex += 30
+            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
+            framesIndex += fps
             intermetidate.forEach { f ->
                 frames!!.add(f)
             }
