@@ -1,25 +1,32 @@
 package LidarData
 
+import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
 import java.util.*
 import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
 const val CREATE_DB_QUERY =
-        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frames (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points real[3][], PRIMARY KEY (frameid, recid));"
-const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frames CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
-const val INSERT_FRAME = "INSERT INTO frames (frameid, recid, points) VALUES (?, ?, ?);"
+        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));"
+const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
+const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
 const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
 const val SELECT_RECORDINGS =
-        "SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording, frames WHERE recid = id GROUP BY id;"
-const val SELECT_POINTS = "SELECT frameid, points FROM frames WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
+        "SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording, frame WHERE recid = id GROUP BY id;"
+const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
+
+const val FLOAT_BYTE_SIZE = 4
+const val FLOATS_PER_POINT = 3
 
 /**
  * The database class is used to communicate with the backend database which provides lidar recordings.
  *
  * First connect to the database and then use the appropriate methods to insert/retrieve data.
+ *
+ * Most important methods: connect, recordings, getFrames, recordingFromFile
  *
  * Example for setting up the schema.
  * <pre>
@@ -56,11 +63,12 @@ const val SELECT_POINTS = "SELECT frameid, points FROM frames WHERE frameid = AN
  * db.close()
  * }
  */
-class Database() {
+class Database {
     private var conn: Connection? = null
 
     /**
      * Returns a list of all recordings and their meta data.
+     * Refer to the RecordingMeta class for more info on fields and data about recordings.
      */
     val recordings: List<RecordingMeta>
         get() {
@@ -148,26 +156,39 @@ class Database() {
         val st = conn!!.prepareStatement(INSERT_FRAME)
         st.setInt(1, frame.frameId)
         st.setInt(2, recordingId)
-        val points =
-                frame.coords.map { lc -> arrayOf(lc.coords.first, lc.coords.second, lc.coords.third) }.toTypedArray()
-        st.setArray(3, conn!!.createArrayOf("float4", points))
+
+        val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * frame.coords.size * FLOATS_PER_POINT)
+        frame.coords.forEach {
+            bb.putFloat(it.x)
+            bb.putFloat(it.y)
+            bb.putFloat(it.z)
+        }
+        st.setBinaryStream(3, ByteArrayInputStream(bb.array()))
 
         st.executeUpdate()
         st.close()
     }
 
     /**
-     * Insert an array of array of doubles as a frame.
+     * Insert an array of array of floats as a frame.
      *
      * @param frameId The id of the frame.
      * @param recordingId The id of the recording the frame should belong to.
      * @param points The raw point data. The array format has to be Double[3][].
      */
-    fun insertPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
+    fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
         val st = conn!!.prepareStatement(INSERT_FRAME)
         st.setInt(1, frameId)
         st.setInt(2, recordingId)
-        st.setArray(3, conn!!.createArrayOf("float4", points))
+
+        val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * points.size * FLOATS_PER_POINT)
+        points.forEach {
+            bb.putFloat(it[0])
+            bb.putFloat(it[1])
+            bb.putFloat(it[2])
+        }
+
+        st.setBinaryStream(3, ByteArrayInputStream(bb.array()))
 
         st.executeUpdate()
         st.close()
@@ -184,7 +205,7 @@ class Database() {
     fun recordingFromFile(
             path: String,
             title: String,
-            reader: LidarReader = LidarReader.DefaultReader(),
+            reader: LidarReader = LidarReader(),
             filterFun: (LidarCoord) -> Boolean = { true }
     ) {
         // Create a new recording first
@@ -202,27 +223,27 @@ class Database() {
                 if (currPoints != null) {
                     // If the last frame existed, insert it into the database.
                     println("Inserted frame $lastFrame with ${currPoints!!.size} points")
-                    if (!currPoints!!.isEmpty()) {
-                        insertPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+                    if (currPoints!!.isNotEmpty()) {
+                        insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
                     }
                 }
 
                 // Update the frame id that is being constructed and create a new list of coords.
                 lastFrame = fid
                 currPoints = reader.azimuthBlockToLidarCoords(az).filter(filterFun).map {
-                    arrayOf(it.coords.first, it.coords.second, it.coords.third)
+                    arrayOf(it.x, it.y, it.z)
                 }.toMutableList()
             } else if (fid == lastFrame) {
                 // If the current frame is being constructed then just add the points to that.
                 currPoints!!.addAll(reader.azimuthBlockToLidarCoords(az).filter(filterFun).map {
-                    arrayOf(it.coords.first, it.coords.second, it.coords.third)
+                    arrayOf(it.x, it.y, it.z)
                 })
             }
         })
 
         // Insert last frame
         if (currPoints != null) {
-            insertPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+            insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
         }
     }
 
@@ -253,11 +274,16 @@ class Database() {
         stx.setInt(3, numberOfFrames)
         val rsx = stx.executeQuery()
         while (rsx.next()) {
-            val f = LidarFrame(rsx.getInt("frameid"))
-            frames.add(f)
-            (rsx.getArray("points").array as Array<Array<Float>>).forEach { a ->
-                f.coords.add(LidarCoord(Triple(a[0], a[1], a[2])))
+            val points = rsx.getBinaryStream("points").buffered()
+            val buff = ByteArray(FLOAT_BYTE_SIZE * FLOATS_PER_POINT)
+            val off = 0
+            val frameList = mutableListOf<LidarCoord>()
+            while (points.read(buff, off, buff.size) == buff.size) {
+                val bb = ByteBuffer.wrap(buff)
+                frameList.add(LidarCoord(bb.float, bb.float, bb.float))
             }
+
+            frames.add(LidarFrame(rsx.getInt("frameid"), frameList.toList()))
         }
         rsx.close()
         stx.close()
@@ -295,18 +321,24 @@ fun main() {
     db.connect("nyx", "lidar")
     db.initTables()
 
-    val nFrames = 50
-    val time = measureTimeMillis {
-        db.getFrames(3, 2000, nFrames, framerate = Framerate.FIVE)
+    db.getFrames(2, 2500, 1).forEach {
+        it.generatePly("/home/nyx/downloads/test3.ply")
     }
 
-    println("Time to take $nFrames frames: $time")
+    //for (i in 0 until 20) {
+    //    val nFrames = 50
+    //    val time = measureTimeMillis {
+    //        db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+    //    }
+
+    //    println("Time to take $nFrames frames: $time")
+    //}
 
     // Create reading with default LidarReader
     //db.recordingFromFile(
     //    path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-    //    title = "every point within a 32m radius"
-    //    ,filterFun = { lc -> (Math.sqrt(lc.coords.first.pow(2.0) + lc.coords.second.pow(2.0))) < 32 }
+    //    title = "everything within 24m range"
+    //    ,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
     //)
     db.close()
 }

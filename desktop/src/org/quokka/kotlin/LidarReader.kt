@@ -10,9 +10,10 @@ import com.github.swrirobotics.bags.reader.records.Connection
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileSystems
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.system.measureTimeMillis
 
 /**
@@ -24,38 +25,29 @@ import kotlin.system.measureTimeMillis
  *
  * See section 3.3. of https://data.ouster.io/downloads/v1.12.0-sw-user-guide.pdf for more information.
  */
-data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val beamAltitudeAngles: Array<Double>) {
+data class LidarReader(private val beamAzimuthAngles: Array<Double> = arrayOf(
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
+        3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164
+), private val beamAltitudeAngles: Array<Double> = arrayOf(
+        16.611, 16.084, 15.557, 15.029, 14.502, 13.975, 13.447, 12.920,
+        12.393, 11.865, 11.338, 10.811, 10.283, 9.756, 9.229, 8.701,
+        8.174, 7.646, 7.119, 6.592, 6.064, 5.537, 5.010, 4.482,
+        3.955, 3.428, 2.900, 2.373, 1.846, 1.318, 0.791, 0.264,
+        -0.264, -0.791, -1.318, -1.846, -2.373, -2.900, -3.428, -3.955,
+        -4.482, -5.010, -5.537, -6.064, -6.592, -7.119, -7.646, -8.174,
+        -8.701, -9.229, -9.756, -10.283, -10.811, -11.338, -11.865, -12.393,
+        -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611
+)) {
     init {
         // Verify that the size of the arrays is correct
         assert(beamAzimuthAngles.size == 64)
         assert(beamAltitudeAngles.size == 64)
-    }
-
-    companion object {
-        fun DefaultReader(): LidarReader {
-            // Default angles from https://github.com/ouster-lidar/ouster_example/blob/master/ouster_client/src/os1_util.cpp
-            val altitudeAngles = arrayOf(
-                16.611, 16.084, 15.557, 15.029, 14.502, 13.975, 13.447, 12.920,
-                12.393, 11.865, 11.338, 10.811, 10.283, 9.756, 9.229, 8.701,
-                8.174, 7.646, 7.119, 6.592, 6.064, 5.537, 5.010, 4.482,
-                3.955, 3.428, 2.900, 2.373, 1.846, 1.318, 0.791, 0.264,
-                -0.264, -0.791, -1.318, -1.846, -2.373, -2.900, -3.428, -3.955,
-                -4.482, -5.010, -5.537, -6.064, -6.592, -7.119, -7.646, -8.174,
-                -8.701, -9.229, -9.756, -10.283, -10.811, -11.338, -11.865, -12.393,
-                -12.920, -13.447, -13.975, -14.502, -15.029, -15.557, -16.084, -16.611
-            )
-            val azimuthAngles = arrayOf(
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164,
-                3.164, 1.055, -1.055, -3.164, 3.164, 1.055, -1.055, -3.164
-            )
-            return LidarReader(azimuthAngles, altitudeAngles)
-        }
     }
 
     private var file: BagFile? = null
@@ -146,16 +138,17 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
      * @return A list of LidarFrames.
      */
     fun readLidarFramesInterval(path: String, start: Int, end: Int): List<LidarFrame> {
-        val frames = HashMap<Int, LidarFrame>()
+        val frames = HashMap<Int, MutableList<LidarCoord>>()
+
         readAzimuthBlocks(path, { az ->
             if (az.frameId.toInt() >= start && az.frameId.toInt() <= end) {
                 // Create a new frame or use an existing one
-                val frame = frames.getOrPut(az.frameId.toInt()) { LidarFrame(az.frameId.toInt()) }
-                frame.coords.addAll(azimuthBlockToLidarCoords(az))
-                if (frame.timestamp == 0UL) frame.timestamp = az.timestamp
+                val l = frames.getOrPut(az.frameId.toInt()) { mutableListOf() }
+                l.addAll(azimuthBlockToLidarCoords(az))
             }
         }, cond = { az -> az.frameId.toInt() < end })
-        return frames.values.sortedBy { it.frameId }
+
+        return frames.entries.map { e -> LidarFrame(e.key, e.value) }
     }
 
     /**
@@ -167,17 +160,17 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
      * @return A list of LidarFrames.
      */
     fun readLidarTimeInterval(path: String, start: ULong, end: ULong): List<LidarFrame> {
-        val frames = HashMap<Int, LidarFrame>()
+        val frames = HashMap<Int, MutableList<LidarCoord>>()
 
         readAzimuthBlocks(path, { az ->
             if (az.timestamp >= start && az.timestamp <= end) {
                 // Create a new frame or use an existing one
-                val frame = frames.getOrPut(az.frameId.toInt()) { LidarFrame(az.frameId.toInt()) }
-                frame.coords.addAll(azimuthBlockToLidarCoords(az))
-                if (frame.timestamp == 0UL) frame.timestamp = az.timestamp
+                val l = frames.getOrPut(az.frameId.toInt()) { mutableListOf() }
+                l.addAll(azimuthBlockToLidarCoords(az))
             }
         })
-        return frames.values.sortedBy { it.frameId }
+
+        return frames.entries.map { e -> LidarFrame(e.key, e.value) }
     }
 
     /**
@@ -211,22 +204,20 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
      * @return
      */
     fun azimuthBlockToLidarCoords(az: Azimuth): List<LidarCoord> {
-        var arr = Array(64) { i ->
+        val arr = Array(64) { i ->
             val range = az.data[i].range.toFloat() / 1000
             val encoderCount = az.encoderCount
             val theta = 2 * Math.PI * (encoderCount.toDouble() / 90112 + beamAzimuthAngles[i] / 360)
             val phi = 2 * Math.PI * (beamAltitudeAngles[i] / 360)
 
             LidarCoord(
-                Triple(
-                    (range * Math.cos(theta) * Math.cos(phi)).toFloat() + 0f,
-                    (-1 * range * Math.sin(theta) * Math.cos(phi)).toFloat() + 0f,
-                    (range * Math.sin(phi)).toFloat() + 0f
-                )
+                    (range * cos(theta) * cos(phi)).toFloat() + 0f,
+                    (-1 * range * sin(theta) * cos(phi)).toFloat() + 0f,
+                    (range * sin(phi)).toFloat() + 0f
             )
         }
 
-        return arr.filter { lc -> lc.coords != Triple(0f, 0f, 0f) }
+        return arr.filter { lc -> lc != LidarCoord.ZeroCoord }
     }
 }
 
@@ -238,22 +229,51 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double>, private val
  * @property frameId The ID of the frame this coordinate belongs to. A frame is a single 360 degrees rotation.
  */
 data class LidarCoord(
-    val coords: Triple<Float, Float, Float>
-)
+        val x: Float,
+        val y: Float,
+        val z: Float
+) {
+    companion object {
+        val ZeroCoord = LidarCoord(0f, 0f, 0f)
+    }
+}
 
 /**
  * Represents a single frame captured. It contains all non zero coordinates and meta data about the frame.
  *
  * @property coords A list of all non zero points captured.
  * @property frameId The ID of the frame.
- * @property timeStart Capture time of the first point in nanoseconds.
- * @property timeEnd Capture time of the last point in nanoseconds.
+ * @property timestamp Capture time of the frame in ns.
  */
 data class LidarFrame(
-    val frameId: Int
+        val frameId: Int,
+        val coords: List<LidarCoord>
 ) {
-    val coords: MutableList<LidarCoord> = mutableListOf()
-    var timestamp: ULong = 0UL
+    /**
+     * Create a ply file which contains a point cloud of the points in the frame.
+     *
+     * @param file Path to the file to be created.
+     */
+    fun generatePly(file: String) {
+        val logFile = File(file)
+        val data = ArrayList<String>()
+        coords.forEach { lc ->
+            data.add("${lc.x} ${lc.y} ${lc.z}")
+        }
+
+        val writer = logFile.bufferedWriter()
+        writer.use { out ->
+            out.append(
+                    data.joinToString(
+                            separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
+                            "element vertex ${data.size}\nproperty float x\n" +
+                            "property float y\n" +
+                            "property float z\nend_header\n"
+                    )
+            )
+            out.newLine()
+        }
+    }
 }
 
 /**
@@ -265,33 +285,11 @@ data class LidarFrame(
  * @property filePath Path to the file where the measurements got read from.
  */
 data class LidarMetaData(
-    val numberOfPoints: Int,
-    val timeInterval: Pair<ULong, ULong>,
-    val frameInterval: Pair<Int, Int>,
-    val filePath: String
+        val numberOfPoints: Int,
+        val timeInterval: Pair<ULong, ULong>,
+        val frameInterval: Pair<Int, Int>,
+        val filePath: String
 )
-
-// Generate a ply file for debugging purposes
-fun generatePly(coords: List<LidarCoord>, target: String) {
-    val logFile = File(target)
-    val data = ArrayList<String>()
-    coords.forEach { lc ->
-        data.add("${lc.coords.first} ${lc.coords.second} ${-lc.coords.third}")
-    }
-
-    val writer = logFile.bufferedWriter()
-    writer.use { out ->
-        out.append(
-            data.joinToString(
-                separator = "\n", prefix = "ply\nformat ascii 1.0\n" +
-                        "element vertex ${data.size}\nproperty float x\n" +
-                        "property float y\n" +
-                        "property float z\nend_header\n"
-            )
-        )
-        out.newLine()
-    }
-}
 
 // Parse a file and puts the frames into individual ply files
 fun main(args: Array<String>) {
@@ -300,7 +298,7 @@ fun main(args: Array<String>) {
         return
     }
 
-    val reader = LidarReader.DefaultReader()
+    val reader = LidarReader()
 
     val filePath = args[0]
     val baseDirectory = args[1]
@@ -310,16 +308,16 @@ fun main(args: Array<String>) {
     println("Reading frames in '$filePath'")
 
     var frames: List<LidarFrame>? = null
-    var time = measureTimeMillis {
+    val time = measureTimeMillis {
         frames = reader.readLidarFramesInterval(filePath, baseFrame, baseFrame + numberOfFrames - 1)
     }
     println("Time taken: ${time}ms")
     println("Number of frames in interval: ${frames?.size}")
-    println("Total number of points: ${frames?.map({ f -> f.coords.size })?.sum()}")
+    println("Total number of points: ${frames?.map { f -> f.coords.size }?.sum()}")
 
     var c = 0
     frames?.forEach { f ->
-        generatePly(f.coords, "${baseDirectory}/${c}.ply")
+        f.generatePly("${baseDirectory}/${c}.ply")
         c++
     }
 }

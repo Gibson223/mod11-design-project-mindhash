@@ -160,9 +160,9 @@ class Space : InputAdapter(), ApplicationListener {
         aux.coords.forEach { f ->
             val model = ModelInstance(
             proxi,
-            1f * f.coords.first,
-            1f * f.coords.second,
-            1f * f.coords.third
+            1f * f.x,
+            1f * f.y,
+            1f * f.z
             )
             result.add(model)
         }
@@ -187,7 +187,7 @@ class Space : InputAdapter(), ApplicationListener {
     fun filepop() {
         timer("Array Creator", period = 1000,initialDelay = 0) {
 
-            val ldrrdr = LidarReader.DefaultReader()
+            val ldrrdr = LidarReader()
             var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 12)
             framesIndex += 12
             intermetidate.forEach { f ->

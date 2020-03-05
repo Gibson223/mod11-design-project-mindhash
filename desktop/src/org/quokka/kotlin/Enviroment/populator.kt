@@ -31,7 +31,7 @@ class Populator constructor  (mySpace: Space) {
 
 
     fun filepop(start: Int, end: Int){
-        val ldrrdr = LidarReader.DefaultReader()
+        val ldrrdr = LidarReader()
         var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", start, end)
 
         val modelBuilder = ModelBuilder()
@@ -49,9 +49,9 @@ class Populator constructor  (mySpace: Space) {
              intermetidate.first().coords.forEach { f ->
                     var instance = ModelInstance(
                         proxi,
-                        1f * f.coords.first,
-                        1f * f.coords.second,
-                        1f * f.coords.third
+                        1f * f.x,
+                        1f * f.y,
+                        1f * f.z
                     )
                     array!!.add(instance!!)
                     intermetidate.drop(0)
