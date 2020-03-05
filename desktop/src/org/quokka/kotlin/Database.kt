@@ -4,9 +4,6 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
 import java.util.*
-import kotlin.math.pow
-import kotlin.math.sqrt
-import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
 const val CREATE_DB_QUERY =
