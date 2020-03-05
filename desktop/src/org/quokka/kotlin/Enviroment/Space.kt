@@ -1,5 +1,8 @@
 package com.mygdx.game.desktop
 
+import LidarData.LidarCoord
+import LidarData.LidarFrame
+import LidarData.LidarReader
 import com.badlogic.gdx.*
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.ModelLoader
@@ -18,11 +21,14 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import org.quokka.kotlin.Enviroment.Populator
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.collections.ArrayList
+import kotlin.concurrent.timer
 
 
-internal class Space : InputAdapter(), ApplicationListener {
+class Space : InputAdapter(), ApplicationListener {
 
     var cam: PerspectiveCamera? = null
     var plexer: InputMultiplexer? = null
@@ -31,12 +37,15 @@ internal class Space : InputAdapter(), ApplicationListener {
     var modelBatch: ModelBatch? = null
 
 
-    var array: ArrayList<ModelInstance>? = null
+    var spaceObjects: ArrayList<ModelInstance>? = null
     var instance: ModelInstance? = null
 
     var bottomBlock: Model? = null
     var proxi: Model? = null
     var pink: Texture? = null
+
+    var frames: ConcurrentLinkedQueue<LidarFrame>? = null
+    var framesIndex = 1800
 
 
     var environment: Environment? = null
@@ -65,31 +74,36 @@ internal class Space : InputAdapter(), ApplicationListener {
 
 
 
+        spaceObjects = ArrayList<ModelInstance>(1)
+
+        val populator = Populator(this)
+
+        frames = ConcurrentLinkedQueue<LidarFrame>()
         //---------Model Population----------
         var modelBuilder = ModelBuilder()
 
         modelBuilder.begin()
         modelBuilder.node().id = "Floor"
-        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"),false)
+        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
         pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
         pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
         var material = Material(TextureAttribute.createDiffuse(pink))
         modelBuilder.end()
 
 
-        bottomBlock = modelBuilder.createBox(10f, 10f, .5f,
-                material,
-                (VertexAttributes.Usage.Position or  VertexAttributes.Usage.Normal.toLong().toInt()).toLong())
+        bottomBlock = modelBuilder.createBox(
+            10f, 10f, .5f,
+            material,
+            (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+        )
 
 
-        proxi = modelBuilder.createBox(.5f, .5f, .5f,
-                Material(ColorAttribute.createDiffuse(Color.ORANGE)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong())
+        proxi = modelBuilder.createBox(
+            .1f, .1f, .1f,
+            Material(ColorAttribute.createDiffuse(Color.ORANGE)),
+            (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+        )
 
-
-        randpop()
-
-        // populate()
 
         // -----------Bottom Text--------
         stage = Stage()
@@ -108,9 +122,10 @@ internal class Space : InputAdapter(), ApplicationListener {
 
 
         Gdx.graphics.setContinuousRendering(false);
-        Gdx.graphics.requestRendering();
-    }
 
+        filepop()
+        newFrame()
+    }
 
 
     override fun render() {
@@ -121,57 +136,69 @@ internal class Space : InputAdapter(), ApplicationListener {
 
         modelBatch!!.begin(cam)
         pink!!.bind()
-        modelBatch!!.render(array, environment)
+        modelBatch!!.render(getNewCoord(), environment)
         modelBatch!!.end()
 
 
         string!!.setLength(0)
         string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
-        // string.append(" Visible: ").append(cam.position);
-//        string!!.append(cam!!.combined)
         label!!.setText(string)
         stage!!.draw()
 
     }
 
-    fun randpop(){
-        array = ArrayList(53000)
-        instance = ModelInstance(bottomBlock,0f,0f,0f)
-        array!!.add(instance!!)
-//        for (i in 0..53000){
-//            var rand = (0..53000).shuffled()
-//            instance = ModelInstance(proxi,randx.get(i)*1F,randy.get(i)*1F,randz.get(i)*1F)
-//            array!!.add(instance!!)
-//        }
-        for (i in -50..50)
-            for(j in -25..25)
-                for (k in -5..5) {
-                    instance = ModelInstance(proxi, i * 1f, j * 1f, k * 1f)
-                    array!!.add(instance!!)
-                }
-    }
 
-    fun populate(){
-        array = ArrayList(1001)
+    fun getNewCoord(): ArrayList<ModelInstance>{
+        var result= ArrayList<ModelInstance>()
+        val aux = frames!!.poll()
+        if(frames!!.isEmpty()){
+            result.add(ModelInstance(proxi,0f,0f,0f))
+            println("empty frame")
+            return result
 
-        instance = ModelInstance(bottomBlock,0f,0f,0f)
-        array!!.add(instance!!)
-        for(i in -25..25){
-            for (j in -25..25){
-//                for (k in -25..25) {
-                instance = ModelInstance(proxi, i * 1F, j * 1F, 1F)
-                array!!.add(instance!!)
-//                }
-            }
-//            instance = ModelInstance(proxi,randx+offzet+i,randy+i,10f)
-//            array!!.add(instance!!)
         }
-//        if(randx + offzet>50){
-//            offzet = 0
-//        }
-//        offzet++
-
+        aux.coords.forEach { f ->
+            val model = ModelInstance(
+            proxi,
+            1f * f.coords.first,
+            1f * f.coords.second,
+            1f * f.coords.third
+            )
+            result.add(model)
+        }
+//        println("new frame loaded")
+        return  result
     }
+
+    fun newFrame() {
+        timer("Array Creator", period = 100,initialDelay = 100) {
+            Gdx.graphics.requestRendering();
+//            render()
+//            println("render requested")
+            }
+    }
+
+
+
+    fun filepop() {
+        timer("Array Creator", period = 1000,initialDelay = 0) {
+
+            val ldrrdr = LidarReader.DefaultReader()
+            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 12)
+            framesIndex += 12
+            intermetidate.forEach { f ->
+                frames!!.add(f)
+            }
+        }
+//        println("New batch loaded")
+    }
+
+
+    fun changeArray(x: ArrayList<ModelInstance>) {
+        this.spaceObjects = x
+    }
+
+
     override fun dispose() {
         modelBatch!!.dispose()
         bottomBlock!!.dispose()
@@ -181,3 +208,6 @@ internal class Space : InputAdapter(), ApplicationListener {
     override fun resize(width: Int, height: Int) {}
     override fun pause() {}
 }
+
+
+

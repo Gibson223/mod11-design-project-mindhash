@@ -3,6 +3,7 @@
 *.class
 *.war
 *.ear
+*.bag
 hs_err_pid*
 
 ## Robovm
@@ -125,3 +126,5 @@ Thumbs.db
 !/ios-moe/xcode/*.xcodeproj/xcshareddata
 !/ios-moe/xcode/*.xcodeproj/project.pbxproj
 /ios-moe/xcode/native/
+
+desktop/src/org/quokka/kotlin/Auxxxx.kt
