@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.sql.*
 import java.util.*
 
-const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
+const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
 const val CREATE_DB_QUERY =
         "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));"
 const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"

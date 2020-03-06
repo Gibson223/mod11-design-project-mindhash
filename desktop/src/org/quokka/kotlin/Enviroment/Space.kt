@@ -3,6 +3,7 @@ package com.mygdx.game.desktop
 import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
+import LidarData.LidarReader
 import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -16,6 +17,7 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
@@ -35,7 +37,7 @@ class Space : InputAdapter(), ApplicationListener {
     var cam: PerspectiveCamera? = null
     var plexer: InputMultiplexer? = null
     var camController: CameraInputController? = null
-    val dfcm = 8 //distnace from camera margin
+    val dfcm = 10//distnace from camera margin
 
     var modelBatch: ModelBatch? = null
 
@@ -44,13 +46,7 @@ class Space : InputAdapter(), ApplicationListener {
     var instance: ModelInstance? = null
 
     var bottomBlock: Model? = null
-    var proxi: Model? = null
-    var onethreePoint: Model? = null
-    var foursixPoint: Model? = null
-    var sevenninePoint: Model? = null
-    var tentwelvePoint: Model? = null
-    var thriteenfifteenPoint: Model? = null
-    var morePoint: Model? = null
+
     var pink: Texture? = null
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
@@ -66,14 +62,17 @@ class Space : InputAdapter(), ApplicationListener {
     var errMessage = " "
     var renderedCount = 0
 
+    val compressed = true
+
     val database: Database
     var batch: DecalBatch? = null
     var decals: List<Decal> = listOf()
+    var decalShaved: List<Decal> = listOf()
     var decalTextureRegion: TextureRegion? = null
 
     init {
         database = Database()
-        database.connect("nyx", "lidar")
+        database.connect("lidar", "mindhash")
     }
 
     override fun create() {
@@ -102,15 +101,7 @@ class Space : InputAdapter(), ApplicationListener {
         //---------Model Population----------
         var modelBuilder = ModelBuilder()
 
-        modelBuilder.begin()
-        modelBuilder.node().id = "Floor"
-        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
-        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
-        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
-        var material = Material(TextureAttribute.createDiffuse(pink))
-        modelBuilder.end()
 
-        val boxsize = .35f
         batch = DecalBatch(CameraGroupStrategy(cam))
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
         pix.setColor(66f/255, 135f/255, 245f/255, 1f)
@@ -121,57 +112,20 @@ class Space : InputAdapter(), ApplicationListener {
 
 
 
+        modelBuilder.begin()
+        modelBuilder.node().id = "Floor"
+        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
+        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
+        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+        var material = Material(TextureAttribute.createDiffuse(pink))
+        modelBuilder.end()
         bottomBlock = modelBuilder.createBox(
             10f, 10f, .5f,
             material,
             (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
-        proxi = Decal
 
-        proxi = modelBuilder.createBox(
-                10f, 10f, 10f,
-                Material(ColorAttribute.createDiffuse(Color.GREEN)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
-
-        onethreePoint = modelBuilder.createBox(boxsize,boxsize,boxsize,
-            Material(ColorAttribute.createDiffuse(Color.LIME)),
-            (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
-
-        foursixPoint = modelBuilder.createBox(boxsize,boxsize,boxsize,
-                Material(ColorAttribute.createDiffuse(Color.YELLOW)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
-
-        sevenninePoint = modelBuilder.createBox(
-                boxsize,boxsize,boxsize,
-                Material(ColorAttribute.createDiffuse(Color.ORANGE)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
-        tentwelvePoint = modelBuilder.createBox(
-                boxsize,boxsize,boxsize,
-                Material(ColorAttribute.createDiffuse(Color.BLUE)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
-        thriteenfifteenPoint = modelBuilder.createBox(
-                boxsize,boxsize,boxsize,
-                Material(ColorAttribute.createDiffuse(Color.PINK)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
-
-//        fifteeneighteenPoint = modelBuilder.createBox(
-//               .35f, .35f, .35f,
-//                Material(ColorAttribute.createDiffuse(Color.GOLD)),
-//                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-//        )
-
-        morePoint = modelBuilder.createBox(
-                boxsize+.2f,boxsize+.2f,boxsize+.2f,
-                Material(ColorAttribute.createDiffuse(Color.RED)),
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
 
 
         // -----------Bottom Text--------
@@ -190,7 +144,7 @@ class Space : InputAdapter(), ApplicationListener {
 
 
 
-        Gdx.graphics.setContinuousRendering(false);
+//        Gdx.graphics.setContinuousRendering(false);
 
         filepop()
         newFrame()
@@ -199,40 +153,38 @@ class Space : InputAdapter(), ApplicationListener {
 
     override fun render() {
         camController!!.update()
-        renderedCount = 0
+        cam!!.lookAt(0f,0f,0f)
 
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
-        modelBatch!!.begin(cam)
-        pink!!.bind()
-        val standIn = shave()
-//        val standIn = getNewCoord()
-        for (inst in standIn) {
-            if(isVisible(inst)) {
-                modelBatch!!.render(inst, environment)
-                renderedCount++
+
+
+        if(compressed == false) {
+            decals.forEach {
+                batch!!.add(it)
+                batch!!.flush()
             }
-        }
-        modelBatch!!.end()
+        } else {
+            decalShaved.forEach {
+                batch!!.add(it)
+            }
+            println(decalShaved.size)
+            if (batch != null) {
+                batch!!.flush()
+            }
 
-        decals.forEach {
-            batch!!.add(it)
         }
-        println("Number of decals: ${batch?.size}")
+//        println("Number of decals: ${batch?.size}")
 
-        for (i in 0 until 50) {
-            batch!!.flush()
-        }
-        println("Number of decals: ${batch?.size}")
+
+//        println("Number of decals: ${batch?.size}")
 
 
         string!!.setLength(0)
         string!!.append(errMessage)
         string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
-        string!!.append(" Rendered: ").append(renderedCount)
-        string!!.append(" out of: ").append(standIn.size)
         string!!.append(" cam: ").append(cam?.position)
         label!!.setText(string)
         stage!!.draw()
@@ -240,108 +192,39 @@ class Space : InputAdapter(), ApplicationListener {
 
 }
 
-    fun isVisible(inst:ModelInstance):Boolean{
-        var position = Vector3()
-        inst!!.transform.getTranslation(position);
-        return cam!!.frustum.pointInFrustum(position);
+    fun newFrame() {
+        timer("Array Creator", period = 100,initialDelay = 100) {
+            if (frames!!.isNotEmpty()) {
+                if(compressed == false) {
+                    decals = frames!!.poll().coords.map {
+                        val d = Decal.newDecal(0.05f, 0.05f, decalTextureRegion)
+                        d.setPosition(it.x, it.y, it.z)
+                        d.lookAt(cam!!.position, cam!!.up)
+                        d
+                    }
+                } else {
+                    decalShaved = shaveDecal()
+                }
+            }
+
+        }
     }
 
 
+    fun filepop() {
+        timer("Array Creator", period = 1000,initialDelay = 0) {
 
-    fun getNewCoord(): ArrayList<ModelInstance>{
-        var result= ArrayList<ModelInstance>()
-        val aux = frames!!.poll()
-        if(frames!!.isEmpty()){
-            result.add(ModelInstance(proxi,0f,0f,0f))
-            errMessage="empty frame"
-            return result
+            val fps = 20
 
-        }
-        aux.coords.forEach { f ->
-            val model = ModelInstance(
-            proxi,
-            1f * f.x,
-            1f * f.y,
-            1f * f.z
-            )
-            result.add(model)
-        }
-//        println("new frame loaded")
-        return  result
-    }
-
-    fun shave():ArrayList<ModelInstance>{
-        var objects = ArrayList<ModelInstance>(15)
-        var map = HashMap<Triple<Float,Float,Float>,Int>()
-
-//        if(frames!!.isEmpty()){
-//            objects.add(ModelInstance(proxi,0f,0f,0f))
-//            println("empty frame")
-//            return objects
-//        }
-
-        while(frames!!.isEmpty() || frames!!.peek().coords.size < 1000){
-            frames!!.poll()
-        }
-
-        var crtFrame = frames!!.poll()
-        crtFrame.coords.forEach { c ->
-
-            val divisions = decidDivisions(c)
-
-            val tripp
-                    = Triple(
-                    decideCPR(c.x,divisions),
-                    decideCPR(c.y,divisions),
-                    decideCPR(c.z,divisions))
-
-            if(map.keys.contains(tripp)){
-                map.set(tripp,map.getValue(tripp)+1)
-            } else {
-                map.set(tripp,1)
+            val ldrrdr = LidarReader()
+            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
+            framesIndex += fps
+            intermetidate.forEach { f ->
+                frames!!.add(f)
             }
         }
-
-        val margin = 5
-        for (key in map.keys){
-            if(map.get(key) in 1..margin){
-                objects.add(ModelInstance(onethreePoint,
-                        key.first
-                        ,key.second
-                        ,key.third))
-
-            } else if (map.get(key) in 1*margin..2*margin) {
-                objects.add(ModelInstance(foursixPoint,
-                        key.first
-                        ,key.second,
-                        key.third))
-
-            } else if (map.get(key) in 3*margin..4*margin) {
-                objects.add(ModelInstance(sevenninePoint,
-                        key.first
-                        ,key.second
-                        ,key.third))
-            } else if (map.get(key) in 4*margin..5*margin) {
-                objects.add(ModelInstance(tentwelvePoint,
-                        key.first
-                        , key.second
-                        , key.third))
-            } else if (map.get(key) in 5*margin..6*margin) {
-                objects.add(ModelInstance(thriteenfifteenPoint,
-                        key.first
-                        , key.second
-                        , key.third))
-            } else if (map.get(key) in 6*margin..7*margin) {
-                objects.add(ModelInstance(morePoint,
-                        key.first
-                        , key.second
-                        , key.third))
-            }
-        }
-
-        return  objects
+//        println("New batch loaded")
     }
-
 
     fun decideCPR(a:Float,divisions:Int):Float{
         var result = 0f
@@ -423,38 +306,6 @@ class Space : InputAdapter(), ApplicationListener {
     }
 
 
-    fun newFrame() {
-        timer("Array Creator", period = 100,initialDelay = 100) {
-            if (frames!!.isNotEmpty()) {
-                decals = frames!!.poll().coords.map {
-                    val d = Decal.newDecal(0.05f, 0.05f, decalTextureRegion)
-                    d.setPosition(it.x, it.y, it.z)
-                    d.lookAt(cam!!.position, cam!!.up)
-                    d
-                }
-            }
-
-            Gdx.graphics.requestRendering();
-            }
-    }
-
-
-    fun filepop() {
-        timer("Array Creator", period = 1000,initialDelay = 0) {
-
-            val fps = 20
-
-            val ldrrdr = LidarReader()
-            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
-            framesIndex += fps
-            intermetidate.forEach { f ->
-                frames!!.add(f)
-            }
-        }
-//        println("New batch loaded")
-    }
-
-
     fun changeArray(x: ArrayList<ModelInstance>) {
         this.spaceObjects = x
     }
@@ -472,6 +323,62 @@ class Space : InputAdapter(), ApplicationListener {
     }
     override fun pause() {}
 
+
+    fun shaveDecal():ArrayList<Decal>{
+        var objects = ArrayList<Decal>(15)
+        var map = HashMap<Triple<Float,Float,Float>,Int>()
+
+        if(frames!!.isEmpty()){
+            val d = Decal.newDecal(0.5f, 0.5f, decalTextureRegion)
+            d.setPosition(0f,0f,0f)
+            d.lookAt(cam!!.position, cam!!.up)
+            println("empty frame")
+            objects.add(d)
+            return objects
+        }
+
+
+        var crtFrame = frames!!.poll()
+        crtFrame.coords.forEach { c ->
+
+            val divisions = decidDivisions(c)
+
+            val tripp
+                    = Triple(
+                    decideCPR(c.x,divisions),
+                    decideCPR(c.y,divisions),
+                    decideCPR(c.z,divisions))
+
+            if(map.keys.contains(tripp)){
+                map.set(tripp,map.getValue(tripp)+1)
+            } else {
+                map.set(tripp,1)
+            }
+        }
+
+        val margin = 5
+        map.keys.forEach { k ->
+            var d = Decal()
+            if(map.get(k) in 1..margin){
+                d = Decal.newDecal(0.1f, 0.1f, decalTextureRegion)
+            } else if (map.get(k) in 1*margin..2*margin) {
+                d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+            } else if (map.get(k) in 3*margin..4*margin) {
+                d = Decal.newDecal(0.2f, 0.2f, decalTextureRegion)
+            } else if (map.get(k) in 4*margin..5*margin) {
+                d = Decal.newDecal(0.25f, 0.25f, decalTextureRegion)
+            } else if (map.get(k) in 5*margin..6*margin) {
+                d = Decal.newDecal(0.3f, 0.3f, decalTextureRegion)
+            } else if (map.get(k) in 6*margin..7*margin) {
+                d = Decal.newDecal(0.35f, 0.35f, decalTextureRegion)
+            }
+            d.setPosition(k.first, k.second,k.third)
+            d.lookAt(cam!!.position, cam!!.up)
+            objects.add(d)
+        }
+
+        return  objects
+    }
 
 }
 
