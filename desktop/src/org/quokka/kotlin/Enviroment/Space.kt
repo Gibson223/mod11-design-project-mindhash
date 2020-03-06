@@ -50,7 +50,7 @@ class Space : InputAdapter(), ApplicationListener {
     var pink: Texture? = null
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
-    var framesIndex = 2400
+    var framesIndex = 1800
 
 
     var environment: Environment? = null
@@ -60,7 +60,6 @@ class Space : InputAdapter(), ApplicationListener {
     var label: Label? = null
     var string: StringBuilder? = null
     var errMessage = " "
-    var renderedCount = 0
 
     val compressed = true
 
@@ -214,17 +213,32 @@ class Space : InputAdapter(), ApplicationListener {
     fun filepop() {
         timer("Array Creator", period = 1000,initialDelay = 0) {
 
-            val fps = 20
+            val fps =12
+            val local = 1
 
-            val ldrrdr = LidarReader()
-            var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
-            framesIndex += fps
-            intermetidate.forEach { f ->
-                frames!!.add(f)
+            if(local == 1 ) {
+                val ldrrdr = LidarReader()
+                var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
+                framesIndex += fps
+                intermetidate.forEach { f ->
+                    frames!!.add(f)
+                }
+
+            } else {
+                if (frames!!.size < 20) {
+                    val intermetidate = database.getFrames(1, framesIndex, fps)
+                    framesIndex += fps
+                    intermetidate.forEach { f ->
+                        frames!!.add(f)
+                    }
+
+            }
+
             }
         }
 //        println("New batch loaded")
     }
+
 
     fun decideCPR(a:Float,divisions:Int):Float{
         var result = 0f
@@ -358,17 +372,22 @@ class Space : InputAdapter(), ApplicationListener {
 
         val margin = 5
         map.keys.forEach { k ->
-            var d = Decal()
+            var d = Decal.newDecal(0.4f, 0.4f, decalTextureRegion)
             if(map.get(k) in 1..margin){
                 d = Decal.newDecal(0.1f, 0.1f, decalTextureRegion)
+
             } else if (map.get(k) in 1*margin..2*margin) {
                 d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+
             } else if (map.get(k) in 3*margin..4*margin) {
                 d = Decal.newDecal(0.2f, 0.2f, decalTextureRegion)
+
             } else if (map.get(k) in 4*margin..5*margin) {
                 d = Decal.newDecal(0.25f, 0.25f, decalTextureRegion)
+
             } else if (map.get(k) in 5*margin..6*margin) {
                 d = Decal.newDecal(0.3f, 0.3f, decalTextureRegion)
+
             } else if (map.get(k) in 6*margin..7*margin) {
                 d = Decal.newDecal(0.35f, 0.35f, decalTextureRegion)
             }
