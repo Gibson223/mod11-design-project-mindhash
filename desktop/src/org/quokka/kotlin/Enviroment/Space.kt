@@ -1,19 +1,21 @@
 package com.mygdx.game.desktop
 
+import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
-import LidarData.LidarReader
 import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.*
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
+import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
-import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
@@ -52,7 +54,7 @@ class Space : InputAdapter(), ApplicationListener {
     var pink: Texture? = null
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
-    var framesIndex = 1800
+    var framesIndex = 2400
 
 
     var environment: Environment? = null
@@ -63,6 +65,16 @@ class Space : InputAdapter(), ApplicationListener {
     var string: StringBuilder? = null
     var errMessage = " "
     var renderedCount = 0
+
+    val database: Database
+    var batch: DecalBatch? = null
+    var decals: List<Decal> = listOf()
+    var decalTextureRegion: TextureRegion? = null
+
+    init {
+        database = Database()
+        database.connect("nyx", "lidar")
+    }
 
     override fun create() {
         modelBatch = ModelBatch()
@@ -99,6 +111,15 @@ class Space : InputAdapter(), ApplicationListener {
         modelBuilder.end()
 
         val boxsize = .35f
+        batch = DecalBatch(CameraGroupStrategy(cam))
+        val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+        pix.setColor(66f/255, 135f/255, 245f/255, 1f)
+        pix.drawPixel(0, 0)
+        val pixtex = Texture(pix)
+        decalTextureRegion = TextureRegion(pixtex)
+
+
+
 
         bottomBlock = modelBuilder.createBox(
             10f, 10f, .5f,
@@ -195,6 +216,16 @@ class Space : InputAdapter(), ApplicationListener {
             }
         }
         modelBatch!!.end()
+
+        decals.forEach {
+            batch!!.add(it)
+        }
+        println("Number of decals: ${batch?.size}")
+
+        for (i in 0 until 50) {
+            batch!!.flush()
+        }
+        println("Number of decals: ${batch?.size}")
 
 
         string!!.setLength(0)
@@ -394,6 +425,15 @@ class Space : InputAdapter(), ApplicationListener {
 
     fun newFrame() {
         timer("Array Creator", period = 100,initialDelay = 100) {
+            if (frames!!.isNotEmpty()) {
+                decals = frames!!.poll().coords.map {
+                    val d = Decal.newDecal(0.05f, 0.05f, decalTextureRegion)
+                    d.setPosition(it.x, it.y, it.z)
+                    d.lookAt(cam!!.position, cam!!.up)
+                    d
+                }
+            }
+
             Gdx.graphics.requestRendering();
             }
     }
