@@ -4,6 +4,7 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.mygdx.game.desktop.Space;
 import org.quokka.game.LidarGame;
+import org.quokka.kotlin.PointCloudVisualizer;
 
 
 public class DesktopLauncher {
