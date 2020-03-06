@@ -1,3 +1,5 @@
+import LidarData.LidarFrame
+
 //package org.quokka.kotlin.Enviroment
 //
 //import LidarData.LidarReader
@@ -59,4 +61,38 @@
 //                instance = ModelInstance(proxi, i * 1f, j * 1f, k * 1f)
 //                spaceObjects!!.add(instance!!)
 //            }
-//}
+
+
+
+
+fun getMaxCoord(frame: LidarFrame):Triple<Int,Int,Int>{
+    var x = 0
+    var y = 0
+    var z = 0
+
+    for (i in frame.coords){
+        if(i.x > x)
+            x = i.x.toInt()
+        if(i.y > y)
+            y = i.y.toInt()
+        if(i.z > z)
+            z = i.z.toInt()
+    }
+    return Triple(x+1,y+1,z+1)
+}
+
+fun getMinCoord(frame: LidarFrame):Triple<Int,Int,Int>{
+    var x = 0
+    var y = 0
+    var z = 0
+
+    for (i in frame.coords){
+        if(i.x < x)
+            x = i.x.toInt()
+        if(i.y < y)
+            y = i.y.toInt()
+        if(i.z < z)
+            z = i.z.toInt()
+    }
+    return Triple(x-1,y-1,z-1)
+}
