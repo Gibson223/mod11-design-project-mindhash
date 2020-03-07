@@ -58,9 +58,11 @@ class Space : InputAdapter(), ApplicationListener {
     var decals: List<Decal> = listOf()
     var decalTextureRegion: TextureRegion? = null
 
+    lateinit var blueYellowFade: Array<TextureRegion>
+
     init {
         database = Database()
-        database.connect("nyx", "lidar")
+        database.connect("lidar", "mindhash")
     }
 
     override fun create() {
@@ -104,6 +106,12 @@ class Space : InputAdapter(), ApplicationListener {
         pix.drawPixel(0, 0)
         val pixtex = Texture(pix)
         decalTextureRegion = TextureRegion(pixtex)
+        blueYellowFade = Array(256) { i ->
+            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+            pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
+            pix.drawPixel(0, 0)
+            TextureRegion(Texture(pix))
+        }
 
 
 
@@ -138,7 +146,7 @@ class Space : InputAdapter(), ApplicationListener {
 
 
 
-        Gdx.graphics.setContinuousRendering(false);
+        //Gdx.graphics.setContinuousRendering(false);
 
         filepop()
         newFrame()
@@ -159,12 +167,8 @@ class Space : InputAdapter(), ApplicationListener {
         decals.forEach {
             batch!!.add(it)
         }
-        println("Number of decals: ${batch?.size}")
 
-        for (i in 0 until 50) {
-            batch!!.flush()
-        }
-        println("Number of decals: ${batch?.size}")
+        batch!!.flush()
 
 
         string!!.setLength(0)
@@ -199,8 +203,17 @@ class Space : InputAdapter(), ApplicationListener {
     fun newFrame() {
         timer("Array Creator", period = 100,initialDelay = 100) {
             if (frames!!.isNotEmpty()) {
-                decals = frames!!.poll().coords.map {
-                    val d = Decal.newDecal(0.05f, 0.05f, decalTextureRegion)
+                val f = frames!!.poll()
+                decals = f.coords.map {
+                    var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
+                    if (perc < 0) {
+                        perc = 0f
+                    } else if (perc > 1) {
+                        perc = 1f
+                    }
+                    val index = (perc * 255).toInt()
+                    //val d = Decal.newDecal(0.05f, 0.05f, blueYellowFade.get(index))
+                    val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
                     d.setPosition(it.x, it.y, it.z)
                     d.lookAt(cam!!.position, cam!!.up)
                     d
