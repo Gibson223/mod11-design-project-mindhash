@@ -1,7 +1,6 @@
 package com.mygdx.game.desktop
 
 import LidarData.Database
-import LidarData.LidarCoord
 import LidarData.LidarFrame
 import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
@@ -59,6 +58,7 @@ class Space : InputAdapter(), ApplicationListener {
     var decalTextureRegion: TextureRegion? = null
 
     lateinit var blueYellowFade: Array<TextureRegion>
+    lateinit var blueRedFade: Array<TextureRegion>
 
     init {
         database = Database()
@@ -102,10 +102,17 @@ class Space : InputAdapter(), ApplicationListener {
 
         batch = DecalBatch(CameraGroupStrategy(cam))
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-        pix.setColor(66f/255, 135f/255, 245f/255, 1f)
+        pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
         val pixtex = Texture(pix)
         decalTextureRegion = TextureRegion(pixtex)
+
+        blueRedFade = Array(256) { i ->
+            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+            pix.setColor(i / 255f, 0f, 1 - i / 255f, 1f)
+            pix.drawPixel(0, 0)
+            TextureRegion(Texture(pix))
+        }
         blueYellowFade = Array(256) { i ->
             val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
             pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
@@ -114,19 +121,17 @@ class Space : InputAdapter(), ApplicationListener {
         }
 
 
-
-
         bottomBlock = modelBuilder.createBox(
-            10f, 10f, .5f,
-            material,
-            (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+                10f, 10f, .5f,
+                material,
+                (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
 
         proxi = modelBuilder.createBox(
-            .1f, .1f, .1f,
-            Material(ColorAttribute.createDiffuse(Color.ORANGE)),
-            (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+                .1f, .1f, .1f,
+                Material(ColorAttribute.createDiffuse(Color.ORANGE)),
+                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
 
 
@@ -143,7 +148,6 @@ class Space : InputAdapter(), ApplicationListener {
 
         plexer = InputMultiplexer(this as InputProcessor, camController)
         Gdx.input.inputProcessor = plexer
-
 
 
         //Gdx.graphics.setContinuousRendering(false);
@@ -179,41 +183,42 @@ class Space : InputAdapter(), ApplicationListener {
     }
 
 
-    fun getNewCoord(): ArrayList<ModelInstance>{
-        var result= ArrayList<ModelInstance>()
+    fun getNewCoord(): ArrayList<ModelInstance> {
+        var result = ArrayList<ModelInstance>()
         val aux = frames!!.poll()
-        if(frames!!.isEmpty()){
-            result.add(ModelInstance(proxi,0f,0f,0f))
+        if (frames!!.isEmpty()) {
+            result.add(ModelInstance(proxi, 0f, 0f, 0f))
             return result
 
         }
         aux.coords.forEach { f ->
             val model = ModelInstance(
-            proxi,
-            1f * f.x,
-            1f * f.y,
-            1f * f.z
+                    proxi,
+                    1f * f.x,
+                    1f * f.y,
+                    1f * f.z
             )
             result.add(model)
         }
 //        println("new frame loaded")
-        return  result
+        return result
     }
 
     fun newFrame() {
-        timer("Array Creator", period = 100,initialDelay = 100) {
+        timer("Array Creator", period = 100, initialDelay = 100) {
             if (frames!!.isNotEmpty()) {
                 val f = frames!!.poll()
                 decals = f.coords.map {
-                    var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
+                    // var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
+                    var perc = (it.z + 10) / 20
                     if (perc < 0) {
                         perc = 0f
                     } else if (perc > 1) {
                         perc = 1f
                     }
                     val index = (perc * 255).toInt()
-                    //val d = Decal.newDecal(0.05f, 0.05f, blueYellowFade.get(index))
-                    val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
+                    // val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
+                    val d = Decal.newDecal(0.08f, 0.08f, blueRedFade[index])
                     d.setPosition(it.x, it.y, it.z)
                     d.lookAt(cam!!.position, cam!!.up)
                     d
@@ -223,13 +228,12 @@ class Space : InputAdapter(), ApplicationListener {
             Gdx.graphics.requestRendering();
 //            render()
 //            println("render requested")
-            }
+        }
     }
 
 
-
     fun filepop() {
-        timer("Array Creator", period = 1000,initialDelay = 0) {
+        timer("Array Creator", period = 1000, initialDelay = 0) {
 
             //val ldrrdr = LidarReader()
             //var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + 12)
