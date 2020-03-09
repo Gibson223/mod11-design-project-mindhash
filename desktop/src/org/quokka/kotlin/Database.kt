@@ -243,9 +243,6 @@ class Database {
 
             if (fid > lastFrame) {
                 // If the frameId changes a whole frame has been captured since the frames in the file are ordered
-                currPoints?.let {
-
-                }
                 if (currPoints != null) {
                     // If the last frame existed, insert it into the database.
                     println("Inserted frame $lastFrame with ${currPoints!!.size} points")
@@ -378,20 +375,20 @@ fun main() {
     //    it.generatePly("/home/nyx/downloads/test3.ply")
     //}
 
-    //for (i in 0 until 20) {
-    //    val nFrames = 50
-    //    val time = measureTimeMillis {
-    //        db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
-    //    }
+    for (i in 0 until 20) {
+        val nFrames = 50
+        val time = measureTimeMillis {
+            db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+        }
 
-    //    println("Time to take $nFrames frames: $time")
-    //}
+        println("Time to take $nFrames frames: $time")
+    }
 
     // Create reading with default LidarReader
-    db.recordingFromFile(
-            path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-            title = "the data with the crossing in the US somewhere"
-            //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
-    )
+    //db.recordingFromFile(
+    //        path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
+    //        title = "the data with the crossing in the US somewhere"
+    //        //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
+    //)
     db.close()
 }
