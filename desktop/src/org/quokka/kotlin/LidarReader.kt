@@ -247,7 +247,9 @@ data class LidarCoord(
  */
 data class LidarFrame(
         val frameId: Int,
-        val coords: List<LidarCoord>
+        val coords: List<LidarCoord>,
+        val maxZ: Float = 0f,
+        val minZ: Float = 0f
 ) {
     /**
      * Create a ply file which contains a point cloud of the points in the frame.

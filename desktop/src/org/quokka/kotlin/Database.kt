@@ -1,20 +1,33 @@
 package LidarData
 
 import java.io.ByteArrayInputStream
+import java.io.ObjectInputStream
 import java.nio.ByteBuffer
+import java.nio.FloatBuffer
 import java.sql.*
 import java.util.*
 
 const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
-const val CREATE_DB_QUERY =
-        "CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255)); CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id) ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));"
+const val CREATE_DB_QUERY = """
+CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
+ minframe integer DEFAULT 0,
+ maxframe integer DEFAULT 0,
+ maxz real DEFAULT 7,
+ minz real DEFAULT -7
+);
+ CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id)
+ ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));
+"""
 const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
 const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
 const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
-const val SELECT_RECORDINGS =
-        "SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording, frame WHERE recid = id GROUP BY id;"
+const val SELECT_RECORDINGS = """
+SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording,
+ frame WHERE recid = id GROUP BY id;
+"""
+const val SELECT_SINGLE_RECORDING = "SELECT * FROM recording WHERE id = ?;"
 const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
-
+const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxz = ?, minz = ? WHERE id = ?;"
 const val FLOAT_BYTE_SIZE = 4
 const val FLOATS_PER_POINT = 3
 
@@ -61,7 +74,7 @@ const val FLOATS_PER_POINT = 3
  * }
  */
 class Database {
-    private var conn: Connection? = null
+    private lateinit var conn: Connection
 
     /**
      * Returns a list of all recordings and their meta data.
@@ -69,21 +82,46 @@ class Database {
      */
     val recordings: List<RecordingMeta>
         get() {
-            val st = conn!!.prepareStatement(SELECT_RECORDINGS)
+            val st = conn.prepareStatement(SELECT_RECORDINGS)
             val rs = st.executeQuery()
             val recs: MutableList<RecordingMeta> = mutableListOf()
 
             while (rs.next()) {
                 recs.add(
                         RecordingMeta(
-                                id = rs.getInt("id"), title = rs.getString("title"),
-                                minFrame = rs.getInt("minframe"), maxFrame = rs.getInt("maxframe"),
-                                numberOfFrames = rs.getInt("numberofframes")
+                                rs.getInt("id"),
+                                rs.getString("title"),
+                                rs.getInt("minframe"),
+                                rs.getInt("maxframe"),
+                                rs.getInt("numberofframes"),
+                                rs.getFloat("maxz"),
+                                rs.getFloat("minz")
                         )
                 )
             }
             return recs
         }
+
+    fun getRecording(id: Int): RecordingMeta? {
+        val st = conn.prepareStatement(SELECT_SINGLE_RECORDING)
+        st.setInt(1, id)
+        val rs = st.executeQuery()
+        var ret: RecordingMeta? = null
+        if (rs.next()) {
+            ret = RecordingMeta(
+                    rs.getInt("id"),
+                    rs.getString("title"),
+                    rs.getInt("minframe"),
+                    rs.getInt("maxframe"),
+                    rs.getInt("maxframe") - rs.getInt("minframe"),
+                    rs.getFloat("maxz"),
+                    rs.getFloat("minz")
+            )
+        }
+        rs.close()
+        st.close()
+        return ret
+    }
 
     /**
      * Connect to the database and authorize.
@@ -103,14 +141,14 @@ class Database {
      * Close the connection to the database.
      */
     fun close() {
-        conn?.close()
+        conn.close()
     }
 
     /**
      * Construct the schema.
      */
     fun initTables() {
-        val st = conn!!.prepareStatement(CREATE_DB_QUERY)
+        val st = conn.prepareStatement(CREATE_DB_QUERY)
         st.executeUpdate()
         st.close()
     }
@@ -119,7 +157,7 @@ class Database {
      * Deconstruct the schema.
      */
     fun destroyTables() {
-        val st = conn!!.prepareStatement(DELETE_DB_QUERY)
+        val st = conn.prepareStatement(DELETE_DB_QUERY)
         st.executeUpdate()
         st.close()
     }
@@ -131,7 +169,7 @@ class Database {
      * @return The id given to the recording for inserting frames later.
      */
     fun newRecording(title: String): Int {
-        val st = conn!!.prepareStatement(INSERT_RECORDING)
+        val st = conn.prepareStatement(INSERT_RECORDING)
         st.setString(1, title)
         val rs = st.executeQuery()
         var r = -1
@@ -144,29 +182,6 @@ class Database {
     }
 
     /**
-     * Inserts a LidarFrame as a frame to the given recording.
-     *
-     * @param frame The lidar frame which contains all necessary data.
-     * @param recordingId The id of the recording the frame is associated with.
-     */
-    fun insertFrame(frame: LidarFrame, recordingId: Int) {
-        val st = conn!!.prepareStatement(INSERT_FRAME)
-        st.setInt(1, frame.frameId)
-        st.setInt(2, recordingId)
-
-        val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * frame.coords.size * FLOATS_PER_POINT)
-        frame.coords.forEach {
-            bb.putFloat(it.x)
-            bb.putFloat(it.y)
-            bb.putFloat(it.z)
-        }
-        st.setBinaryStream(3, ByteArrayInputStream(bb.array()))
-
-        st.executeUpdate()
-        st.close()
-    }
-
-    /**
      * Insert an array of array of floats as a frame.
      *
      * @param frameId The id of the frame.
@@ -174,7 +189,7 @@ class Database {
      * @param points The raw point data. The array format has to be Double[3][].
      */
     fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
-        val st = conn!!.prepareStatement(INSERT_FRAME)
+        val st = conn.prepareStatement(INSERT_FRAME)
         st.setInt(1, frameId)
         st.setInt(2, recordingId)
 
@@ -190,6 +205,7 @@ class Database {
         st.executeUpdate()
         st.close()
     }
+
 
     /**
      * Record all data from a file and put it in the database with a title for the given recording.
@@ -211,9 +227,16 @@ class Database {
         var lastFrame = -1
         // The list which is used to construct the raw point data for a frame.
         var currPoints: MutableList<Array<Float>>? = null
+        var minFrame = Integer.MAX_VALUE
+        var maxFrame = Integer.MIN_VALUE
         // Iterate through Azimuth blocks and construct and insert frames into the database.
         reader.readAzimuthBlocks(path, { az ->
             val fid = az.frameId.toInt()
+
+            if (fid > maxFrame)
+                maxFrame = fid
+            if (fid < minFrame)
+                minFrame = fid
 
             if (fid > lastFrame) {
                 // If the frameId changes a whole frame has been captured since the frames in the file are ordered
@@ -242,6 +265,15 @@ class Database {
         if (currPoints != null) {
             insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
         }
+
+        val st = conn.prepareStatement(UPDATE_RECORDING_FRAMES)
+        st.setInt(1, minFrame)
+        st.setInt(2, minFrame)
+        st.setFloat(3, 7f)
+        st.setFloat(4, -7f)
+        st.setInt(5, recId)
+        st.executeUpdate()
+        st.close()
     }
 
     /**
@@ -264,9 +296,14 @@ class Database {
         val spf = framerate.stepsPerFrame
         val frames = mutableListOf<LidarFrame>()
 
-        val stx = conn!!.prepareStatement(SELECT_POINTS)
+        val recording = getRecording(recordingId)
+        if (recording == null) {
+            return emptyList()
+        }
+
+        val stx = conn.prepareStatement(SELECT_POINTS)
         val frameIds = (startFrame until (startFrame + spf * numberOfFrames) step spf).toList().toTypedArray()
-        stx.setArray(1, conn!!.createArrayOf("integer", frameIds))
+        stx.setArray(1, conn.createArrayOf("integer", frameIds))
         stx.setInt(2, recordingId)
         stx.setInt(3, numberOfFrames)
         val rsx = stx.executeQuery()
@@ -280,7 +317,12 @@ class Database {
                 frameList.add(LidarCoord(bb.float, bb.float, bb.float))
             }
 
-            frames.add(LidarFrame(rsx.getInt("frameid"), frameList.toList()))
+            frames.add(LidarFrame(
+                    rsx.getInt("frameid"),
+                    frameList.toList(),
+                    maxZ = recording.maxZ,
+                    minZ = recording.minZ
+            ))
         }
         rsx.close()
         stx.close()
@@ -310,32 +352,40 @@ enum class Framerate(val stepsPerFrame: Int) {
  * @property maxFrame The maximum frame value.
  * @property numberOfFrames The total number of frames.
  */
-data class RecordingMeta(val id: Int, val title: String, val minFrame: Int, val maxFrame: Int, val numberOfFrames: Int)
+data class RecordingMeta(
+        val id: Int,
+        val title: String,
+        val minFrame: Int,
+        val maxFrame: Int,
+        val numberOfFrames: Int,
+        val maxZ: Float,
+        val minZ: Float
+)
 
 
 fun main() {
     val db = Database()
-    db.connect("nyx", "lidar")
+    db.connect("lidar", "mindhash")
     db.initTables()
 
-    db.getFrames(2, 2500, 1).forEach {
-        it.generatePly("/home/nyx/downloads/test3.ply")
-    }
-
-    //for (i in 0 until 20) {
-    //    val nFrames = 50
-    //    val time = measureTimeMillis {
-    //        db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
-    //    }
-
-    //    println("Time to take $nFrames frames: $time")
+    //db.getFrames(2, 2500, 1).forEach {
+    //    it.generatePly("/home/nyx/downloads/test3.ply")
     //}
+
+    for (i in 0 until 20) {
+        val nFrames = 50
+        val time = measureTimeMillis {
+            db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+        }
+
+        println("Time to take $nFrames frames: $time")
+    }
 
     // Create reading with default LidarReader
     //db.recordingFromFile(
-    //    path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-    //    title = "everything within 24m range"
-    //    ,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
+    //        path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
+    //        title = "the data with the crossing in the US somewhere"
+    //        //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
     //)
     db.close()
 }

@@ -25,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.kotlin.Enviroment.Populator
 import java.lang.Error
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.pow
@@ -55,8 +56,8 @@ class Space : InputAdapter(), ApplicationListener {
     var pink: Texture? = null
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
-    var framesIndex = 1800
-
+    var framesIndex = 2400
+    var pause = AtomicBoolean(false)
 
     var environment: Environment? = null
 
@@ -74,6 +75,8 @@ class Space : InputAdapter(), ApplicationListener {
     var decals: List<Decal> = listOf()
     var decalShaved: List<Decal> = listOf()
     var decalTextureRegion: TextureRegion? = null
+
+    lateinit var blueYellowFade: Array<TextureRegion>
 
     init {
         database = Database()
@@ -113,6 +116,12 @@ class Space : InputAdapter(), ApplicationListener {
         pix.drawPixel(0, 0)
         val pixtex = Texture(pix)
         decalTextureRegion = TextureRegion(pixtex)
+        blueYellowFade = Array(256) { i ->
+            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+            pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
+            pix.drawPixel(0, 0)
+            TextureRegion(Texture(pix))
+        }
 
 
 
@@ -153,6 +162,11 @@ class Space : InputAdapter(), ApplicationListener {
 
 
     override fun render() {
+
+        if(Gdx.input.isKeyPressed(Input.Keys.SPACE) == true){
+            pause.getAndSet(!pause.get())
+        }
+
         camController!!.update()
 
         if(fixedCamera == true ) {
@@ -164,6 +178,10 @@ class Space : InputAdapter(), ApplicationListener {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
+        decals.forEach {
+            batch!!.add(it)
+        }
+        println("Number of decals: ${batch?.size}")
 
         if(compressed == false) {
             decals.forEach {
@@ -193,12 +211,20 @@ class Space : InputAdapter(), ApplicationListener {
         timer("Array Creator", period = 100,initialDelay = 100) {
             if (frames!!.isNotEmpty()) {
                 if(compressed == false) {
-                    decals = frames!!.poll().coords.map {
-                        val d = Decal.newDecal(0.05f, 0.05f, decalTextureRegion)
-                        d.setPosition(it.x, it.y, it.z)
-                        d.lookAt(cam!!.position, cam!!.up)
-                        d
+                val f = frames!!.poll()
+                decals = f.coords.map {
+                    var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
+                    if (perc < 0) {
+                        perc = 0f
+                    } else if (perc > 1) {
+                        perc = 1f
                     }
+                    val index = (perc * 255).toInt()
+                    //val d = Decal.newDecal(0.05f, 0.05f, blueYellowFade.get(index))
+                    val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
+                    d.setPosition(it.x, it.y, it.z)
+                    d.lookAt(cam!!.position, cam!!.up)
+                    d
                 } else {
                     decalShaved = shaveDecal()
                 }
