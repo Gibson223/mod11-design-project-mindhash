@@ -188,14 +188,22 @@ class Database {
      * @param frameId The id of the frame.
      * @param recordingId The id of the recording the frame should belong to.
      * @param points The raw point data. The array format has to be Double[3][].
+     * @return Returns the minimum and maximum Z coordinate
      */
-    fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
+    fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) : Pair<Float, Float> {
         val st = conn.prepareStatement(INSERT_FRAME)
         st.setInt(1, frameId)
         st.setInt(2, recordingId)
 
+        var minZ = Float.MAX_VALUE
+        var maxZ = Float.MIN_VALUE
+
         val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * points.size * FLOATS_PER_POINT)
         points.forEach {
+            if (it[2] < minZ)
+                minZ = it[2]
+            if (it[2] > maxZ)
+                maxZ = it[2]
             bb.putFloat(it[0])
             bb.putFloat(it[1])
             bb.putFloat(it[2])
@@ -205,6 +213,7 @@ class Database {
 
         st.executeUpdate()
         st.close()
+        return Pair(minZ, maxZ)
     }
 
 
@@ -230,6 +239,8 @@ class Database {
         var currPoints: MutableList<Array<Float>>? = null
         var minFrame = Integer.MAX_VALUE
         var maxFrame = Integer.MIN_VALUE
+        var maxZ = Float.MIN_VALUE
+        var minZ = Float.MAX_VALUE
         // Iterate through Azimuth blocks and construct and insert frames into the database.
         reader.readAzimuthBlocks(path, { az ->
             val fid = az.frameId.toInt()
@@ -245,7 +256,11 @@ class Database {
                     // If the last frame existed, insert it into the database.
                     println("Inserted frame $lastFrame with ${currPoints!!.size} points")
                     if (currPoints!!.isNotEmpty()) {
-                        insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+                        val bounds = insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+                        if (bounds.first < minZ)
+                            minZ = bounds.first
+                        if (bounds.second > maxZ)
+                            maxZ = bounds.second
                     }
                 }
 
@@ -264,14 +279,18 @@ class Database {
 
         // Insert last frame
         if (currPoints != null) {
-            insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+            val bounds = insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
+            if (bounds.first < minZ)
+                minZ = bounds.first
+            if (bounds.second > maxZ)
+                maxZ = bounds.second
         }
 
         val st = conn.prepareStatement(UPDATE_RECORDING_FRAMES)
         st.setInt(1, minFrame)
-        st.setInt(2, minFrame)
-        st.setFloat(3, 7f)
-        st.setFloat(4, -7f)
+        st.setInt(2, maxFrame)
+        st.setFloat(3, maxZ)
+        st.setFloat(4, minZ)
         st.setInt(5, recId)
         st.executeUpdate()
         st.close()
@@ -373,20 +392,20 @@ fun main() {
     //    it.generatePly("/home/nyx/downloads/test3.ply")
     //}
 
-    for (i in 0 until 20) {
-        val nFrames = 50
-        val time = measureTimeMillis {
-            db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
-        }
+    //for (i in 0 until 20) {
+    //    val nFrames = 50
+    //    val time = measureTimeMillis {
+    //        db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
+    //    }
 
-        println("Time to take $nFrames frames: $time")
-    }
+    //    println("Time to take $nFrames frames: $time")
+    //}
 
     // Create reading with default LidarReader
-    //db.recordingFromFile(
-    //        path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-    //        title = "the data with the crossing in the US somewhere"
-    //        //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
-    //)
+    db.recordingFromFile(
+            path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
+            title = "all the points"
+            //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
+    )
     db.close()
 }
