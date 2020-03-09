@@ -34,10 +34,15 @@ import kotlin.math.sqrt
 
 class Space : InputAdapter(), ApplicationListener {
 
+
+    //-------GUI controlls-----
+    var fixedCamera = true
+
+
     var cam: PerspectiveCamera? = null
     var plexer: InputMultiplexer? = null
     var camController: CameraInputController? = null
-    val dfcm = 10//distnace from camera margin
+    val dfcm = 15//distnace from camera margin
 
     var modelBatch: ModelBatch? = null
 
@@ -62,6 +67,7 @@ class Space : InputAdapter(), ApplicationListener {
     var errMessage = " "
 
     val compressed = true
+    val local = true
 
     val database: Database
     var batch: DecalBatch? = null
@@ -141,10 +147,6 @@ class Space : InputAdapter(), ApplicationListener {
         plexer = InputMultiplexer(this as InputProcessor, camController)
         Gdx.input.inputProcessor = plexer
 
-
-
-//        Gdx.graphics.setContinuousRendering(false);
-
         filepop()
         newFrame()
     }
@@ -152,7 +154,10 @@ class Space : InputAdapter(), ApplicationListener {
 
     override fun render() {
         camController!!.update()
-        cam!!.lookAt(0f,0f,0f)
+
+        if(fixedCamera == true ) {
+            cam!!.lookAt(0f, 0f, 0f)
+        }
 
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
@@ -169,16 +174,9 @@ class Space : InputAdapter(), ApplicationListener {
             decalShaved.forEach {
                 batch!!.add(it)
             }
-            println(decalShaved.size)
-            if (batch != null) {
-                batch!!.flush()
-            }
+            batch!!.flush()
 
         }
-//        println("Number of decals: ${batch?.size}")
-
-
-//        println("Number of decals: ${batch?.size}")
 
 
         string!!.setLength(0)
@@ -214,9 +212,9 @@ class Space : InputAdapter(), ApplicationListener {
         timer("Array Creator", period = 1000,initialDelay = 0) {
 
             val fps =12
-            val local = 1
 
-            if(local == 1 ) {
+
+            if(local == true ) {
                 val ldrrdr = LidarReader()
                 var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
                 framesIndex += fps
@@ -372,7 +370,7 @@ class Space : InputAdapter(), ApplicationListener {
 
         val margin = 5
         map.keys.forEach { k ->
-            var d = Decal.newDecal(0.4f, 0.4f, decalTextureRegion)
+            var d = Decal.newDecal(.4f, .4f, decalTextureRegion)
             if(map.get(k) in 1..margin){
                 d = Decal.newDecal(0.1f, 0.1f, decalTextureRegion)
 
