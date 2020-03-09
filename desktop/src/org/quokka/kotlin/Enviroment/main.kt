@@ -5,7 +5,7 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 
 fun main(){
     val config = LwjglApplicationConfiguration()
-    config.height = 600
-    config.width = 900
+    config.height = 900
+    config.width = 1800
     LwjglApplication(Space(), config)
 }
