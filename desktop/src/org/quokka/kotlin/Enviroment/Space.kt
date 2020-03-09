@@ -6,6 +6,8 @@ import LidarData.LidarFrame
 import LidarData.LidarReader
 import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.*
@@ -22,9 +24,8 @@ import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import net.java.games.input.Component
-import org.quokka.kotlin.Enviroment.Populator
 import org.quokka.kotlin.Enviroment.UIobserver
-import java.lang.Error
+import org.quokka.lidar.MyGdxGame
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,8 +38,6 @@ import kotlin.math.sqrt
 
 
 class Space : InputAdapter(), ApplicationListener, Observer {
-
-
 
     val compressed = false
     val local = false
@@ -83,7 +82,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     var errMessage = " "
 
     val database: Database
-    var batch: DecalBatch? = null
+    var decalBatch: DecalBatch? = null
 
     var decals: List<Decal> = listOf()
     var compressedDecals: List<Decal> = listOf()
@@ -99,7 +98,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     }
 
     override fun create() {
-
 
         modelBatch = ModelBatch()
         //-----------Camera Creation------------------
@@ -127,7 +125,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         var modelBuilder = ModelBuilder()
 
 
-        batch = DecalBatch(CameraGroupStrategy(cam))
+        decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
@@ -166,9 +164,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         font = BitmapFont()
         label = Label(" ", LabelStyle(font, Color.WHITE))
         stage!!.addActor(label)
-        val act = Actor()
-        act.color = Color.BROWN
-        stage!!.addActor(act)
         string = StringBuilder()
 
 
@@ -181,8 +176,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
 
     override fun render() {
-
-
         camController!!.update()
 
         if (fixedCamera == true) {
@@ -195,14 +188,14 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         if (compressed == false) {
             decals.forEach {
-                batch!!.add(it)
+                decalBatch!!.add(it)
             }
         } else {
             compressedDecals.forEach {
-                batch!!.add(it)
+                decalBatch!!.add(it)
             }
         }
-        batch!!.flush()
+        decalBatch!!.flush()
 
 
         string!!.setLength(0)
