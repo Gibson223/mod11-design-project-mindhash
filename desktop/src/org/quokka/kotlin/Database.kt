@@ -6,6 +6,7 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.sql.*
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
 const val CREATE_DB_QUERY = """
@@ -134,7 +135,7 @@ class Database {
         props.setProperty("user", user)
         props.setProperty("password", password)
         props.setProperty("ssl", "false")
-//        conn = DriverManager.getConnection(DATABASE_URL, props)
+        conn = DriverManager.getConnection(DATABASE_URL, props)
     }
 
     /**

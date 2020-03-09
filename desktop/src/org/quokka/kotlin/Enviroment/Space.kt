@@ -36,6 +36,9 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener {
 
 
+    val compressed = true
+    val local = false
+
     //-------GUI controlls-----
     var fixedCamera = true
 
@@ -67,9 +70,6 @@ class Space : InputAdapter(), ApplicationListener {
     var string: StringBuilder? = null
     var errMessage = " "
 
-    val compressed = true
-    val local = true
-
     val database: Database
     var batch: DecalBatch? = null
     var decals: List<Decal> = listOf()
@@ -84,6 +84,7 @@ class Space : InputAdapter(), ApplicationListener {
     }
 
     override fun create() {
+
         modelBatch = ModelBatch()
         //-----------Camera Creation------------------
         cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
@@ -112,7 +113,7 @@ class Space : InputAdapter(), ApplicationListener {
 
         batch = DecalBatch(CameraGroupStrategy(cam))
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-        pix.setColor(66f/255, 135f/255, 245f/255, 1f)
+        pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
         val pixtex = Texture(pix)
         decalTextureRegion = TextureRegion(pixtex)
@@ -134,12 +135,10 @@ class Space : InputAdapter(), ApplicationListener {
         var material = Material(TextureAttribute.createDiffuse(pink))
         modelBuilder.end()
         bottomBlock = modelBuilder.createBox(
-            10f, 10f, .5f,
-            material,
-            (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+                10f, 10f, .5f,
+                material,
+                (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
         )
-
-
 
 
         // -----------Bottom Text--------
@@ -163,13 +162,13 @@ class Space : InputAdapter(), ApplicationListener {
 
     override fun render() {
 
-        if(Gdx.input.isKeyPressed(Input.Keys.SPACE) == true){
+        if (Gdx.input.isKeyPressed(Input.Keys.SPACE) == true) {
             pause.getAndSet(!pause.get())
         }
 
         camController!!.update()
 
-        if(fixedCamera == true ) {
+        if (fixedCamera == true) {
             cam!!.lookAt(0f, 0f, 0f)
         }
 
@@ -181,9 +180,7 @@ class Space : InputAdapter(), ApplicationListener {
         decals.forEach {
             batch!!.add(it)
         }
-        println("Number of decals: ${batch?.size}")
-
-        if(compressed == false) {
+        if (compressed == false) {
             decals.forEach {
                 batch!!.add(it)
                 batch!!.flush()
@@ -200,33 +197,36 @@ class Space : InputAdapter(), ApplicationListener {
         string!!.setLength(0)
         string!!.append(errMessage)
         string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
-        string!!.append(" cam: ").append(cam?.position)
+        string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.draw()
         errMessage = ""
 
-}
+    }
 
     fun newFrame() {
-        timer("Array Creator", period = 100,initialDelay = 100) {
-            if (frames!!.isNotEmpty()) {
-                if(compressed == false) {
-                val f = frames!!.poll()
-                decals = f.coords.map {
-                    var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
-                    if (perc < 0) {
-                        perc = 0f
-                    } else if (perc > 1) {
-                        perc = 1f
+        timer("Array Creator", period = 100, initialDelay = 100) {
+            if(pause.get() == false) {
+                if (frames!!.isNotEmpty()) {
+                    if (compressed == false) {
+                        val f = frames!!.poll()
+                        decals = f.coords.map {
+                            var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
+                            if (perc < 0) {
+                                perc = 0f
+                            } else if (perc > 1) {
+                                perc = 1f
+                            }
+                            val index = (perc * 255).toInt()
+                            //val d = Decal.newDecal(0.05f, 0.05f, blueYellowFade.get(index))
+                            val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
+                            d.setPosition(it.x, it.y, it.z)
+                            d.lookAt(cam!!.position, cam!!.up)
+                            d
+                        }
+                    } else {
+                        decalShaved = shaveDecal()
                     }
-                    val index = (perc * 255).toInt()
-                    //val d = Decal.newDecal(0.05f, 0.05f, blueYellowFade.get(index))
-                    val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
-                    d.setPosition(it.x, it.y, it.z)
-                    d.lookAt(cam!!.position, cam!!.up)
-                    d
-                } else {
-                    decalShaved = shaveDecal()
                 }
             }
 
@@ -235,68 +235,69 @@ class Space : InputAdapter(), ApplicationListener {
 
 
     fun filepop() {
-        timer("Array Creator", period = 1000,initialDelay = 0) {
+        timer("Array Creator", period = 1000, initialDelay = 0) {
 
-            val fps =12
+            val fps = 12
 
-
-            if(local == true ) {
-                val ldrrdr = LidarReader()
-                var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
-                framesIndex += fps
-                intermetidate.forEach { f ->
-                    frames!!.add(f)
-                }
-
-            } else {
-                if (frames!!.size < 20) {
-                    val intermetidate = database.getFrames(1, framesIndex, fps)
+            if(pause.get() == false) {
+                if (local == true) {
+                    val ldrrdr = LidarReader()
+                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
                     framesIndex += fps
                     intermetidate.forEach { f ->
                         frames!!.add(f)
                     }
 
-            }
+                } else {
+                    if (frames!!.size < 20) {
+                        val intermetidate = database.getFrames(1, framesIndex, fps)
+                        framesIndex += fps
+                        intermetidate.forEach { f ->
+                            frames!!.add(f)
+                        }
 
+                    }
+
+                }
             }
         }
 //        println("New batch loaded")
     }
 
 
-    fun decideCPR(a:Float,divisions:Int):Float{
+    fun decideCPR(a: Float, divisions: Int): Float {
         var result = 0f
         var auxxx = 0f
-        if(a > -1 && a < 1){
+        if (a > -1 && a < 1) {
             auxxx = a
         } else {
             auxxx = a - a.toInt()
         }
-        val margin:Float
-        if(divisions == 1){
-            return  a
-        } else if(divisions == 2) {
+        val margin: Float
+        if (divisions == 1) {
+            return a
+        } else if (divisions == 2) {
             margin = .5f
             when (auxxx) {
                 in 0f..margin -> result = a.toInt() * 1f
                 in margin..1f -> result = a.toInt() + margin * sign(a)
 
-                in -1f..margin*-1 -> result = a.toInt() + margin * sign(a)
-                in margin*-1..0f -> result = a.toInt() * 1f
+                in -1f..margin * -1 -> result = a.toInt() + margin * sign(a)
+                in margin * -1..0f -> result = a.toInt() * 1f
             }
-        } else if(divisions == 3){
+        } else if (divisions == 3) {
             margin = .33f
             when (auxxx) {
                 in 0f..margin -> result = a.toInt() * 1f
-                in margin..margin*2 -> result = a.toInt() + margin * sign(a)
-                in margin*2..1f -> result = a.toInt() + margin *2* sign(a)
+                in margin..margin * 2 -> result = a.toInt() + margin * sign(a)
+                in margin * 2..1f -> result = a.toInt() + margin * 2 * sign(a)
 
-                in margin*-1..0f -> result = a.toInt() * 1f
-                in margin*-2..margin*-1 -> result = a.toInt() + margin * sign(a)
-                in -1f..margin*-2 -> result = a.toInt() + margin *2* sign(a)
+                in margin * -1..0f -> result = a.toInt() * 1f
+                in margin * -2..margin * -1 -> result = a.toInt() + margin * sign(a)
+                in -1f..margin * -2 -> result = a.toInt() + margin * 2 * sign(a)
             }
 
-        } else if(divisions == 4) {
+        } else if (divisions == 4) {
             margin = .25f
             when (auxxx) {
                 in 0f..margin -> result = a.toInt() * 1f
@@ -304,8 +305,8 @@ class Space : InputAdapter(), ApplicationListener {
                 in margin * 2..margin * 3 -> result = a.toInt() + margin * 2 * sign(a)
                 in margin * 3..1f -> result = a.toInt() + margin * 3 * sign(a)
 
-                in margin*-1..0f -> result = a.toInt() * 1f
-                in -1f..margin * -3 -> result = a.toInt() + margin *3* sign(a)
+                in margin * -1..0f -> result = a.toInt() * 1f
+                in -1f..margin * -3 -> result = a.toInt() + margin * 3 * sign(a)
                 in margin * -2..margin * -1 -> result = a.toInt() + margin * 1 * sign(a)
                 in margin * -3..margin * -2 -> result = a.toInt() + margin * 2 * sign(a)
             }
@@ -321,20 +322,20 @@ class Space : InputAdapter(), ApplicationListener {
      * @return 1,2,3,4 number of divisions,
      * will be fed into decideCPR
      */
-    fun decidDivisions(coord: LidarCoord):Int{
+    fun decidDivisions(coord: LidarCoord): Int {
         val camp = cam?.position
         if (camp != null) {
             val distance =
-                    sqrt((coord.x-camp.x).pow(2)
-                    + (coord.y-camp.y).pow(2)
-                    + (coord.z-camp.z).pow(2))
+                    sqrt((coord.x - camp.x).pow(2)
+                            + (coord.y - camp.y).pow(2)
+                            + (coord.z - camp.z).pow(2))
 
-            val substraction = distance -dfcm
-            if (substraction < 0){
+            val substraction = distance - dfcm
+            if (substraction < 0) {
                 return 1
-            } else if (substraction < dfcm ){
+            } else if (substraction < dfcm) {
                 return 2
-            } else if (substraction < 2*dfcm){
+            } else if (substraction < 2 * dfcm) {
                 return 3
             } else {
                 return 4
@@ -359,16 +360,17 @@ class Space : InputAdapter(), ApplicationListener {
     override fun resize(width: Int, height: Int) {
         stage?.getViewport()?.update(width, height, true);
     }
+
     override fun pause() {}
 
 
-    fun shaveDecal():ArrayList<Decal>{
+    fun shaveDecal(): ArrayList<Decal> {
         var objects = ArrayList<Decal>(15)
-        var map = HashMap<Triple<Float,Float,Float>,Int>()
+        var map = HashMap<Triple<Float, Float, Float>, Int>()
 
-        if(frames!!.isEmpty()){
+        if (frames!!.isEmpty()) {
             val d = Decal.newDecal(0.5f, 0.5f, decalTextureRegion)
-            d.setPosition(0f,0f,0f)
+            d.setPosition(0f, 0f, 0f)
             d.lookAt(cam!!.position, cam!!.up)
             println("empty frame")
             objects.add(d)
@@ -381,49 +383,57 @@ class Space : InputAdapter(), ApplicationListener {
 
             val divisions = decidDivisions(c)
 
-            val tripp
-                    = Triple(
-                    decideCPR(c.x,divisions),
-                    decideCPR(c.y,divisions),
-                    decideCPR(c.z,divisions))
+            val tripp = Triple(
+                    decideCPR(c.x, divisions),
+                    decideCPR(c.y, divisions),
+                    decideCPR(c.z, divisions))
 
-            if(map.keys.contains(tripp)){
-                map.set(tripp,map.getValue(tripp)+1)
+            if (map.keys.contains(tripp)) {
+                map.set(tripp, map.getValue(tripp) + 1)
             } else {
-                map.set(tripp,1)
+                map.set(tripp, 1)
             }
         }
+
 
         val margin = 5
         map.keys.forEach { k ->
             var d = Decal.newDecal(.4f, .4f, decalTextureRegion)
-            if(map.get(k) in 1..margin){
-                d = Decal.newDecal(0.1f, 0.1f, decalTextureRegion)
-
-            } else if (map.get(k) in 1*margin..2*margin) {
-                d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
-
-            } else if (map.get(k) in 3*margin..4*margin) {
-                d = Decal.newDecal(0.2f, 0.2f, decalTextureRegion)
-
-            } else if (map.get(k) in 4*margin..5*margin) {
-                d = Decal.newDecal(0.25f, 0.25f, decalTextureRegion)
-
-            } else if (map.get(k) in 5*margin..6*margin) {
-                d = Decal.newDecal(0.3f, 0.3f, decalTextureRegion)
-
-            } else if (map.get(k) in 6*margin..7*margin) {
-                d = Decal.newDecal(0.35f, 0.35f, decalTextureRegion)
+            var perc = (k.third - crtFrame.minZ) / (crtFrame.maxZ - crtFrame.minZ)
+            if (perc < 0) {
+                perc = 0f
+            } else if (perc > 1) {
+                perc = 1f
             }
-            d.setPosition(k.first, k.second,k.third)
+            val index = (perc * 255).toInt()
+            if (map.get(k) in 1..margin) {
+                d = Decal.newDecal(0.1f, 0.1f, blueYellowFade[index])
+
+            } else if (map.get(k) in 1 * margin..2 * margin) {
+                d = Decal.newDecal(0.15f, 0.15f, blueYellowFade[index])
+
+            } else if (map.get(k) in 3 * margin..4 * margin) {
+                d = Decal.newDecal(0.2f, 0.2f, blueYellowFade[index])
+
+            } else if (map.get(k) in 4 * margin..5 * margin) {
+                d = Decal.newDecal(0.25f, 0.25f, blueYellowFade[index])
+
+            } else if (map.get(k) in 5 * margin..6 * margin) {
+                d = Decal.newDecal(0.3f, 0.3f, blueYellowFade[index])
+
+            } else if (map.get(k) in 6 * margin..7 * margin) {
+                d = Decal.newDecal(0.35f, 0.35f, blueYellowFade[index])
+            }
+            d.setPosition(k.first, k.second, k.third)
             d.lookAt(cam!!.position, cam!!.up)
             objects.add(d)
         }
 
-        return  objects
+        return objects
     }
-
 }
+
+
 
 
 
