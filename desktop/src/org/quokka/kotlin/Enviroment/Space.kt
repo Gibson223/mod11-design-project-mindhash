@@ -24,7 +24,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import java.lang.Error
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.xml.soap.Text
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.pow
@@ -209,7 +208,6 @@ class Space : InputAdapter(), ApplicationListener {
                 if (compressed == false) {
                     val f = frames!!.poll()
                     decals = f.coords.map {
-                        // val d = Decal()
                         val d = Decal.newDecal(0.08f, 0.08f, decalTextureRegion)
                         d.setPosition(it.x, it.y, it.z)
                         d.lookAt(cam!!.position, cam!!.up)
