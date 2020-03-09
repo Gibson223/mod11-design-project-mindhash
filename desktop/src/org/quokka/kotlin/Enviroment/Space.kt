@@ -21,17 +21,13 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-<<<<<<< Updated upstream
-=======
 import net.java.games.input.Component
 import org.quokka.kotlin.Enviroment.Populator
 import org.quokka.kotlin.Enviroment.UIobserver
->>>>>>> Stashed changes
 import java.lang.Error
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.xml.soap.Text
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.timer
@@ -43,16 +39,12 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener, Observer {
 
 
-<<<<<<< Updated upstream
+
     val compressed = false
     val local = false
-=======
-    val compressed = true
-    val local = true
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
->>>>>>> Stashed changes
 
     //-------GUI controlls-----
     var fixedCamera = true
@@ -67,7 +59,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * used in deciding how compressed the data is
      * based on the point's distance from the camera
      */
-    val dfcm = 20
+    val dfcm = 30
 
     var modelBatch: ModelBatch? = null
 
@@ -92,14 +84,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     val database: Database
     var batch: DecalBatch? = null
-<<<<<<< Updated upstream
-    var decals: List<Decal> = emptyList()
-    var decalShaved: List<Decal> = emptyList()
-=======
+
     var decals: List<Decal> = listOf()
     var compressedDecals: List<Decal> = listOf()
-    var decalTextureRegion: TextureRegion? = null
->>>>>>> Stashed changes
 
     lateinit var blueYellowFade: Array<TextureRegion>
     lateinit var blueRedFade: Array<TextureRegion>
@@ -195,13 +182,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     override fun render() {
 
-<<<<<<< Updated upstream
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) == true) {
-            pause.getAndSet(!pause.get())
-        }
 
-=======
->>>>>>> Stashed changes
         camController!!.update()
 
         if (fixedCamera == true) {
@@ -240,7 +221,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      */
     fun newFrame() {
         timer("Array Creator", period = 100, initialDelay = 100) {
-<<<<<<< Updated upstream
             if (pause.get() == false && frames!!.isNotEmpty()) {
                 if (compressed == false) {
                     val f = frames!!.poll()
@@ -251,33 +231,10 @@ class Space : InputAdapter(), ApplicationListener, Observer {
                         d.lookAt(cam!!.position, cam!!.up)
                         colorDecal(d, blueRedFade)
                         d
-=======
-            if(pause.get() == false) {
-                if (frames!!.isNotEmpty()) {
-                    if (compressed == false) {
-                        val f = frames!!.poll()
-                        decals = f.coords.map {
-                            var perc = (it.z - f.minZ) / (f.maxZ - f.minZ)
-                            if (perc < 0) {
-                                perc = 0f
-                            } else if (perc > 1) {
-                                perc = 1f
-                            }
-                            val index = (perc * 255).toInt()
-                            //val d = Decal.newDecal(0.05f, 0.05f, blueYellowFade.get(index))
-                            val d = Decal.newDecal(0.08f, 0.08f, blueYellowFade[index])
-                            d.setPosition(it.x, it.y, it.z)
-                            d.lookAt(cam!!.position, cam!!.up)
-                            d
-                        }
-                    } else {
-                        compressedDecals = compressPoints()
->>>>>>> Stashed changes
                     }
                 } else {
-                    decalShaved = shaveDecal()
-                    decalShaved.forEach { d -> colorDecal(d, blueRedFade) }
-                    println("Got new decals: ${decalShaved.size}")
+                    compressedDecals = compressPoints()
+                    compressedDecals.forEach { d -> colorDecal(d, blueRedFade) }
                 }
             }
         }
@@ -477,34 +434,25 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         val margin = 5
         map.keys.forEach { k ->
 
-            //calculate the color gradient for each point
-            // the color goes from blue(0) to yellow(255) based on the z axis
-            var perc = (k.z - crtFrame.minZ) / (crtFrame.maxZ - crtFrame.minZ)
-            if (perc < 0) {
-                perc = 0f
-            } else if (perc > 1) {
-                perc = 1f
-            }
-            val index = (perc * 255).toInt()
+            var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
 
-            var d = Decal.newDecal(.35f, .35f, blueYellowFade[index])
             if (map.get(k) in 1..margin) {
-                d = Decal.newDecal(0.1f, 0.1f, blueYellowFade[index])
+                d.setDimensions(0.1f,0.1f)
 
             } else if (map.get(k) in 1 * margin..2 * margin) {
-                d = Decal.newDecal(0.15f, 0.15f, blueYellowFade[index])
+                d.setDimensions(0.2f,0.2f)
 
             } else if (map.get(k) in 3 * margin..4 * margin) {
-                d = Decal.newDecal(0.2f, 0.2f, blueYellowFade[index])
+                d.setDimensions(0.2f,0.2f)
 
             } else if (map.get(k) in 4 * margin..5 * margin) {
-                d = Decal.newDecal(0.25f, 0.25f, blueYellowFade[index])
+                d.setDimensions(0.25f,0.25f)
 
             } else if (map.get(k) in 5 * margin..6 * margin) {
-                d = Decal.newDecal(0.3f, 0.3f, blueYellowFade[index])
+                d.setDimensions(0.25f,0.25f)
 
             } else if (map.get(k) in 6 * margin..100) {
-                d = Decal.newDecal(0.35f, 0.35f, blueYellowFade[index])
+                d.setDimensions(0.3f,0.3f)
             }
             d.setPosition(k.x, k.y, k.z)
             d.lookAt(cam!!.position, cam!!.up)
