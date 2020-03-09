@@ -22,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.kotlin.Enviroment.Populator
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 
@@ -44,7 +45,7 @@ class Space : InputAdapter(), ApplicationListener {
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
     var framesIndex = 2400
-
+    var pause = AtomicBoolean(false)
 
     var environment: Environment? = null
 
@@ -154,6 +155,11 @@ class Space : InputAdapter(), ApplicationListener {
 
 
     override fun render() {
+
+        if(Gdx.input.isKeyPressed(Input.Keys.SPACE) == true){
+            pause.getAndSet(!pause.get())
+        }
+
         camController!!.update()
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
