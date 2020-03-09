@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import java.lang.Error
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.xml.soap.Text
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.pow
@@ -72,10 +73,10 @@ class Space : InputAdapter(), ApplicationListener {
     var batch: DecalBatch? = null
     var decals: List<Decal> = emptyList()
     var decalShaved: List<Decal> = emptyList()
-    var decalTextureRegion: TextureRegion? = null
 
     lateinit var blueYellowFade: Array<TextureRegion>
     lateinit var blueRedFade: Array<TextureRegion>
+    lateinit var decalTextureRegion: TextureRegion
 
     init {
         database = Database()
@@ -111,11 +112,11 @@ class Space : InputAdapter(), ApplicationListener {
 
 
         batch = DecalBatch(CameraGroupStrategy(cam))
+
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
-        val pixtex = Texture(pix)
-        decalTextureRegion = TextureRegion(pixtex)
+        decalTextureRegion = TextureRegion(Texture(pix))
 
         blueRedFade = Array(256) { i ->
             val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -181,7 +182,6 @@ class Space : InputAdapter(), ApplicationListener {
 
 
         if (compressed == false) {
-            println("adding decals")
             decals.forEach {
                 batch!!.add(it)
             }
@@ -190,7 +190,6 @@ class Space : InputAdapter(), ApplicationListener {
                 batch!!.add(it)
             }
         }
-        println("Flushing decals")
         batch!!.flush()
 
 
@@ -210,8 +209,8 @@ class Space : InputAdapter(), ApplicationListener {
                 if (compressed == false) {
                     val f = frames!!.poll()
                     decals = f.coords.map {
-                        val d = Decal()
-                        d.setDimensions(0.08f, 0.08f)
+                        // val d = Decal()
+                        val d = Decal.newDecal(0.08f, 0.08f, decalTextureRegion)
                         d.setPosition(it.x, it.y, it.z)
                         d.lookAt(cam!!.position, cam!!.up)
                         colorDecal(d, blueRedFade)
