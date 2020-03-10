@@ -418,9 +418,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             //dummy value which contains the point to which the currently analyzed point is approximated to
             // it is the point itself if the camera is close enough
             val tripp = LidarCoord(
-                    returnCPP(c.x, 1),
-                    returnCPP(c.y, 1),
-                    returnCPP(c.z, 1))
+                    returnCPP(c.x, divisions),
+                    returnCPP(c.y, divisions),
+                    returnCPP(c.z, divisions))
 
             //if the point has not been added before initialize it with one
             //otherwise update its value in the map
