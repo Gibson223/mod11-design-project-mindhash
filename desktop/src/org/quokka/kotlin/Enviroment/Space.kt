@@ -40,7 +40,9 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener, Observer {
 
     val compressed = true
-    val local = true
+    val local = false
+
+    var lidarFPS = 12
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
@@ -84,8 +86,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     val database: Database
     var decalBatch: DecalBatch? = null
 
+
     var decals: List<Decal> = listOf()
-    var compressedDecals: List<Decal> = listOf()
 
     lateinit var blueYellowFade: Array<TextureRegion>
     lateinit var blueRedFade: Array<TextureRegion>
@@ -172,9 +174,15 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     }
 
 
+    /**
+     * this is the render method
+     * it is called 60 times per second
+     * it renders the environment and the camera within
+     */
     override fun render() {
         camController!!.update()
 
+        //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             cam!!.lookAt(0f, 0f, 0f)
         }
@@ -183,21 +191,16 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
-        if (compressed == false) {
-            decals.forEach {
-                decalBatch!!.add(it)
-            }
-        } else {
-            compressedDecals.forEach {
-                decalBatch!!.add(it)
-            }
+        decals.forEach {
+            decalBatch!!.add(it)
         }
+
         decalBatch!!.flush()
 
 
         string!!.setLength(0)
         string!!.append(errMessage)
-        string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
+        string!!.append(" lidarFPS: ").append(Gdx.graphics.framesPerSecond)
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
@@ -208,7 +211,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     /**
      * this methods is called every tenth of a seconds
-     * to load new data in the environment
+     * to load new data in the environment by changing
+     * the global variable decal 
+     * which is both a List<Decal>
      */
     fun newFrame() {
         timer("Array Creator", period = 100, initialDelay = 100) {
@@ -224,13 +229,14 @@ class Space : InputAdapter(), ApplicationListener, Observer {
                         d
                     }
                 } else {
-                    compressedDecals = compressPoints()
-                    compressedDecals.forEach { d -> colorDecal(d, blueRedFade) }
+                    decals = compressPoints()
+                    decals.forEach { d -> colorDecal(d, blueRedFade) }
                 }
             }
         }
     }
 
+ 
     fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
         val minZ = -10
         val maxZ = 15
@@ -243,21 +249,26 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     }
 
 
+    /**
+     * this method retrieves information from the DB
+     * it is called periodically every second
+     * and retrieves lidarFPS(global variable) number of frames
+     * the lidar data is generate at 10 frames per second
+     */
     fun filepop() {
         timer("Array Creator", period = 1000, initialDelay = 0) {
-            val fps = 12
             if (pause.get() == false) {
-                if (local == true) {
+                if (local == true) { // local for testing purposes only, it uses data from a .bag file
                     val ldrrdr = LidarReader()
-                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
-                    framesIndex += fps
+                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + lidarFPS)
+                    framesIndex += lidarFPS
                     intermetidate.forEach { f ->
                         frames!!.add(f)
                     }
-                } else {
+                } else { //if local == false then the data is take from the database
                     if (frames!!.size < 20) {
-                        val intermetidate = database.getFrames(1, framesIndex, fps)
-                        framesIndex += fps
+                        val intermetidate = database.getFrames(1, framesIndex, lidarFPS)
+                        framesIndex += lidarFPS
                         intermetidate.forEach { f ->
                             frames!!.add(f)
                         }
@@ -266,7 +277,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
                 }
             }
         }
-//        println("New batch loaded")
     }
 
 
@@ -430,24 +440,12 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         map.keys.forEach { k ->
 
             var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
+            val baseSizeofDecal = .2f
 
-            if (map.get(k) in 1..margin) {
-                d.setDimensions(0.1f,0.1f)
-
-            } else if (map.get(k) in 1 * margin..2 * margin) {
-                d.setDimensions(0.2f,0.2f)
-
-            } else if (map.get(k) in 3 * margin..4 * margin) {
-                d.setDimensions(0.2f,0.2f)
-
-            } else if (map.get(k) in 4 * margin..5 * margin) {
-                d.setDimensions(0.25f,0.25f)
-
-            } else if (map.get(k) in 5 * margin..6 * margin) {
-                d.setDimensions(0.25f,0.25f)
-
-            } else if (map.get(k) in 6 * margin..100) {
-                d.setDimensions(0.3f,0.3f)
+            for (i in 0..8){
+                if (map.get(k) in i*margin .. (i+1)*margin){
+                    d.setDimensions(baseSizeofDecal+i*0.02f,baseSizeofDecal+i*0.02f)
+                }
             }
             d.setPosition(k.x, k.y, k.z)
             d.lookAt(cam!!.position, cam!!.up)
