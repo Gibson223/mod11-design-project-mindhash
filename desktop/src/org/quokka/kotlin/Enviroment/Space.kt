@@ -230,6 +230,15 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         }
     }
 
+    /**
+     * Helper function which changes the texture of a decal based on its Z coordinate.
+     * The percentage of its z coordinate on a relative scale is calculated and then the
+     * appropriate texture region is chosen.
+     * The effect works best if the array of textures is a color gradient.
+     *
+     * @param d The decal to be recolored.
+     * @param textures An array of texture regions to pick from. Must be non empty.
+     */
     fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
         val minZ = -10
         val maxZ = 15
