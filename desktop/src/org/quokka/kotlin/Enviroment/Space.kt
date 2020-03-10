@@ -7,7 +7,6 @@ import LidarData.LidarReader
 import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.*
@@ -19,13 +18,14 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import net.java.games.input.Component
 import org.quokka.kotlin.Enviroment.UIobserver
-import org.quokka.lidar.MyGdxGame
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -39,8 +39,8 @@ import kotlin.math.sqrt
 
 class Space : InputAdapter(), ApplicationListener, Observer {
 
-    val compressed = false
-    val local = false
+    val compressed = true
+    val local = true
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
@@ -58,7 +58,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * used in deciding how compressed the data is
      * based on the point's distance from the camera
      */
-    val dfcm = 30
+    val dfcm = 15
 
     var modelBatch: ModelBatch? = null
 
@@ -98,7 +98,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     }
 
     override fun create() {
-
         modelBatch = ModelBatch()
         //-----------Camera Creation------------------
         cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
@@ -166,9 +165,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         stage!!.addActor(label)
         string = StringBuilder()
 
-
         plexer = InputMultiplexer(this as InputProcessor, camController)
-        Gdx.input.inputProcessor = plexer
 
         filepop()
         newFrame()
@@ -203,6 +200,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
+        stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
         errMessage = ""
 
@@ -272,7 +270,15 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     }
 
 
-    fun decideCPR(a: Float, divisions: Int): Float {
+    /**
+     * this methods returns the parent of a point
+     * the parent of a point is a point to which the initial point is aproximated
+     * @param a is the number being tested
+     * @param divisions is the number of divisions meaning
+     * if it is 1 then then the number is aproximated to itself
+     * if it is 2 then then number is approximated to closes .5 or .0
+     */
+    fun returnCPP(a: Float, divisions: Int): Float {
         var result = 0f
         var auxxx = 0f
         if (a > -1 && a < 1) {
@@ -327,7 +333,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * depending on the distance from the camera
      * @param coord is the coordinate being checked
      * @return 1,2,3,4 number of divisions,
-     * will be fed into decideCPR
+     * will be fed into returnCPP
      */
     fun decidDivisions(coord: LidarCoord): Int {
         val camp = cam?.position
@@ -341,19 +347,14 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             if (substraction < 0) {
                 return 1
             } else if (substraction < dfcm) {
-                return 2
+                return 4
             } else if (substraction < 2 * dfcm) {
                 return 3
             } else {
-                return 4
+                return 2
             }
 
         } else throw Error("Could not find camera position in decidDivisions")
-    }
-
-
-    fun changeArray(x: ArrayList<ModelInstance>) {
-        this.spaceObjects = x
     }
 
 
@@ -409,9 +410,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             //dummy value which contains the point to which the currently analyzed point is approximated to
             // it is the point itself if the camera is close enough
             val tripp = LidarCoord(
-                    decideCPR(c.x, divisions),
-                    decideCPR(c.y, divisions),
-                    decideCPR(c.z, divisions))
+                    returnCPP(c.x, 1),
+                    returnCPP(c.y, 1),
+                    returnCPP(c.z, 1))
 
             //if the point has not been added before initialize it with one
             //otherwise update its value in the map
@@ -423,7 +424,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         }
 
         //each point after the compression will represent one or more points
-        //the margin is
+        // based on how many points it represent, the size of the Decal for that point
+        // the margin is a number. it represents the step from one size to another
         val margin = 5
         map.keys.forEach { k ->
 
