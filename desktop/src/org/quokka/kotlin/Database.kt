@@ -12,9 +12,11 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.system.measureTimeMillis
 
+// Constants for setting up database connection
 const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
 const val DATABASE_USERNAME = "nyx"
 const val DATABASE_PASSWORD = "lidar"
+
 const val CREATE_DB_QUERY = """
 CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
  minframe integer DEFAULT 0,
@@ -132,8 +134,7 @@ class Database {
 
     fun getRecording(id: Int): RecordingMeta? {
         val conn = DbConnectionPool.connection
-        val st = conn.prepareStatement(SELECT_SINGLE_RECORDING)
-        st.setInt(1, id)
+        val st = conn.prepareStatement(SELECT_SINGLE_RECORDING).apply { setInt(1, id) }
         val rs = st.executeQuery()
         var ret: RecordingMeta? = null
         if (rs.next()) {
@@ -179,19 +180,20 @@ class Database {
      * Creates a new recording without any frames.
      *
      * @param title The title of the recording.
-     * @return The id given to the recording for inserting frames later.
+     * @return The id given to the recording for inserting frames later. Returns -1 if the recording could not be
+     * created.
      */
     private fun newRecording(title: String): Int {
         val conn = DbConnectionPool.connection
-        val st = conn.prepareStatement(INSERT_RECORDING)
-        st.setString(1, title)
+        val st = conn.prepareStatement(INSERT_RECORDING).apply { setString(1, title) }
         val rs = st.executeQuery()
         var r = -1
         while (rs.next()) {
             r = rs.getInt(1)
         }
-        rs?.close()
-        st?.close()
+
+        rs.close()
+        st.close()
         conn.close()
         return r
     }
@@ -204,15 +206,13 @@ class Database {
      * @param points The raw point data. The array format has to be Double[3][].
      * @return Returns the minimum and maximum Z coordinate
      */
-    private fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) : Pair<Float, Float> {
+    private fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>): Pair<Float, Float> {
         val conn = DbConnectionPool.connection
-        val st = conn.prepareStatement(INSERT_FRAME)
-        st.setInt(1, frameId)
-        st.setInt(2, recordingId)
 
         var minZ = Float.MAX_VALUE
         var maxZ = Float.MIN_VALUE
 
+        // Allocate a byte buffer to put the floats in which is then put into the database as bytea
         val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * points.size * FLOATS_PER_POINT)
         points.forEach {
             if (it[2] < minZ)
@@ -224,9 +224,12 @@ class Database {
             bb.putFloat(it[2])
         }
 
-        st.setBinaryStream(3, ByteArrayInputStream(bb.array()))
-
-        st.executeUpdate()
+        val st = conn.prepareStatement(INSERT_FRAME).apply {
+            setInt(1, frameId)
+            setInt(2, recordingId)
+            setBinaryStream(3, ByteArrayInputStream(bb.array()))
+            executeUpdate()
+        }
         st.close()
         conn.close()
         return Pair(minZ, maxZ)
@@ -303,13 +306,15 @@ class Database {
                 maxZ = bounds.second
         }
 
-        val st = conn.prepareStatement(UPDATE_RECORDING_FRAMES)
-        st.setInt(1, minFrame)
-        st.setInt(2, maxFrame)
-        st.setFloat(3, maxZ)
-        st.setFloat(4, minZ)
-        st.setInt(5, recId)
-        st.executeUpdate()
+        // Update the meta data of the recording
+        val st = conn.prepareStatement(UPDATE_RECORDING_FRAMES).apply {
+            setInt(1, minFrame)
+            setInt(2, maxFrame)
+            setFloat(3, maxZ)
+            setFloat(4, minZ)
+            setInt(5, recId)
+            executeUpdate()
+        }
         st.close()
         conn.close()
     }
@@ -340,11 +345,16 @@ class Database {
             return emptyList()
         }
 
-        val stx = conn.prepareStatement(SELECT_POINTS)
+        // Create an array of all frame ids to be fetched
         val frameIds = (startFrame until (startFrame + spf * numberOfFrames) step spf).toList().toTypedArray()
-        stx.setArray(1, conn.createArrayOf("integer", frameIds))
-        stx.setInt(2, recordingId)
-        stx.setInt(3, numberOfFrames)
+
+        val stx = conn.prepareStatement(SELECT_POINTS).apply {
+            setArray(1, conn.createArrayOf("integer", frameIds))
+            setInt(2, recordingId)
+            setInt(3, numberOfFrames)
+        }
+
+        // Iterate over result sets and parse each frame back to LidarFrame objects
         val rsx = stx.executeQuery()
         while (rsx.next()) {
             val points = rsx.getBinaryStream("points").buffered()
@@ -363,6 +373,7 @@ class Database {
                     minZ = recording.minZ
             ))
         }
+
         rsx.close()
         stx.close()
         conn.close()

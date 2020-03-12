@@ -184,6 +184,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         if (compressed == false) {
             decals.forEach {
+                it.lookAt(cam!!.position, cam!!.up)
                 decalBatch!!.add(it)
             }
         } else {
@@ -215,9 +216,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
                 if (compressed == false) {
                     val f = frames!!.poll()
                     decals = f.coords.map {
-                        val d = Decal.newDecal(0.08f, 0.08f, decalTextureRegion)
+                        val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
                         d.setPosition(it.x, it.y, it.z)
-                        d.lookAt(cam!!.position, cam!!.up)
                         colorDecal(d, blueRedFade)
                         d
                     }
