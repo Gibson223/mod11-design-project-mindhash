@@ -37,8 +37,8 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space : InputAdapter(), ApplicationListener, Observer {
-
+//class Space : InputAdapter(), ApplicationListener, Observer {
+class Space : Screen, InputAdapter(), Observer {
     val compressed = true
     val local = true
 
@@ -97,7 +97,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         database.connect("lidar", "mindhash")
     }
 
-    override fun create() {
+    fun create() {
         modelBatch = ModelBatch()
         //-----------Camera Creation------------------
         cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
@@ -165,14 +165,23 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         stage!!.addActor(label)
         string = StringBuilder()
 
-        plexer = InputMultiplexer(this as InputProcessor, camController)
+        plexer = InputMultiplexer(this as InputProcessor, camController) // TODO: ask what this is supposed to do??
 
         filepop()
         newFrame()
     }
 
+    override fun hide() {
+        TODO("Not yet implemented")
+    }
 
-    override fun render() {
+    override fun show() {
+        Gdx.input.inputProcessor = this;
+        create()
+    }
+
+
+    override fun render(delta: Float) {
         camController!!.update()
 
         if (fixedCamera == true) {
