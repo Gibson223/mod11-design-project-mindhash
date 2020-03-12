@@ -39,8 +39,8 @@ import kotlin.math.sqrt
 
 class Space : InputAdapter(), ApplicationListener, Observer {
 
-    val compressed = true
-    val local = true
+    val compressed = false
+    val local = false
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
@@ -94,7 +94,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     init {
         database = Database()
-        database.connect("lidar", "mindhash")
     }
 
     override fun create() {
@@ -362,7 +361,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         bottomBlock!!.dispose()
     }
 
-    override fun resume() {}
+    override fun resume() {
+    }
 
     override fun resize(width: Int, height: Int) {
         stage?.getViewport()?.update(width, height, true);

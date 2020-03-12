@@ -1,14 +1,20 @@
 package LidarData
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import java.io.ByteArrayInputStream
 import java.io.ObjectInputStream
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.sql.*
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import kotlin.system.measureTimeMillis
 
-const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
+const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
+const val DATABASE_USERNAME = "nyx"
+const val DATABASE_PASSWORD = "lidar"
 const val CREATE_DB_QUERY = """
 CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
  minframe integer DEFAULT 0,
@@ -31,6 +37,27 @@ const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY
 const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxz = ?, minz = ? WHERE id = ?;"
 const val FLOAT_BYTE_SIZE = 4
 const val FLOATS_PER_POINT = 3
+
+/**
+ * Singleton object which manages multiple database connections.
+ */
+object DbConnectionPool {
+    private val config: HikariConfig = HikariConfig()
+    private val ds: HikariDataSource
+
+    init {
+        config.jdbcUrl = DATABASE_URL
+        config.username = DATABASE_USERNAME
+        config.password = DATABASE_PASSWORD
+        config.addDataSourceProperty("cachePrepStmts", "true")
+        config.addDataSourceProperty("prepStmtCacheSize", "250")
+        config.addDataSourceProperty("prepStmtSqlLimit", "2048")
+        ds = HikariDataSource(config)
+    }
+
+    val connection: Connection
+        get() = ds.getConnection()
+}
 
 /**
  * The database class is used to communicate with the backend database which provides lidar recordings.
@@ -75,14 +102,13 @@ const val FLOATS_PER_POINT = 3
  * }
  */
 class Database {
-    private lateinit var conn: Connection
-
     /**
      * Returns a list of all recordings and their meta data.
      * Refer to the RecordingMeta class for more info on fields and data about recordings.
      */
     val recordings: List<RecordingMeta>
         get() {
+            val conn = DbConnectionPool.connection
             val st = conn.prepareStatement(SELECT_RECORDINGS)
             val rs = st.executeQuery()
             val recs: MutableList<RecordingMeta> = mutableListOf()
@@ -100,10 +126,12 @@ class Database {
                         )
                 )
             }
+            conn.close()
             return recs
         }
 
     fun getRecording(id: Int): RecordingMeta? {
+        val conn = DbConnectionPool.connection
         val st = conn.prepareStatement(SELECT_SINGLE_RECORDING)
         st.setInt(1, id)
         val rs = st.executeQuery()
@@ -121,46 +149,30 @@ class Database {
         }
         rs.close()
         st.close()
-        return ret
-    }
-
-    /**
-     * Connect to the database and authorize.
-     *
-     * @param user
-     * @param password
-     */
-    fun connect(user: String, password: String) {
-        val props = Properties()
-        props.setProperty("user", user)
-        props.setProperty("password", password)
-        props.setProperty("ssl", "false")
-        conn = DriverManager.getConnection(DATABASE_URL, props)
-    }
-
-    /**
-     * Close the connection to the database.
-     */
-    fun close() {
         conn.close()
+        return ret
     }
 
     /**
      * Construct the schema.
      */
     fun initTables() {
+        val conn = DbConnectionPool.connection
         val st = conn.prepareStatement(CREATE_DB_QUERY)
         st.executeUpdate()
         st.close()
+        conn.close()
     }
 
     /**
      * Deconstruct the schema.
      */
     fun destroyTables() {
+        val conn = DbConnectionPool.connection
         val st = conn.prepareStatement(DELETE_DB_QUERY)
         st.executeUpdate()
         st.close()
+        conn.close()
     }
 
     /**
@@ -169,7 +181,8 @@ class Database {
      * @param title The title of the recording.
      * @return The id given to the recording for inserting frames later.
      */
-    fun newRecording(title: String): Int {
+    private fun newRecording(title: String): Int {
+        val conn = DbConnectionPool.connection
         val st = conn.prepareStatement(INSERT_RECORDING)
         st.setString(1, title)
         val rs = st.executeQuery()
@@ -179,6 +192,7 @@ class Database {
         }
         rs?.close()
         st?.close()
+        conn.close()
         return r
     }
 
@@ -190,7 +204,8 @@ class Database {
      * @param points The raw point data. The array format has to be Double[3][].
      * @return Returns the minimum and maximum Z coordinate
      */
-    fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) : Pair<Float, Float> {
+    private fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) : Pair<Float, Float> {
+        val conn = DbConnectionPool.connection
         val st = conn.prepareStatement(INSERT_FRAME)
         st.setInt(1, frameId)
         st.setInt(2, recordingId)
@@ -213,6 +228,7 @@ class Database {
 
         st.executeUpdate()
         st.close()
+        conn.close()
         return Pair(minZ, maxZ)
     }
 
@@ -231,6 +247,7 @@ class Database {
             reader: LidarReader = LidarReader(),
             filterFun: (LidarCoord) -> Boolean = { true }
     ) {
+        val conn = DbConnectionPool.connection
         // Create a new recording first
         val recId = newRecording(title)
         // Id of the frame that is being modified.
@@ -294,6 +311,7 @@ class Database {
         st.setInt(5, recId)
         st.executeUpdate()
         st.close()
+        conn.close()
     }
 
     /**
@@ -313,6 +331,7 @@ class Database {
             numberOfFrames: Int,
             framerate: Framerate = Framerate.TEN
     ): List<LidarFrame> {
+        val conn = DbConnectionPool.connection
         val spf = framerate.stepsPerFrame
         val frames = mutableListOf<LidarFrame>()
 
@@ -346,7 +365,7 @@ class Database {
         }
         rsx.close()
         stx.close()
-        //return frames.sortedBy { it.frameId }.toList()
+        conn.close()
         return frames
     }
 }
@@ -385,27 +404,25 @@ data class RecordingMeta(
 
 fun main() {
     val db = Database()
-    db.connect("lidar", "mindhash")
     db.initTables()
 
     //db.getFrames(2, 2500, 1).forEach {
     //    it.generatePly("/home/nyx/downloads/test3.ply")
     //}
 
-    //for (i in 0 until 20) {
-    //    val nFrames = 50
-    //    val time = measureTimeMillis {
-    //        db.getFrames(1, 2400 + nFrames * i, nFrames, framerate = Framerate.FIVE)
-    //    }
+    for (i in 0 until 40) {
+        val nFrames = 50
+        val time = measureTimeMillis {
+            db.getFrames(1, 2000 + nFrames * i, nFrames, framerate = Framerate.TEN)
+        }
 
-    //    println("Time to take $nFrames frames: $time")
-    //}
+        println("Time to take $nFrames frames: $time")
+    }
 
     // Create reading with default LidarReader
-    db.recordingFromFile(
-            path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-            title = "all the points"
-            //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
-    )
-    db.close()
+    //db.recordingFromFile(
+    //        path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
+    //        title = "all the points"
+    //        //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
+    //)
 }
