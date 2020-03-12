@@ -40,7 +40,7 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener, Observer {
 
     val compressed = true
-    val local = false
+    val local = true
 
     var lidarFPS = 12
 
@@ -112,6 +112,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         //---------Camera controls--------
         camController = CameraInputController(cam)
         Gdx.input.inputProcessor = camController
+        plexer = InputMultiplexer(this as InputProcessor, camController)
+
+
         environment = Environment()
         environment!!.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
         environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
@@ -167,7 +170,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         stage!!.addActor(label)
         string = StringBuilder()
 
-        plexer = InputMultiplexer(this as InputProcessor, camController)
 
         filepop()
         newFrame()
@@ -191,8 +193,10 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
-        decals.forEach {
-            decalBatch!!.add(it)
+        decals.forEach {d ->
+            if (cam!!.frustum.boundsInFrustum(d.x,d.y,d.z,.3f,.3f,.3f) == true ) {
+                decalBatch!!.add(d)
+            }
         }
 
         decalBatch!!.flush()
@@ -200,7 +204,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         string!!.setLength(0)
         string!!.append(errMessage)
-        string!!.append(" lidarFPS: ").append(Gdx.graphics.framesPerSecond)
+        string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
