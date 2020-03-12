@@ -40,7 +40,7 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener, Observer {
 
     val compressed = true
-    val local = true
+    val local = false
 
     var lidarFPS = 12
 
@@ -52,7 +52,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
 
     var cam: PerspectiveCamera? = null
-    var plexer: InputMultiplexer? = null
     var camController: CameraInputController? = null
 
     /**
@@ -64,13 +63,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     var modelBatch: ModelBatch? = null
 
-
-    var spaceObjects: ArrayList<ModelInstance>? = null
-    var instance: ModelInstance? = null
-
-    var bottomBlock: Model? = null
-
-    var pink: Texture? = null
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
     var framesIndex = 2400
@@ -89,7 +81,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     var decals: List<Decal> = listOf()
 
-    lateinit var blueYellowFade: Array<TextureRegion>
+
     lateinit var blueRedFade: Array<TextureRegion>
     lateinit var decalTextureRegion: TextureRegion
 
@@ -112,7 +104,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         //---------Camera controls--------
         camController = CameraInputController(cam)
         Gdx.input.inputProcessor = camController
-        plexer = InputMultiplexer(this as InputProcessor, camController)
 
 
         environment = Environment()
@@ -120,11 +111,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
 
-
-        spaceObjects = ArrayList<ModelInstance>(1)
-
-
         frames = ConcurrentLinkedQueue<LidarFrame>()
+
         //---------Model Population----------
         var modelBuilder = ModelBuilder()
 
@@ -142,26 +130,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             pix.drawPixel(0, 0)
             TextureRegion(Texture(pix))
         }
-        blueYellowFade = Array(256) { i ->
-            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-            pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
-            pix.drawPixel(0, 0)
-            TextureRegion(Texture(pix))
-        }
 
-
-        modelBuilder.begin()
-        modelBuilder.node().id = "Floor"
-        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
-        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
-        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
-        var material = Material(TextureAttribute.createDiffuse(pink))
-        modelBuilder.end()
-        bottomBlock = modelBuilder.createBox(
-                10f, 10f, .5f,
-                material,
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
 
         // -----------Bottom Text--------
         stage = Stage()
@@ -374,7 +343,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     override fun dispose() {
         modelBatch!!.dispose()
-        bottomBlock!!.dispose()
     }
 
     override fun resume() {}
