@@ -11,21 +11,17 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.*
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
-import com.badlogic.gdx.utils.viewport.ScreenViewport
 import net.java.games.input.Component
-import org.quokka.kotlin.Enviroment.UIobserver
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,9 +33,9 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space : InputAdapter(), ApplicationListener, Observer {
+class Space : InputAdapter(), ApplicationListener {
 
-    val compressed = true
+    val compressed = false
     val local = false
 
     var lidarFPS = 12
@@ -48,7 +44,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     var pause = AtomicBoolean(false)
 
     //-------GUI controlls-----
-    var fixedCamera = true
+    var fixedCamera = false
 
 
     var cam: PerspectiveCamera? = null
@@ -153,6 +149,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     override fun render() {
         camController!!.update()
 
+
+
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             cam!!.lookAt(0f, 0f, 0f)
@@ -173,7 +171,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         string!!.setLength(0)
         string!!.append(errMessage)
-        string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
+        string!!.append(" direction: ").append(cam!!.direction)
+        string!!.append(" combined: ").append(cam!!.combined)
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
@@ -187,6 +186,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * to load new data in the environment by changing
      * the global variable decal 
      * which is both a List<Decal>
+     * @author Robert
      */
     fun newFrame() {
         timer("Array Creator", period = 100, initialDelay = 100) {
@@ -234,6 +234,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * it is called periodically every second
      * and retrieves lidarFPS(global variable) number of frames
      * the lidar data is generate at 10 frames per second
+     * @author Robert
      */
     fun filepop() {
         timer("Array Creator", period = 1000, initialDelay = 0) {
@@ -267,6 +268,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * @param divisions is the number of divisions meaning
      * if it is 1 then then the number is aproximated to itself
      * if it is 2 then then number is approximated to closes .5 or .0
+     * @author Robert
      */
     fun returnCPP(a: Float, divisions: Int): Float {
         var result = 0f
@@ -324,6 +326,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * @param coord is the coordinate being checked
      * @return 1,2,3,4 number of divisions,
      * will be fed into returnCPP
+     * @author Robert
      */
     fun decidDivisions(coord: LidarCoord): Int {
         val camp = cam?.position
@@ -373,6 +376,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * and puts points which are close enough to each other in one point
      * then gives the remaining points a suitably sized decal
      * based on the amount of points which are compressed into that point
+     * @author Robert
      */
     fun compressPoints(): ArrayList<Decal> {
         var objects = ArrayList<Decal>(15) //end result of the method
@@ -434,14 +438,55 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         return objects
     }
 
-    override fun update(o: Observable?, arg: Any?) {
-        println("called upadte")
-       if(o is UIobserver){
-           if (arg == Component.Identifier.Key.SPACE){
-               pause()
-           }
-       }
+
+
+    //-------Camera Control Methods-----------------------
+
+    var camSigns = Vector3(1f,1f,1f)
+    val camSpeed = .1f
+
+    fun moveZUp(){
+        val crt = cam!!.position
+        cam!!.translate(0f,0f,camSigns.z*camSpeed+crt.z)
+        if (cam!!.position.z > 0){
+            camSigns.z = 1f
+        } else {
+            camSigns.z = -1f
+        }
     }
+
+    fun moveZDown(){
+        val crt = cam!!.position
+        cam!!.translate(0f,0f,crt.z-camSigns.z*camSpeed)
+
+        if (cam!!.position.z > 0){
+            camSigns.z = 1f
+        } else {
+            camSigns.z = -1f
+        }
+    }
+
+    fun moveXUp(){
+        val crt = cam!!.position
+        cam!!.translate(0f,0f,camSigns.x*camSpeed+crt.x)
+        if (cam!!.position.x > 0){
+            camSigns.x = 1f
+        } else {
+            camSigns.x = -1f
+        }
+    }
+    fun moveXDown(){
+        val crt = cam!!.position
+        cam!!.translate(0f,0f,camSigns.z*camSpeed+crt.z)
+        if (cam!!.position.z > 0){
+            camSigns.z = 1f
+        } else {
+            camSigns.z = -1f
+        }
+    }
+
+
+
 }
 
 
