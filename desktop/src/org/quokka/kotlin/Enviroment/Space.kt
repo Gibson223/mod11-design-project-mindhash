@@ -36,7 +36,7 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener {
 
     val compressed = false
-    val local = false
+    val local = true
 
     var lidarFPS = 12
 
@@ -150,6 +150,19 @@ class Space : InputAdapter(), ApplicationListener {
         camController!!.update()
 
 
+        if(Gdx.input.isKeyPressed(Input.Keys.Y)){
+            moveYUp()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.H)){
+            moveYDown()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.UP)){
+            moveZUp()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.DOWN)){
+            moveZDown()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+            moveXUp()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+            moveXDown()
+        }
 
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
@@ -172,7 +185,7 @@ class Space : InputAdapter(), ApplicationListener {
         string!!.setLength(0)
         string!!.append(errMessage)
         string!!.append(" direction: ").append(cam!!.direction)
-        string!!.append(" combined: ").append(cam!!.combined)
+        string!!.append(" project : ").append(cam!!.normalizeUp())
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
@@ -443,47 +456,45 @@ class Space : InputAdapter(), ApplicationListener {
     //-------Camera Control Methods-----------------------
 
     var camSigns = Vector3(1f,1f,1f)
-    val camSpeed = .1f
+    val camSpeed = .5f
 
     fun moveZUp(){
         val crt = cam!!.position
-        cam!!.translate(0f,0f,camSigns.z*camSpeed+crt.z)
-        if (cam!!.position.z > 0){
-            camSigns.z = 1f
-        } else {
-            camSigns.z = -1f
-        }
+        cam!!.translate(0f,0f,camSigns.z*camSpeed)
+        cam!!.update()
     }
 
     fun moveZDown(){
         val crt = cam!!.position
-        cam!!.translate(0f,0f,crt.z-camSigns.z*camSpeed)
-
-        if (cam!!.position.z > 0){
-            camSigns.z = 1f
-        } else {
-            camSigns.z = -1f
-        }
+        cam!!.translate(0f,0f,-camSigns.z*camSpeed)
+        cam!!.update()
     }
 
     fun moveXUp(){
         val crt = cam!!.position
-        cam!!.translate(0f,0f,camSigns.x*camSpeed+crt.x)
-        if (cam!!.position.x > 0){
-            camSigns.x = 1f
-        } else {
-            camSigns.x = -1f
-        }
+        cam!!.translate(camSigns.x*camSpeed,0f,0f)
+        cam!!.update()
     }
+
     fun moveXDown(){
         val crt = cam!!.position
-        cam!!.translate(0f,0f,camSigns.z*camSpeed+crt.z)
-        if (cam!!.position.z > 0){
-            camSigns.z = 1f
-        } else {
-            camSigns.z = -1f
-        }
+        cam!!.translate(-camSigns.x*camSpeed,0f,0f)
+        cam!!.update()
     }
+
+    fun moveYUp(){
+        val crt = cam!!.position
+        cam!!.translate(0f,camSigns.y*camSpeed,0f)
+        cam!!.update()
+    }
+
+
+    fun moveYDown(){
+        val crt = cam!!.position
+        cam!!.translate(0f,-camSigns.y*camSpeed,0f)
+        cam!!.update()
+    }
+
 
 
 
