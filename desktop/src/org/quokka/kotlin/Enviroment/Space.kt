@@ -37,6 +37,7 @@ class Space : InputAdapter(), ApplicationListener {
 
     val compressed = false
     val local = true
+    var axis = true
 
     var lidarFPS = 12
 
@@ -76,6 +77,7 @@ class Space : InputAdapter(), ApplicationListener {
 
 
     var decals: List<Decal> = listOf()
+    val axisDecals: ArrayList<Decal> = ArrayList(30)
 
 
     lateinit var blueRedFade: Array<TextureRegion>
@@ -128,6 +130,22 @@ class Space : InputAdapter(), ApplicationListener {
         }
 
 
+        for(i in -50..50){
+            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dx.setPosition(i*-1f,-1f,-1f)
+            dx.lookAt(cam!!.position, cam!!.up)
+            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dy.setPosition(-1f,-1f*i,-1f)
+            dy.lookAt(cam!!.position, cam!!.up)
+            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dz.setPosition(-1f,-1f,i*-1f)
+            dz.lookAt(cam!!.position, cam!!.up)
+            axisDecals.add(dx)
+            axisDecals.add(dy)
+            axisDecals.add(dz)
+        }
+
+
         // -----------Bottom Text--------
         stage = Stage()
         font = BitmapFont()
@@ -147,22 +165,10 @@ class Space : InputAdapter(), ApplicationListener {
      * it renders the environment and the camera within
      */
     override fun render() {
-        camController!!.update()
+//        camController!!.update()
 
 
-        if(Gdx.input.isKeyPressed(Input.Keys.Y)){
-            moveYUp()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.H)){
-            moveYDown()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.UP)){
-            moveZUp()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.DOWN)){
-            moveZDown()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            moveXUp()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            moveXDown()
-        }
+        campButtonpress()
 
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
@@ -179,13 +185,21 @@ class Space : InputAdapter(), ApplicationListener {
             }
         }
 
+        if(axis == true ) {
+            axisDecals.forEach { d ->
+                if (cam!!.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
+                    decalBatch!!.add(d)
+                }
+            }
+        }
+
         decalBatch!!.flush()
 
 
         string!!.setLength(0)
         string!!.append(errMessage)
         string!!.append(" direction: ").append(cam!!.direction)
-        string!!.append(" project : ").append(cam!!.normalizeUp())
+        string!!.append(" up  : ").append(cam!!.up)
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
@@ -268,6 +282,10 @@ class Space : InputAdapter(), ApplicationListener {
                         }
 
                     }
+                }
+            } else {
+                decals.forEach { d->
+                    d.lookAt(cam!!.position,cam!!.up)
                 }
             }
         }
@@ -455,47 +473,103 @@ class Space : InputAdapter(), ApplicationListener {
 
     //-------Camera Control Methods-----------------------
 
-    var camSigns = Vector3(1f,1f,1f)
     val camSpeed = .5f
+    val rotationAngle = .5f
+
+
+    fun campButtonpress(){
+        if(Gdx.input.isKeyPressed(Input.Keys.Y)){
+            moveYUp()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.H)){
+            moveYDown()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.UP)){
+            moveZUp()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.DOWN)){
+            moveZDown()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+            moveXUp()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+            moveXDown()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.Q)){
+            rotateY()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.E)){
+            rotateYrev()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.A)){
+            rotateZ()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.D)){
+            rotateZrev()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.Z)){
+            rotateX()
+        } else if(Gdx.input.isKeyPressed(Input.Keys.C)){
+            rotateXrev()
+        }
+    }
 
     fun moveZUp(){
-        val crt = cam!!.position
-        cam!!.translate(0f,0f,camSigns.z*camSpeed)
+        cam!!.translate(0f,0f,camSpeed)
         cam!!.update()
     }
 
     fun moveZDown(){
-        val crt = cam!!.position
-        cam!!.translate(0f,0f,-camSigns.z*camSpeed)
+        cam!!.translate(0f,0f,-camSpeed)
         cam!!.update()
     }
 
     fun moveXUp(){
-        val crt = cam!!.position
-        cam!!.translate(camSigns.x*camSpeed,0f,0f)
+        cam!!.translate(camSpeed,0f,0f)
         cam!!.update()
     }
 
     fun moveXDown(){
-        val crt = cam!!.position
-        cam!!.translate(-camSigns.x*camSpeed,0f,0f)
+        cam!!.translate(-camSpeed,0f,0f)
         cam!!.update()
     }
 
     fun moveYUp(){
-        val crt = cam!!.position
-        cam!!.translate(0f,camSigns.y*camSpeed,0f)
+        cam!!.translate(0f,camSpeed,0f)
         cam!!.update()
     }
 
 
     fun moveYDown(){
-        val crt = cam!!.position
-        cam!!.translate(0f,-camSigns.y*camSpeed,0f)
+        cam!!.translate(0f,-camSpeed,0f)
         cam!!.update()
     }
 
+    fun rotateY() {
+        cam!!.rotate(Vector3(0f,1f,0f),rotationAngle)
+        cam!!.update()
+    }
 
+    fun rotateYrev(){
+        cam!!.rotate(Vector3(0f,1f,0f),-rotationAngle)
+        cam!!.update()
+
+    }
+
+    fun rotateZ(){
+        cam!!.rotate(Vector3(0f,0f,1f),-rotationAngle)
+        cam!!.update()
+
+    }
+
+    fun rotateZrev(){
+        cam!!.rotate(Vector3(0f,0f,1f),rotationAngle)
+        cam!!.update()
+
+    }
+
+    fun rotateX(){
+        cam!!.rotate(Vector3(1f,0f,0f),rotationAngle)
+        cam!!.update()
+
+    }
+
+    fun rotateXrev(){
+        cam!!.rotate(Vector3(1f,0f,0f),-rotationAngle)
+        cam!!.update()
+
+    }
 
 
 }
