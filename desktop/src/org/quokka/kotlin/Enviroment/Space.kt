@@ -4,12 +4,15 @@ import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
 import LidarData.LidarReader
-import com.badlogic.gdx.*
+import com.badlogic.gdx.ApplicationListener
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
+import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.*
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.graphics.g3d.*
+import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
@@ -21,12 +24,8 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import net.java.games.input.Component
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.concurrent.timer
 import kotlin.math.pow
 import kotlin.math.sign
@@ -198,9 +197,8 @@ class Space : InputAdapter(), ApplicationListener {
 
         string!!.setLength(0)
         string!!.append(errMessage)
+        string!!.append(" up : ").append(cam!!.up)
         string!!.append(" direction: ").append(cam!!.direction)
-        string!!.append(" up  : ").append(cam!!.up)
-        string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
@@ -362,10 +360,7 @@ class Space : InputAdapter(), ApplicationListener {
     fun decidDivisions(coord: LidarCoord): Int {
         val camp = cam?.position
         if (camp != null) {
-            val distance =
-                    sqrt((coord.x - camp.x).pow(2)
-                            + (coord.y - camp.y).pow(2)
-                            + (coord.z - camp.z).pow(2))
+            val distance = distanceBetween2points(coord,camp)
 
             val substraction = distance - dfcm
             if (substraction < 0) {
@@ -470,103 +465,139 @@ class Space : InputAdapter(), ApplicationListener {
     }
 
 
-
+    /**
+     * calculates the distance betwwen two points
+     * the points can be represented as
+     * either Vector3 or LidarCoord
+     * @author Robet
+     */
+    fun distanceBetween2points(a: LidarCoord, b:LidarCoord):Float{
+        return  sqrt((a.x - b.x).pow(2)
+                        + (a.y - b.y).pow(2)
+                        + (a.z - b.z).pow(2))
+    }
+    fun distanceBetween2points(a: Vector3, b:LidarCoord):Float{
+        return  sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+    fun distanceBetween2points(a: LidarCoord, b:Vector3):Float{
+        return  sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+    fun distanceBetween2points(a: Vector3, b:Vector3):Float{
+        return  sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+    /**
+     * @author Robert
+     */
     //-------Camera Control Methods-----------------------
 
-    val camSpeed = .5f
-    val rotationAngle = .5f
+
+    val camSpeed = 10f
+    val rotationAngle = 50f
 
 
-    fun campButtonpress(){
-        if(Gdx.input.isKeyPressed(Input.Keys.Y)){
-            moveYUp()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.H)){
-            moveYDown()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.UP)){
-            moveZUp()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.DOWN)){
-            moveZDown()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-            moveXUp()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            moveXDown()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.Q)){
-            rotateY()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.E)){
-            rotateYrev()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.A)){
-            rotateZ()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.D)){
-            rotateZrev()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.Z)){
-            rotateX()
-        } else if(Gdx.input.isKeyPressed(Input.Keys.C)){
-            rotateXrev()
+    fun campButtonpress() {
+
+        val delta = Gdx.graphics.deltaTime
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            moveLeft(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            moveRight(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.I)) {
+            moveForward(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.K)) {
+            moveBackward(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            moveUp(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            moveDown(delta)
+        } else if(Gdx.input.isKeyPressed(Input.Keys.W)){
+            rotateUp(delta)
+        } else if(Gdx.input.isKeyPressed(Input.Keys.S)){
+            rotateDown(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            rotateLeft(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            rotateRight(delta)
+//        } else if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
+//            rotateZ()
+//        } else if (Gdx.input.isKeyPressed(Input.Keys.C)) {
+//            rotateZrev()
+        } else if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+            resetCamera()
         }
     }
 
-    fun moveZUp(){
-        cam!!.translate(0f,0f,camSpeed)
+    fun resetCamera(){
+        cam!!.position[0f, 0f] = 30f
+        cam!!.lookAt(0f, 0f, 0f)
         cam!!.update()
     }
 
-    fun moveZDown(){
-        cam!!.translate(0f,0f,-camSpeed)
+    fun moveForward(delta: Float){
+        cam!!.translate(Vector3(cam!!.direction).scl(delta * camSpeed))
         cam!!.update()
     }
 
-    fun moveXUp(){
-        cam!!.translate(camSpeed,0f,0f)
+    fun moveBackward(delta: Float){
+        cam!!.translate(Vector3(cam!!.direction).scl(-delta * camSpeed))
         cam!!.update()
     }
 
-    fun moveXDown(){
-        cam!!.translate(-camSpeed,0f,0f)
+    fun moveUp(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).scl(delta * camSpeed))
         cam!!.update()
     }
 
-    fun moveYUp(){
-        cam!!.translate(0f,camSpeed,0f)
+    fun moveDown(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).scl(-delta * camSpeed))
         cam!!.update()
     }
 
-
-    fun moveYDown(){
-        cam!!.translate(0f,-camSpeed,0f)
+    fun moveLeft(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction,90f).scl(-delta * camSpeed))
         cam!!.update()
     }
 
-    fun rotateY() {
-        cam!!.rotate(Vector3(0f,1f,0f),rotationAngle)
+    fun moveRight(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction,90f).scl(delta * camSpeed))
         cam!!.update()
     }
 
-    fun rotateYrev(){
-        cam!!.rotate(Vector3(0f,1f,0f),-rotationAngle)
+    fun rotateUp(delta: Float) {
+        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction,90f),delta*rotationAngle)
         cam!!.update()
+    }
 
+    fun rotateDown(delta: Float) {
+        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction,90f),-delta*rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateLeft(delta: Float) {
+        cam!!.rotate(cam!!.up,delta*rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateRight(delta: Float) {
+        cam!!.rotate(cam!!.up,-delta*rotationAngle)
+        cam!!.update()
     }
 
     fun rotateZ(){
-        cam!!.rotate(Vector3(0f,0f,1f),-rotationAngle)
-        cam!!.update()
-
-    }
-
-    fun rotateZrev(){
         cam!!.rotate(Vector3(0f,0f,1f),rotationAngle)
         cam!!.update()
 
     }
 
-    fun rotateX(){
-        cam!!.rotate(Vector3(1f,0f,0f),rotationAngle)
-        cam!!.update()
-
-    }
-
-    fun rotateXrev(){
-        cam!!.rotate(Vector3(1f,0f,0f),-rotationAngle)
+    fun rotateZrev(){
+        cam!!.rotate(Vector3(0f,0f,1f),-rotationAngle)
         cam!!.update()
 
     }
