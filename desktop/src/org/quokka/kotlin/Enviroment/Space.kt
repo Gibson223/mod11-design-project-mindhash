@@ -19,12 +19,11 @@ import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import net.java.games.input.Component
-import org.quokka.kotlin.Enviroment.Populator
 import org.quokka.kotlin.Enviroment.UIobserver
-import java.lang.Error
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -177,6 +176,48 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         filepop()
         newFrame()
+
+        var bf_button: Image? = null
+        bf_button = Image(Texture("Screen3D/bf_button.png"))
+        bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
+        stage!!.addActor(bf_button)
+        Gdx.input.inputProcessor = stage
+
+        var ff_button: Image? = null
+        ff_button = Image(Texture("Screen3D/ff_button.png"))
+        ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
+        stage!!.addActor(ff_button)
+        Gdx.input.inputProcessor = stage
+
+        var arrows_button: Image? = null
+        arrows_button = Image(Texture("Screen3D/arrows_button.png"))
+        arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
+        stage!!.addActor(arrows_button)
+        Gdx.input.inputProcessor = stage
+
+        var earth_button: Image? = null
+        earth_button = Image(Texture("Screen3D/earth_button.png"))
+        earth_button.setPosition(Gdx.graphics.width - 215.toFloat(), 70f)
+        stage!!.addActor(earth_button)
+        Gdx.input.inputProcessor = stage
+
+        var pause_button: Image? = null
+        pause_button = Image(Texture("Screen3D/pause_button.png"))
+        pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
+        stage!!.addActor(pause_button)
+        Gdx.input.inputProcessor = stage
+
+        var reset_button: Image? = null
+        reset_button = Image(Texture("Screen3D/reset_button.png"))
+        reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
+        stage!!.addActor(reset_button)
+        Gdx.input.inputProcessor = stage
+
+        var settings_button: Image? = null
+        settings_button = Image(Texture("Screen3D/setting_button.png"))
+        settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
+        stage!!.addActor(settings_button)
+        Gdx.input.inputProcessor = stage
     }
 
 
@@ -210,7 +251,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
         string!!.append(" paused: ").append(pause.get())
         label!!.setText(string)
+        stage!!.act()
         stage!!.draw()
+        Gdx.input.inputProcessor = stage
         errMessage = ""
 
     }
