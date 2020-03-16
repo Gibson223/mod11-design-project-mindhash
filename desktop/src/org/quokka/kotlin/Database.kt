@@ -99,7 +99,7 @@ object DbConnectionPool {
  * db.close()
  * }
  */
-class Database {
+object Database {
     /**
      * Returns a list of all recordings and their meta data.
      * Refer to the RecordingMeta class for more info on fields and data about recordings.
@@ -399,8 +399,7 @@ data class RecordingMeta(
 
 
 fun main() {
-    val db = Database()
-    db.initTables()
+    Database.initTables()
 
     //db.getFrames(2, 2500, 1).forEach {
     //    it.generatePly("/home/nyx/downloads/test3.ply")
@@ -409,7 +408,7 @@ fun main() {
     for (i in 0 until 40) {
         val nFrames = 50
         val time = measureTimeMillis {
-            db.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
+            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
         }
 
         println("Time to take $nFrames frames: $time")
