@@ -17,8 +17,7 @@ const val CREATE_DB_QUERY = """
 CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
  minframe integer DEFAULT 0,
  maxframe integer DEFAULT 0,
- maxz real DEFAULT 7,
- minz real DEFAULT -7
+ maxpoints integer
 );
  CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id)
  ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));
@@ -32,7 +31,7 @@ SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(fram
 """
 const val SELECT_SINGLE_RECORDING = "SELECT * FROM recording WHERE id = ?;"
 const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
-const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxz = ?, minz = ? WHERE id = ?;"
+const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxpoints = ? WHERE id = ?;"
 const val FLOAT_BYTE_SIZE = 4
 const val FLOATS_PER_POINT = 3
 
@@ -119,8 +118,7 @@ object Database {
                                 rs.getInt("minframe"),
                                 rs.getInt("maxframe"),
                                 rs.getInt("numberofframes"),
-                                rs.getFloat("maxz"),
-                                rs.getFloat("minz")
+                                rs.getInt("maxpoints")
                         )
                 )
             }
@@ -140,8 +138,7 @@ object Database {
                     rs.getInt("minframe"),
                     rs.getInt("maxframe"),
                     rs.getInt("maxframe") - rs.getInt("minframe"),
-                    rs.getFloat("maxz"),
-                    rs.getFloat("minz")
+                    rs.getInt("maxpoints")
             )
         }
         rs.close()
@@ -202,19 +199,12 @@ object Database {
      * @param points The raw point data. The array format has to be Double[3][].
      * @return Returns the minimum and maximum Z coordinate
      */
-    private fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>): Pair<Float, Float> {
+    private fun insertRawPointsAsFrame(frameId: Int, recordingId: Int, points: Array<Array<Float>>) {
         val conn = DbConnectionPool.connection
-
-        var minZ = Float.MAX_VALUE
-        var maxZ = Float.MIN_VALUE
 
         // Allocate a byte buffer to put the floats in which is then put into the database as bytea
         val bb = ByteBuffer.allocate(FLOAT_BYTE_SIZE * points.size * FLOATS_PER_POINT)
         points.forEach {
-            if (it[2] < minZ)
-                minZ = it[2]
-            if (it[2] > maxZ)
-                maxZ = it[2]
             bb.putFloat(it[0])
             bb.putFloat(it[1])
             bb.putFloat(it[2])
@@ -228,7 +218,6 @@ object Database {
         }
         st.close()
         conn.close()
-        return Pair(minZ, maxZ)
     }
 
 
@@ -255,8 +244,7 @@ object Database {
         var currPoints: MutableList<Array<Float>>? = null
         var minFrame = Integer.MAX_VALUE
         var maxFrame = Integer.MIN_VALUE
-        var maxZ = Float.MIN_VALUE
-        var minZ = Float.MAX_VALUE
+        var maxPoints = 0
         // Iterate through Azimuth blocks and construct and insert frames into the database.
         reader.readAzimuthBlocks(path, { az ->
             val fid = az.frameId.toInt()
@@ -271,12 +259,13 @@ object Database {
                 if (currPoints != null) {
                     // If the last frame existed, insert it into the database.
                     println("Inserted frame $lastFrame with ${currPoints!!.size} points")
-                    if (currPoints!!.isNotEmpty()) {
-                        val bounds = insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
-                        if (bounds.first < minZ)
-                            minZ = bounds.first
-                        if (bounds.second > maxZ)
-                            maxZ = bounds.second
+                    currPoints?.let {
+                        if (it.isNotEmpty()) {
+                            if (maxPoints < it.size) {
+                                maxPoints = it.size
+                            }
+                            insertRawPointsAsFrame(lastFrame, recId, it.toTypedArray())
+                        }
                     }
                 }
 
@@ -294,21 +283,21 @@ object Database {
         })
 
         // Insert last frame
-        if (currPoints != null) {
-            val bounds = insertRawPointsAsFrame(lastFrame, recId, currPoints!!.toTypedArray())
-            if (bounds.first < minZ)
-                minZ = bounds.first
-            if (bounds.second > maxZ)
-                maxZ = bounds.second
+        currPoints?.let {
+            if (it.isNotEmpty()) {
+                if (maxPoints < it.size) {
+                    maxPoints = it.size
+                }
+                insertRawPointsAsFrame(lastFrame, recId, it.toTypedArray())
+            }
         }
 
         // Update the meta data of the recording
         val st = conn.prepareStatement(UPDATE_RECORDING_FRAMES).apply {
             setInt(1, minFrame)
             setInt(2, maxFrame)
-            setFloat(3, maxZ)
-            setFloat(4, minZ)
-            setInt(5, recId)
+            setInt(3, maxPoints)
+            setInt(4, recId)
             executeUpdate()
         }
         st.close()
@@ -364,9 +353,7 @@ object Database {
 
             frames.add(LidarFrame(
                     rsx.getInt("frameid"),
-                    frameList.toList(),
-                    maxZ = recording.maxZ,
-                    minZ = recording.minZ
+                    frameList.toList()
             ))
         }
 
@@ -386,6 +373,7 @@ object Database {
  * @property minFrame The minimum frame value.
  * @property maxFrame The maximum frame value.
  * @property numberOfFrames The total number of frames.
+ * @property maxNumberOfPoints The maximum number of points in a single frame.
  */
 data class RecordingMeta(
         val id: Int,
@@ -393,26 +381,26 @@ data class RecordingMeta(
         val minFrame: Int,
         val maxFrame: Int,
         val numberOfFrames: Int,
-        val maxZ: Float,
-        val minZ: Float
+        val maxNumberOfPoints: Int
 )
 
 
 fun main() {
+    Database.destroyTables()
     Database.initTables()
 
     //db.getFrames(2, 2500, 1).forEach {
     //    it.generatePly("/home/nyx/downloads/test3.ply")
     //}
 
-    for (i in 0 until 40) {
-        val nFrames = 50
-        val time = measureTimeMillis {
-            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
-        }
+    //for (i in 0 until 40) {
+    //    val nFrames = 50
+    //    val time = measureTimeMillis {
+    //        Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
+    //    }
 
-        println("Time to take $nFrames frames: $time")
-    }
+    //    println("Time to take $nFrames frames: $time")
+    //}
 
     // Create reading with default LidarReader
     //db.recordingFromFile(
