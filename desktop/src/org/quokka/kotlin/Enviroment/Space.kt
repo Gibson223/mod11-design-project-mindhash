@@ -218,6 +218,12 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
         stage!!.addActor(settings_button)
         Gdx.input.inputProcessor = stage
+
+        var home_button: Image? = null
+        home_button = Image(Texture("Screen3D/home_button.png"))
+        home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
+        stage!!.addActor(home_button)
+        Gdx.input.inputProcessor = stage
     }
 
 
