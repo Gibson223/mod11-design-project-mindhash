@@ -2,20 +2,16 @@ package LidarData
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import org.quokka.kotlin.config.LidarFps
 import java.io.ByteArrayInputStream
-import java.io.ObjectInputStream
 import java.nio.ByteBuffer
-import java.nio.FloatBuffer
 import java.sql.*
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
 import kotlin.system.measureTimeMillis
 
 // Constants for setting up database connection
-const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
-const val DATABASE_USERNAME = "nyx"
-const val DATABASE_PASSWORD = "lidar"
+const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
+const val DATABASE_USERNAME = "lidar"
+const val DATABASE_PASSWORD = "mindhash"
 
 const val CREATE_DB_QUERY = """
 CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
@@ -334,7 +330,7 @@ class Database {
             recordingId: Int,
             startFrame: Int,
             numberOfFrames: Int,
-            framerate: Framerate = Framerate.TEN
+            framerate: LidarFps = LidarFps.TEN
     ): List<LidarFrame> {
         val conn = DbConnectionPool.connection
         val spf = framerate.stepsPerFrame
@@ -381,17 +377,6 @@ class Database {
     }
 }
 
-/**
- * An enum which defines the possible framerates when retrieving frames from the database.
- *
- * @property stepsPerFrame The number of frames skipped for the chosen framerate.
- */
-enum class Framerate(val stepsPerFrame: Int) {
-    TEN(1),
-    FIVE(2),
-    TWO(5),
-    ONE(10)
-}
 
 /**
  * Meta data belonging to a recording.
@@ -424,7 +409,7 @@ fun main() {
     for (i in 0 until 40) {
         val nFrames = 50
         val time = measureTimeMillis {
-            db.getFrames(1, 2000 + nFrames * i, nFrames, framerate = Framerate.TEN)
+            db.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
         }
 
         println("Time to take $nFrames frames: $time")
