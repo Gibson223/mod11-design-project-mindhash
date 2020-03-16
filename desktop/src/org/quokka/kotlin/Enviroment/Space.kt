@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
@@ -40,7 +41,7 @@ import kotlin.math.sqrt
 //class Space : InputAdapter(), ApplicationListener, Observer {
 class Space : Screen, InputAdapter(), Observer {
     val compressed = true
-    val local = true
+    val local = false
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
@@ -169,6 +170,51 @@ class Space : Screen, InputAdapter(), Observer {
 
         filepop()
         newFrame()
+
+
+        GuiButtons()
+    }
+
+    fun GuiButtons(){
+        var bf_button: Image? = null
+        bf_button = Image(Texture("Screen3D/bf_button.png"))
+        bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
+        stage!!.addActor(bf_button)
+
+        var ff_button: Image? = null
+        ff_button = Image(Texture("Screen3D/ff_button.png"))
+        ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
+        stage!!.addActor(ff_button)
+
+        var arrows_button: Image? = null
+        arrows_button = Image(Texture("Screen3D/arrows_button.png"))
+        arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
+        stage!!.addActor(arrows_button)
+
+        var earth_button: Image? = null
+        earth_button = Image(Texture("Screen3D/earth_button.png"))
+        earth_button.setPosition(Gdx.graphics.width - 215.toFloat(), 70f)
+        stage!!.addActor(earth_button)
+
+        var pause_button: Image? = null
+        pause_button = Image(Texture("Screen3D/pause_button.png"))
+        pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
+        stage!!.addActor(pause_button)
+
+        var reset_button: Image? = null
+        reset_button = Image(Texture("Screen3D/reset_button.png"))
+        reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
+        stage!!.addActor(reset_button)
+
+        var settings_button: Image? = null
+        settings_button = Image(Texture("Screen3D/setting_button.png"))
+        settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
+        stage!!.addActor(settings_button)
+
+        var home_button: Image? = null
+        home_button = Image(Texture("Screen3D/home_button.png"))
+        home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
+        stage!!.addActor(home_button)
     }
 
     override fun hide() {
