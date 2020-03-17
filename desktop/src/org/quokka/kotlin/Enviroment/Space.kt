@@ -177,15 +177,165 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         filepop()
         newFrame()
 
+        var left_bar: Image? = null
+        left_bar = Image(Texture("Screen3D/left_bar.png"))
+        left_bar.setPosition(Gdx.graphics.width / 2 - 323.toFloat(), 10f)
+        stage!!.addActor(left_bar)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar1: Image? = null
+        middle_bar1 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar1.setPosition(Gdx.graphics.width / 2 - 300.toFloat(), 10f)
+        stage!!.addActor(middle_bar1)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar2: Image? = null
+        middle_bar2 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar2.setPosition(Gdx.graphics.width / 2 - 275.toFloat(), 10f)
+        stage!!.addActor(middle_bar2)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar3: Image? = null
+        middle_bar3 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar3.setPosition(Gdx.graphics.width / 2 - 250.toFloat(), 10f)
+        stage!!.addActor(middle_bar3)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar4: Image? = null
+        middle_bar4 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar4.setPosition(Gdx.graphics.width / 2 - 225.toFloat(), 10f)
+        stage!!.addActor(middle_bar4)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar5: Image? = null
+        middle_bar5 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar5.setPosition(Gdx.graphics.width / 2 - 200.toFloat(), 10f)
+        stage!!.addActor(middle_bar5)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar6: Image? = null
+        middle_bar6 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar6.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 10f)
+        stage!!.addActor(middle_bar6)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar7: Image? = null
+        middle_bar7 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar7.setPosition(Gdx.graphics.width / 2 - 150.toFloat(), 10f)
+        stage!!.addActor(middle_bar7)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar8: Image? = null
+        middle_bar8 = Image(Texture("Screen3D/inVideo_bar.png"))
+        middle_bar8.setPosition(Gdx.graphics.width / 2 - 125.toFloat(), 5f)
+        stage!!.addActor(middle_bar8)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar9: Image? = null
+        middle_bar9 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar9.setPosition(Gdx.graphics.width / 2 - 100.toFloat(), 10f)
+        stage!!.addActor(middle_bar9)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar10: Image? = null
+        middle_bar10 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar10.setPosition(Gdx.graphics.width / 2 - 75.toFloat(), 10f)
+        stage!!.addActor(middle_bar10)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar11: Image? = null
+        middle_bar11 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar11.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 10f)
+        stage!!.addActor(middle_bar11)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar12: Image? = null
+        middle_bar12 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar12.setPosition(Gdx.graphics.width / 2 - 25.toFloat(), 10f)
+        stage!!.addActor(middle_bar12)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar13: Image? = null
+        middle_bar13 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar13.setPosition(Gdx.graphics.width / 2.toFloat(), 10f)
+        stage!!.addActor(middle_bar13)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar14: Image? = null
+        middle_bar14 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar14.setPosition(Gdx.graphics.width / 2 + 25.toFloat(), 10f)
+        stage!!.addActor(middle_bar14)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar15: Image? = null
+        middle_bar15 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar15.setPosition(Gdx.graphics.width / 2 + 50.toFloat(), 10f)
+        stage!!.addActor(middle_bar15)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar16: Image? = null
+        middle_bar16 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar16.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 10f)
+        stage!!.addActor(middle_bar16)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar17: Image? = null
+        middle_bar17 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar17.setPosition(Gdx.graphics.width / 2 + 100.toFloat(), 10f)
+        stage!!.addActor(middle_bar17)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar18: Image? = null
+        middle_bar18 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar18.setPosition(Gdx.graphics.width / 2 + 125.toFloat(), 10f)
+        stage!!.addActor(middle_bar18)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar19: Image? = null
+        middle_bar19 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar19.setPosition(Gdx.graphics.width / 2 + 150.toFloat(), 10f)
+        stage!!.addActor(middle_bar19)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar20: Image? = null
+        middle_bar20 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar20.setPosition(Gdx.graphics.width / 2 + 175.toFloat(), 10f)
+        stage!!.addActor(middle_bar20)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar21: Image? = null
+        middle_bar21 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar21.setPosition(Gdx.graphics.width / 2 + 200.toFloat(), 10f)
+        stage!!.addActor(middle_bar21)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar22: Image? = null
+        middle_bar22 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar22.setPosition(Gdx.graphics.width / 2 + 225.toFloat(), 10f)
+        stage!!.addActor(middle_bar22)
+        Gdx.input.inputProcessor = stage
+
+        var middle_bar23: Image? = null
+        middle_bar23 = Image(Texture("Screen3D/middle_bar.png"))
+        middle_bar23.setPosition(Gdx.graphics.width / 2 + 250.toFloat(), 10f)
+        stage!!.addActor(middle_bar23)
+        Gdx.input.inputProcessor = stage
+
+        var right_bar: Image? = null
+        right_bar = Image(Texture("Screen3D/right_bar.png"))
+        right_bar.setPosition(Gdx.graphics.width / 2 + 275.toFloat(), 11f)
+        stage!!.addActor(right_bar)
+        Gdx.input.inputProcessor = stage
+
         var bf_button: Image? = null
         bf_button = Image(Texture("Screen3D/bf_button.png"))
-        bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
+        bf_button.setPosition(Gdx.graphics.width / 2 - 190.toFloat(), 75f)
         stage!!.addActor(bf_button)
         Gdx.input.inputProcessor = stage
 
         var ff_button: Image? = null
         ff_button = Image(Texture("Screen3D/ff_button.png"))
-        ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
+        ff_button.setPosition(Gdx.graphics.width / 2 + 60.toFloat(), 75f)
         stage!!.addActor(ff_button)
         Gdx.input.inputProcessor = stage
 
@@ -203,7 +353,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         var pause_button: Image? = null
         pause_button = Image(Texture("Screen3D/pause_button.png"))
-        pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
+        pause_button.setPosition(Gdx.graphics.width / 2 - 65.toFloat(), 75f)
         stage!!.addActor(pause_button)
         Gdx.input.inputProcessor = stage
 
