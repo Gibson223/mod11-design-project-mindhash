@@ -36,7 +36,7 @@ class Space : InputAdapter(), ApplicationListener {
 
     val compressed = false
     val local = true
-    var axis = true
+    var axis = false
 
     var lidarFPS = 12
 
