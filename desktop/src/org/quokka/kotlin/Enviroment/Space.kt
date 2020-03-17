@@ -26,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import org.quokka.game.desktop.GameInitializer
+import java.awt.Checkbox
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.timer
@@ -34,7 +35,6 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-//class Space : InputAdapter(), ApplicationListener, Observer {
 class Space: Screen {
     lateinit var plexer: InputMultiplexer
     val compressed = true
@@ -277,9 +277,11 @@ class Space: Screen {
         val resolution = Label("RESOLUTION",shared_style)
         val compression = Label("COMPRESSION",shared_style)
         val distance = Label("DISTANCE",shared_style)
-
+        val fixed_camera = Label("FIXED CAMERA", shared_style)
         val lidar_box =  SelectBox<Int>(skin)
         lidar_box.setItems(1, 2, 5, 10)
+
+        val camera_checkbox = CheckBox("", skin)
 
         val compression_box =  SelectBox<Int>(skin)
         lidar_box.setItems(0,1,2,3,4)
@@ -307,6 +309,10 @@ class Space: Screen {
         dialog.contentTable.row()
         dialog.contentTable.add(compression)
         dialog.contentTable.add(compression_box)
+        dialog.contentTable.row()
+        dialog.contentTable.add(fixed_camera)
+        dialog.contentTable.add(camera_checkbox)
+        dialog.contentTable.add()
         dialog.contentTable.row()
         dialog.contentTable.add(distance)
         dialog.contentTable.add(distance_field).width(50f)
