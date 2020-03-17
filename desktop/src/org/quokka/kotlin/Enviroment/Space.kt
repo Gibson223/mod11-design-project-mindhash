@@ -412,6 +412,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         Gdx.input.inputProcessor = stage
         errMessage = ""
 
+        if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) System.exit(0)
     }
 
     /**
