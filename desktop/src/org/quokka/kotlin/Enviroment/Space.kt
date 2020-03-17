@@ -5,6 +5,7 @@ import LidarData.LidarCoord
 import LidarData.LidarFrame
 import LidarData.LidarReader
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.*
@@ -20,13 +21,14 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import org.quokka.game.desktop.GameInitializer
-import java.awt.Checkbox
+import org.quokka.kotlin.Enviroment.GuiButtons
+import org.quokka.kotlin.Enviroment.settingsdialog
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.timer
@@ -39,12 +41,15 @@ class Space: Screen {
     lateinit var plexer: InputMultiplexer
     val compressed = true
     val local = true
+    var axis = false
+
+    var lidarFPS = 12
 
     var running = AtomicBoolean(true)
-    var pause = AtomicBoolean(false)
+    var pause = AtomicBoolean(true)
 
     //-------GUI controlls-----
-    var fixedCamera = true
+    var fixedCamera = false
 
 
     var cam: PerspectiveCamera? = null
@@ -82,7 +87,7 @@ class Space: Screen {
     var decalBatch: DecalBatch? = null
 
     var decals: List<Decal> = listOf()
-    var compressedDecals: List<Decal> = listOf()
+    val axisDecals: ArrayList<Decal> = ArrayList(30)
 
     lateinit var blueYellowFade: Array<TextureRegion>
     lateinit var blueRedFade: Array<TextureRegion>
@@ -106,7 +111,6 @@ class Space: Screen {
 
         //---------Camera controls--------
         camController = CameraInputController(cam)
-        Gdx.input.inputProcessor = camController
         environment = Environment()
         environment!!.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
         environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
@@ -118,9 +122,6 @@ class Space: Screen {
 
         frames = ConcurrentLinkedQueue<LidarFrame>()
         //---------Model Population----------
-        var modelBuilder = ModelBuilder()
-
-
         decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -142,18 +143,20 @@ class Space: Screen {
         }
 
 
-        modelBuilder.begin()
-        modelBuilder.node().id = "Floor"
-        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
-        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
-        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
-        var material = Material(TextureAttribute.createDiffuse(pink))
-        modelBuilder.end()
-        bottomBlock = modelBuilder.createBox(
-                10f, 10f, .5f,
-                material,
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
+        for(i in -50..50){
+            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dx.setPosition(i*-1f,-1f,-1f)
+            dx.lookAt(cam!!.position, cam!!.up)
+            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dy.setPosition(-1f,-1f*i,-1f)
+            dy.lookAt(cam!!.position, cam!!.up)
+            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dz.setPosition(-1f,-1f,i*-1f)
+            dz.lookAt(cam!!.position, cam!!.up)
+            axisDecals.add(dx)
+            axisDecals.add(dy)
+            axisDecals.add(dz)
+        }
 
         // -----------Bottom Text--------
         stage = Stage()
@@ -165,178 +168,14 @@ class Space: Screen {
         newFrame()
 
 
-        GuiButtons()
+        GuiButtons(this)
 
         plexer = InputMultiplexer(stage, camController)
         Gdx.input.inputProcessor = plexer
 
     }
 
-    fun GuiButtons(){
-        var bf_button: Image? = null
-        bf_button = Image(Texture("Screen3D/bf_button.png"))
-        bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
-        stage!!.addActor(bf_button)
-        bf_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked BF")
-            }
-        })
 
-        var ff_button: Image? = null
-        ff_button = Image(Texture("Screen3D/ff_button.png"))
-        ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
-        stage!!.addActor(ff_button)
-        ff_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked FF")
-            }
-        })
-
-        var arrows_button: Image? = null
-        arrows_button = Image(Texture("Screen3D/arrows_button.png"))
-        arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
-        stage!!.addActor(arrows_button)
-        arrows_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked ARROW")
-            }
-        })
-
-        var earth_button: Image? = null
-        earth_button = Image(Texture("Screen3D/earth_button.png"))
-        earth_button.setPosition(Gdx.graphics.width - 215.toFloat(), 70f)
-        stage!!.addActor(earth_button)
-        earth_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked WORLD")
-            }
-        })
-
-        var pause_button: Image? = null
-        pause_button = Image(Texture("Screen3D/pause_button.png"))
-        pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
-        stage!!.addActor(pause_button)
-        pause_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked PAUSE")
-            }
-        })
-
-        var reset_button: Image? = null
-        reset_button = Image(Texture("Screen3D/reset_button.png"))
-        reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
-        stage!!.addActor(reset_button)
-        reset_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked RESET")
-            }
-        })
-
-        val settings_dialog = settings()
-
-        var settings_button: Image? = null
-        settings_button = Image(Texture("Screen3D/setting_button.png"))
-        settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
-        stage!!.addActor(settings_button)
-        settings_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked SETTINGS and opened settings")
-                settings_dialog.show(stage)
-            }
-        })
-
-
-        var home_button: Image? = null
-        home_button = Image(Texture("Screen3D/home_button.png"))
-        home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
-        stage!!.addActor(home_button)
-        home_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked HOME")
-            }
-        })
-
-
-    }
-
-    fun settings(): Dialog {
-        val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
-        val shared_style = LabelStyle(font, Color.WHITE)
-
-        val dialog = Dialog("", skin)
-        dialog.setSize(200f, 250f)
-        dialog.setPosition(Gdx.graphics.width / 2 - 100f, Gdx.graphics.height / 2 - 101f)
-        dialog.contentTable.defaults().pad(10f)
-        dialog.color = Color(Color.GRAY.r, Color.GRAY.g, Color.GRAY.b, 1f)
-
-        // labels
-        val lidar = Label("LIDAR FPS", shared_style)
-        val playback = Label("PLAYBACK FPS",shared_style)
-        val memory = Label("MEMORY",shared_style)
-        val resolution = Label("RESOLUTION",shared_style)
-        val compression = Label("COMPRESSION",shared_style)
-        val distance = Label("DISTANCE",shared_style)
-        val fixed_camera = Label("FIXED CAMERA", shared_style)
-        val lidar_box =  SelectBox<Int>(skin)
-        lidar_box.setItems(1, 2, 5, 10)
-
-        val camera_checkbox = CheckBox("", skin)
-
-        val compression_box =  SelectBox<Int>(skin)
-        lidar_box.setItems(0,1,2,3,4)
-
-        val resolution_box =  SelectBox<String>(skin)
-        resolution_box.setItems("1920x1080", "1080x720")
-
-        val playback_slider = Slider(1f, 60f, 5f,false,  skin)
-
-        val distance_field = TextField("", skin)
-
-        dialog.contentTable.add(Label("PREFERENCES", shared_style))
-        dialog.contentTable.row()
-
-        dialog.contentTable.add(lidar)
-        dialog.contentTable.add(lidar_box)
-        dialog.contentTable.row()
-        dialog.contentTable.add(playback)
-        dialog.contentTable.add(playback_slider)
-        dialog.contentTable.row()
-        dialog.contentTable.add(memory)
-        dialog.contentTable.row()
-        dialog.contentTable.add(resolution)
-        dialog.contentTable.add(resolution_box)
-        dialog.contentTable.row()
-        dialog.contentTable.add(compression)
-        dialog.contentTable.add(compression_box)
-        dialog.contentTable.row()
-        dialog.contentTable.add(fixed_camera)
-        dialog.contentTable.add(camera_checkbox)
-        dialog.contentTable.add()
-        dialog.contentTable.row()
-        dialog.contentTable.add(distance)
-        dialog.contentTable.add(distance_field).width(50f)
-        dialog.contentTable.row()
-
-        val back_button = TextButton("BACK", skin)
-        back_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("quit settings menu")
-                dialog.hide()
-            }
-        })
-
-        val save_button = TextButton("SAVE", skin)
-        save_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("saved settings (MOCK)")
-            }
-        })
-
-        dialog.contentTable.add(back_button)
-        dialog.contentTable.add(save_button)
-        return dialog
-    }
 
     override fun hide() {
         TODO("Not yet implemented")
@@ -348,8 +187,12 @@ class Space: Screen {
 
 
     override fun render(delta: Float) {
-        camController!!.update()
+        //        camController!!.update()
 
+
+        campButtonpress()
+
+        //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             cam!!.lookAt(0f, 0f, 0f)
         }
@@ -358,26 +201,32 @@ class Space: Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
-        if (compressed == false) {
-            decals.forEach {
-                decalBatch!!.add(it)
-            }
-        } else {
-            compressedDecals.forEach {
-                decalBatch!!.add(it)
+        decals.forEach {d ->
+            if (cam!!.frustum.boundsInFrustum(d.x,d.y,d.z,.3f,.3f,.3f) == true ) {
+                decalBatch!!.add(d)
             }
         }
+
+        if(axis == true ) {
+            axisDecals.forEach { d ->
+                if (cam!!.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
+                    decalBatch!!.add(d)
+                }
+            }
+        }
+
         decalBatch!!.flush()
 
 
         string!!.setLength(0)
         string!!.append(errMessage)
-        string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
-        string!!.append(" paused: ").append(pause.get())
+        string!!.append(" up : ").append(cam!!.up)
+        string!!.append(" direction: ").append(cam!!.direction)
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
         errMessage = ""
+
 
     }
 
@@ -398,8 +247,8 @@ class Space: Screen {
                         d
                     }
                 } else {
-                    compressedDecals = compressPoints()
-                    compressedDecals.forEach { d -> colorDecal(d, blueRedFade) }
+                    decals = compressPoints()
+                    decals.forEach { d -> colorDecal(d, blueRedFade) }
                 }
             }
         }
@@ -428,28 +277,30 @@ class Space: Screen {
 
     fun filepop() {
         timer("Array Creator", period = 1000, initialDelay = 0) {
-            val fps = 12
             if (pause.get() == false) {
-                if (local == true) {
+                if (local == true) { // local for testing purposes only, it uses data from a .bag file
                     val ldrrdr = LidarReader()
-                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
-                    framesIndex += fps
+                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + lidarFPS)
+                    framesIndex += lidarFPS
                     intermetidate.forEach { f ->
                         frames!!.add(f)
                     }
-                } else {
+                } else { //if local == false then the data is take from the database
                     if (frames!!.size < 20) {
-                        val intermetidate = database.getFrames(1, framesIndex, fps)
-                        framesIndex += fps
+                        val intermetidate = database.getFrames(1, framesIndex, lidarFPS)
+                        framesIndex += lidarFPS
                         intermetidate.forEach { f ->
                             frames!!.add(f)
                         }
 
                     }
                 }
+            } else {
+                decals.forEach { d->
+                    d.lookAt(cam!!.position,cam!!.up)
+                }
             }
         }
-//        println("New batch loaded")
     }
 
 
@@ -639,6 +490,120 @@ class Space: Screen {
 
         return objects
     }
+
+
+    /**
+     * @author Robert
+     */
+    //-------Camera Control Methods-----------------------
+
+
+    val camSpeed = 100f
+    val rotationAngle = 500f
+
+
+    fun campButtonpress() {
+
+        val delta = Gdx.graphics.deltaTime
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            moveLeft(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            moveRight(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.I)) {
+            moveForward(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.K)) {
+            moveBackward(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            moveUp(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            moveDown(delta)
+        } else if(Gdx.input.isKeyPressed(Input.Keys.W)){
+            rotateUp(delta)
+        } else if(Gdx.input.isKeyPressed(Input.Keys.S)){
+            rotateDown(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            rotateLeft(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            rotateRight(delta)
+//        } else if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
+//            rotateZ()
+//        } else if (Gdx.input.isKeyPressed(Input.Keys.C)) {
+//            rotateZrev()
+        } else if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+            resetCamera()
+        }
+    }
+
+    fun resetCamera(){
+        cam!!.position[0f, 0f] = 30f
+        cam!!.lookAt(0f, 0f, 0f)
+        cam!!.update()
+    }
+
+    fun moveForward(delta: Float){
+        cam!!.translate(Vector3(cam!!.direction).scl(delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveBackward(delta: Float){
+        cam!!.translate(Vector3(cam!!.direction).scl(-delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveUp(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).scl(delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveDown(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).scl(-delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveLeft(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction,90f).scl(-delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveRight(delta: Float){
+        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction,90f).scl(delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun rotateUp(delta: Float) {
+        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction,90f),delta*rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateDown(delta: Float) {
+        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction,90f),-delta*rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateLeft(delta: Float) {
+        cam!!.rotate(cam!!.up,delta*rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateRight(delta: Float) {
+        cam!!.rotate(cam!!.up,-delta*rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateZ(){
+        cam!!.rotate(Vector3(0f,0f,1f),rotationAngle)
+        cam!!.update()
+
+    }
+
+    fun rotateZrev(){
+        cam!!.rotate(Vector3(0f,0f,1f),-rotationAngle)
+        cam!!.update()
+
+    }
+
+
 
 }
 

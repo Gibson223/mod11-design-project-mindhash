@@ -6,7 +6,7 @@ import org.quokka.game.desktop.GameInitializer
 
 fun main(){
     val config = LwjglApplicationConfiguration()
-    config.height = 900
-    config.width = 1800
+    config.height = 720
+    config.width = 1080
     LwjglApplication(GameInitializer(), config)
 }
