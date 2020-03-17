@@ -26,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import net.java.games.input.Component
 import org.quokka.kotlin.Enviroment.UIobserver
+import org.quokka.kotlin.internals.Buffer
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -70,6 +71,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     var pink: Texture? = null
 
+    val buffer = Buffer(1)
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
     var framesIndex = 2400
 
@@ -81,7 +83,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     var string: StringBuilder? = null
     var errMessage = " "
 
-    val database: Database
     var decalBatch: DecalBatch? = null
 
     var decals: List<Decal> = listOf()
@@ -91,10 +92,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     lateinit var blueRedFade: Array<TextureRegion>
     lateinit var decalTextureRegion: TextureRegion
 
-
-    init {
-        database = Database()
-    }
 
     override fun create() {
         modelBatch = ModelBatch()
@@ -166,7 +163,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         plexer = InputMultiplexer(this as InputProcessor, camController)
 
-        filepop()
+        // filepop()
         newFrame()
     }
 
@@ -212,6 +209,20 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      */
     fun newFrame() {
         timer("Array Creator", period = 100, initialDelay = 100) {
+            if (!pause.get()) {
+                var nextFrame: LidarFrame? = null
+                nextFrame = buffer.nextFrame()
+                nextFrame?.let { f ->
+                    decals = f.coords.map {
+                        val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+                        d.setPosition(it.x, it.y, it.z)
+                        colorDecal(d, blueRedFade)
+                        d
+                    }
+                }
+            }
+        }
+        /*
             if (pause.get() == false && frames!!.isNotEmpty()) {
                 if (compressed == false) {
                     val f = frames!!.poll()
@@ -226,7 +237,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
                     compressedDecals.forEach { d -> colorDecal(d, blueRedFade) }
                 }
             }
-        }
+         */
     }
 
     fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
@@ -254,7 +265,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
                     }
                 } else {
                     if (frames!!.size < 20) {
-                        val intermetidate = database.getFrames(1, framesIndex, fps)
+                        val intermetidate = Database.getFrames(1, framesIndex, fps)
                         framesIndex += fps
                         intermetidate.forEach { f ->
                             frames!!.add(f)
@@ -372,7 +383,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         pause.set(!pause.get())
     }
 
-    fun getRunning():Boolean {
+    fun getRunning(): Boolean {
         return running.get()
     }
 
@@ -388,7 +399,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         var objects = ArrayList<Decal>(15) //end result of the method
 
         var map = HashMap<LidarCoord, Int>()
-                //map containing the coordinates as key and the number of points approximated to that point as value
+        //map containing the coordinates as key and the number of points approximated to that point as value
 
         //if the frame is empty (which should never be) add a dummy decal
         if (frames!!.isEmpty()) {
@@ -404,7 +415,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
         crtFrame.coords.forEach { c ->
             val divisions = decidDivisions(c)
-                //calculate the compression power(1/2/3/4) based on the distance from the camera
+            //calculate the compression power(1/2/3/4) based on the distance from the camera
 
             //dummy value which contains the point to which the currently analyzed point is approximated to
             // it is the point itself if the camera is close enough
@@ -431,22 +442,22 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
 
             if (map.get(k) in 1..margin) {
-                d.setDimensions(0.1f,0.1f)
+                d.setDimensions(0.1f, 0.1f)
 
             } else if (map.get(k) in 1 * margin..2 * margin) {
-                d.setDimensions(0.2f,0.2f)
+                d.setDimensions(0.2f, 0.2f)
 
             } else if (map.get(k) in 3 * margin..4 * margin) {
-                d.setDimensions(0.2f,0.2f)
+                d.setDimensions(0.2f, 0.2f)
 
             } else if (map.get(k) in 4 * margin..5 * margin) {
-                d.setDimensions(0.25f,0.25f)
+                d.setDimensions(0.25f, 0.25f)
 
             } else if (map.get(k) in 5 * margin..6 * margin) {
-                d.setDimensions(0.25f,0.25f)
+                d.setDimensions(0.25f, 0.25f)
 
             } else if (map.get(k) in 6 * margin..100) {
-                d.setDimensions(0.3f,0.3f)
+                d.setDimensions(0.3f, 0.3f)
             }
             d.setPosition(k.x, k.y, k.z)
             d.lookAt(cam!!.position, cam!!.up)
@@ -458,11 +469,11 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     override fun update(o: Observable?, arg: Any?) {
         println("called upadte")
-       if(o is UIobserver){
-           if (arg == Component.Identifier.Key.SPACE){
-               pause()
-           }
-       }
+        if (o is UIobserver) {
+            if (arg == Component.Identifier.Key.SPACE) {
+                pause()
+            }
+        }
     }
 }
 

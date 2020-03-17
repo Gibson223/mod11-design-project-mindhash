@@ -10,14 +10,13 @@ object GlobalConfig {
     // How fast the
     var playbackSpeed = 1.0;
     // The size of the buffer for stored frames in seconds.
-    var bufferSize = 20;
+    var bufferSize = 10;
     // Resolution of the screen
     var resolution = Resolution(1600, 900)
     // Fullscreen or not
     var fullscreen = false
     // Compression level
     var compressionLevel = CompressionLevel.NONE
-
 }
 
 /**
@@ -25,11 +24,11 @@ object GlobalConfig {
  *
  * @property stepsPerFrame The number of frames skipped for the chosen framerate.
  */
-enum class LidarFps(val stepsPerFrame: Int) {
-    TEN(1),
-    FIVE(2),
-    TWO(5),
-    ONE(10)
+enum class LidarFps(val fps: Int, val stepsPerFrame: Int) {
+    TEN(10, 1),
+    FIVE(5, 2),
+    TWO(2, 5),
+    ONE(1, 10)
 }
 
 /**
