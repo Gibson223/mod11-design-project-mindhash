@@ -4,7 +4,7 @@ import com.badlogic.gdx.Game
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import org.quokka.Screens.IndexScreen
+import com.mygdx.game.desktop.Space
 
 
 class GameInitializer : Game() {
@@ -15,7 +15,7 @@ class GameInitializer : Game() {
         batch = SpriteBatch()
         //Use LibGDX's default Arial font.
         font = BitmapFont()
-        this.setScreen(IndexScreen(this))
+        this.setScreen(Space())
     }
 
     override fun render() {

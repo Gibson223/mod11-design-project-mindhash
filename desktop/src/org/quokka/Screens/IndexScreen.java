@@ -59,11 +59,12 @@ public class IndexScreen implements Screen {
        });
 
        stage.addActor(badge);
-       Gdx.input.setInputProcessor(stage);
+
    }
 
     @Override
     public void show(){
+        Gdx.input.setInputProcessor(stage);
     }
 
     @Override
