@@ -72,10 +72,8 @@ class Buffer(val recordingId: Int) {
     @Synchronized
     private fun updateBuffers() {
         if (!queryLock.tryLock()) {
-            println("Already querying")
             return
         }
-        println(this)
 
         // Calculate number of frames per buffer
         val framePerBuffer = GlobalConfig.bufferSize * GlobalConfig.lidarFps.fps
@@ -89,7 +87,6 @@ class Buffer(val recordingId: Int) {
         } else if (playQueue.size <= framePerBuffer * 0.8) {
             val lastId = playQueue.peekLast()?.frameId ?: recordingMeta.minFrame
             if (lastId < recordingMeta.maxFrame) {
-                println("Fetching more frames")
                 playQueue.addAll(Database.getFrames(
                         recordingId = recordingId,
                         startFrame = lastId,

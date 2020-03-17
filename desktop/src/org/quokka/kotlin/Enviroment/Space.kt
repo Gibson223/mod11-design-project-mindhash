@@ -36,7 +36,6 @@ import kotlin.concurrent.timer
 import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sqrt
-import kotlin.system.measureTimeMillis
 
 
 class Space : InputAdapter(), ApplicationListener, Observer {
@@ -212,20 +211,15 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         timer("Array Creator", period = 100, initialDelay = 100) {
             if (!pause.get()) {
                 var nextFrame: LidarFrame? = null
-                val millis = measureTimeMillis { nextFrame = buffer.nextFrame() }
-                println("Time for nextFrame: $millis ${nextFrame?.coords?.size}")
-                val millisRender = measureTimeMillis {
-                    nextFrame?.let { f ->
-                        decals = arrayListOf()
-                        decals = f.coords.map {
-                            val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
-                            d.setPosition(it.x, it.y, it.z)
-                            colorDecal(d, blueRedFade)
-                            d
-                        }
+                nextFrame = buffer.nextFrame()
+                nextFrame?.let { f ->
+                    decals = f.coords.map {
+                        val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+                        d.setPosition(it.x, it.y, it.z)
+                        colorDecal(d, blueRedFade)
+                        d
                     }
                 }
-                println("Time to parse decals: $millisRender")
             }
         }
         /*
