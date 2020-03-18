@@ -525,10 +525,6 @@ class Space : InputAdapter(), ApplicationListener {
             rotateLeft(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             rotateRight(delta)
-//        } else if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
-//            rotateZ()
-//        } else if (Gdx.input.isKeyPressed(Input.Keys.C)) {
-//            rotateZrev()
         } else if (Gdx.input.isKeyPressed(Input.Keys.R)) {
             resetCamera()
         }
