@@ -4,10 +4,10 @@ import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
 import LidarData.LidarReader
-import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
-import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.InputMultiplexer
+import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
@@ -21,9 +21,13 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import org.quokka.kotlin.Enviroment.GuiButtons
+import org.quokka.kotlin.Enviroment.settingsdialog
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.timer
@@ -32,19 +36,35 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space : InputAdapter(), ApplicationListener {
-
-    val compressed = false
+class Space: Screen {
+    lateinit var plexer: InputMultiplexer
+    val compressed = true
     val local = true
     var axis = false
 
-    var lidarFPS = 12
+    //-------__Preferancess__---------
+    var lidarFPS = 12 //lidar fps 5/10/20
+    var playbackFPS = 0 // manually fix fps
+    var memory =0 // we're not sure yet how this will work
+    var resolution = Pair( //will use this to change resolution
+            Gdx.graphics.getWidth(),
+            Gdx.graphics.getHeight())
+    var compresion = 1 //compression level
+    var gradualCompression = false
+        //camera setting, if the camera is closer the compression will decrease
+    var fixedCamera = false
+
+
+
+
+
+
 
     var running = AtomicBoolean(true)
-    var pause = AtomicBoolean(false)
+    var pause = AtomicBoolean(true)
 
     //-------GUI controlls-----
-    var fixedCamera = false
+    var fixedCamera = true
 
 
     var cam: PerspectiveCamera? = null
@@ -88,7 +108,7 @@ class Space : InputAdapter(), ApplicationListener {
         database.connect("lidar", "mindhash")
     }
 
-    override fun create() {
+    fun create() {
         modelBatch = ModelBatch()
         //-----------Camera Creation------------------
         cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
@@ -111,9 +131,6 @@ class Space : InputAdapter(), ApplicationListener {
         frames = ConcurrentLinkedQueue<LidarFrame>()
 
         //---------Model Population----------
-        var modelBuilder = ModelBuilder()
-
-
         decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -145,26 +162,51 @@ class Space : InputAdapter(), ApplicationListener {
         }
 
 
+        modelBuilder.begin()
+        modelBuilder.node().id = "Floor"
+        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
+        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
+        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+        var material = Material(TextureAttribute.createDiffuse(pink))
+        modelBuilder.end()
+        bottomBlock = modelBuilder.createBox(
+                10f, 10f, .5f,
+                material,
+                (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+        )
+
         // -----------Bottom Text--------
         stage = Stage()
         font = BitmapFont()
         label = Label(" ", LabelStyle(font, Color.WHITE))
         stage!!.addActor(label)
         string = StringBuilder()
-
-
         filepop()
         newFrame()
+
+
+        GuiButtons(this)
+
+        plexer = InputMultiplexer(stage, camController)
+        Gdx.input.inputProcessor = plexer
+
     }
 
 
-    /**
-     * this is the render method
-     * it is called 60 times per second
-     * it renders the environment and the camera within
-     */
     override fun render() {
-//        camController!!.update()
+        camController!!.update()
+
+    override fun hide() {
+        TODO("Not yet implemented")
+    }
+
+    override fun show() {
+        create()
+    }
+
+
+    override fun render(delta: Float) {
+        //        camController!!.update()
 
 
         campButtonpress()
@@ -203,6 +245,7 @@ class Space : InputAdapter(), ApplicationListener {
         stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
         errMessage = ""
+
 
     }
 
