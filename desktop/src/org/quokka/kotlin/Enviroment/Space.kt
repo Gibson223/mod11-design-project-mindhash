@@ -52,7 +52,7 @@ class Space: Screen {
             Gdx.graphics.getHeight())
     var compresion = 1 //compression level
     var gradualCompression = false
-        //camera setting, if the camera is closer the compression will decrease
+    //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = false
 
 
@@ -250,7 +250,7 @@ class Space: Screen {
      */
     fun newFrame() {
         timer("Array Creator", period = 100, initialDelay = 100) {
-            if (pause.get() == false && frames!!.isNotEmpty()) {
+            if (pause.get() != false && frames!!.isNotEmpty()) {
                 if (compressed == false) {
                     val f = frames!!.poll()
                     decals = f.coords.map {
@@ -291,7 +291,7 @@ class Space: Screen {
 
     fun filepop() {
         timer("Array Creator", period = 1000, initialDelay = 0) {
-            if (pause.get() == false) {
+            if (pause.get() != false) {
                 if (local == true) { // local for testing purposes only, it uses data from a .bag file
                     val ldrrdr = LidarReader()
                     var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + lidarFPS)
@@ -437,7 +437,7 @@ class Space: Screen {
         var objects = ArrayList<Decal>(15) //end result of the method
 
         var map = HashMap<LidarCoord, Int>()
-                //map containing the coordinates as key and the number of points approximated to that point as value
+        //map containing the coordinates as key and the number of points approximated to that point as value
 
         //if the frame is empty (which should never be) add a dummy decal
         if (frames!!.isEmpty()) {
@@ -453,7 +453,7 @@ class Space: Screen {
 
         crtFrame.coords.forEach { c ->
             val divisions = decidDivisions(c)
-                //calculate the compression power(1/2/3/4) based on the distance from the camera
+            //calculate the compression power(1/2/3/4) based on the distance from the camera
 
             //dummy value which contains the point to which the currently analyzed point is approximated to
             // it is the point itself if the camera is close enough
