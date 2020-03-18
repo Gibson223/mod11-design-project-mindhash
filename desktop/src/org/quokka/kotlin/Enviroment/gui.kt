@@ -123,15 +123,43 @@ fun GuiButtons(space: Space){
     arrows_button = Image(Texture("Screen3D/arrows_button.png"))
     arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
+    arrows_button.addListener(object: ClickListener(){
+        override fun clicked(event: InputEvent?, x: Float, y: Float) {
+            val x1 = arrows_button.width/3
+            val x2 = 2*arrows_button.width/3
+            val x3 = arrows_button.width
+
+            val y1 = arrows_button.height/3
+            val y2 = 2*arrows_button.height/3
+            val y3 = arrows_button.height
+
+            val delta = Gdx.graphics.deltaTime
+            when {
+                x < x1 && y < y1 -> println("q1")
+                x < x2 && y < y1 -> space.rotateDown(delta)
+                x < x3 && y < y1 -> println("q3")
+
+                x < x1 && y < y2 -> space.rotateLeft(delta)
+                x < x2 && y < y2 -> println("center")
+                x < x3 && y < y2 -> space.rotateRight(delta)
+
+                x < x1 && y < y3 -> println("q7")
+                x < x2 && y < y3 -> space.rotateUp(delta)
+                x < x3 && y < y3 -> println("q9")
+
+            }
+        }
+    })
+
+
 
     var earth_button: Image? = null
     earth_button = Image(Texture("Screen3D/earth_button.png"))
-    earth_button.setPosition(Gdx.graphics.width - 215.toFloat(), 70f)
+    earth_button.setPosition(Gdx.graphics.width - 185.toFloat(), 60f)
     space.stage!!.addActor(earth_button)
-    earth_button.addListener(object: InputListener(){
-        override fun keyDown(event: InputEvent?, keycode: Int): Boolean {
-            println("entered earth")
-            return false
+    earth_button.addListener(object: ClickListener(){
+        override fun clicked(event: InputEvent?, x: Float, y: Float) {
+            println("earth clicked")
         }
     })
 
