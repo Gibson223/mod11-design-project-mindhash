@@ -35,7 +35,7 @@ import kotlin.math.sqrt
 class Space : InputAdapter(), ApplicationListener {
 
     val compressed = false
-    val local = true
+    val local = false
     var axis = false
 
     var lidarFPS = 12

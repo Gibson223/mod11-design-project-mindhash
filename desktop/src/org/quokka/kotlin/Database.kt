@@ -135,7 +135,7 @@ class Database {
         props.setProperty("user", user)
         props.setProperty("password", password)
         props.setProperty("ssl", "false")
-//        conn = DriverManager.getConnection(DATABASE_URL, props)
+        conn = DriverManager.getConnection(DATABASE_URL, props)
     }
 
     /**
