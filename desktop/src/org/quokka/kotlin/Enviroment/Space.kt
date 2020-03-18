@@ -43,13 +43,27 @@ class Space: Screen {
     val local = true
     var axis = false
 
-    var lidarFPS = 12
+    //-------__Preferancess__---------
+    var lidarFPS = 12 //lidar fps 5/10/20
+    var playbackFPS = 0 // manually fix fps
+    var memory =0 // we're not sure yet how this will work
+    var resolution = Pair( //will use this to change resolution
+            Gdx.graphics.getWidth(),
+            Gdx.graphics.getHeight())
+    var compresion = 1 //compression level
+    var gradualCompression = false
+        //camera setting, if the camera is closer the compression will decrease
+    var fixedCamera = false
+
+
+
+
+
+
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(true)
 
-    //-------GUI controlls-----
-    var fixedCamera = false
 
 
     var cam: PerspectiveCamera? = null
