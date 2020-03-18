@@ -1,20 +1,19 @@
 package org.quokka.kotlin.Enviroment
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.InputListener
-import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.mygdx.game.desktop.Space
 
-import com.mygdx.game.desktop.Space.*
-import java.io.OutputStream
+fun save_settings(setdialog: Dialog){
+    val prefs: Preferences = Gdx.app.getPreferences("MindhashPrefs")
+
+}
 
 fun settingsdialog(): Dialog {
     val font = BitmapFont()
@@ -96,6 +95,10 @@ fun settingsdialog(): Dialog {
     dialog.contentTable.add(save_button)
 
     return dialog
+
+    fun save_settings(){
+
+    }
 }
 
 fun GuiButtons(space: Space){
