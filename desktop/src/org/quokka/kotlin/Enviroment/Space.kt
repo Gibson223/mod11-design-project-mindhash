@@ -139,24 +139,6 @@ class Space: Screen {
         }
 
 
-        for (i in -50..50) {
-            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dx.setPosition(i * -1f, -1f, -1f)
-            dx.lookAt(cam!!.position, cam!!.up)
-            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dy.setPosition(-1f, -1f * i, -1f)
-            dy.lookAt(cam!!.position, cam!!.up)
-            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dz.setPosition(-1f, -1f, i * -1f)
-            dz.lookAt(cam!!.position, cam!!.up)
-            axisDecals.add(dx)
-            axisDecals.add(dy)
-            axisDecals.add(dz)
-        }
-
-
-
-
         // -----------Bottom Text--------
         stage = Stage()
         font = BitmapFont()
