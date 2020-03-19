@@ -5,10 +5,12 @@ import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
+import kotlin.math.absoluteValue
 
 fun save_settings(setdialog: Dialog){
     val prefs: Preferences = Gdx.app.getPreferences("MindhashPrefs")
@@ -81,7 +83,7 @@ fun settingsdialog(space: Space): Dialog {
     back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("quit settings menu")
-            space.pause()
+            space.pause.set(true)
             dialog.hide()
         }
     })
@@ -96,15 +98,10 @@ fun settingsdialog(space: Space): Dialog {
     dialog.contentTable.add(save_button)
 
     return dialog
-
-    fun save_settings(){
-
-    }
 }
 
 fun GuiButtons(space: Space){
-    var bf_button: Image? = null
-    bf_button = Image(Texture("Screen3D/bf_button.png"))
+    var bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
     space.stage!!.addActor(bf_button)
     bf_button.addListener(object : ClickListener() {
@@ -113,8 +110,7 @@ fun GuiButtons(space: Space){
         }
     })
 
-    var ff_button: Image? = null
-    ff_button = Image(Texture("Screen3D/ff_button.png"))
+    var ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
     ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
     space.stage!!.addActor(ff_button)
     ff_button.addListener(object : ClickListener() {
@@ -123,9 +119,8 @@ fun GuiButtons(space: Space){
         }
     })
 
-    var arrows_button: Image? = null
-    arrows_button = Image(Texture("Screen3D/arrows_button.png"))
-    arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
+    var arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
+    arrows_button.setPosition(Gdx.graphics.width - 1050.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object: ClickListener(){
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -140,15 +135,15 @@ fun GuiButtons(space: Space){
             val delta = Gdx.graphics.deltaTime
             when {
                 x < x1 && y < y1 -> println("q1")
-                x < x2 && y < y1 -> space.rotateDown(delta)
+                x < x2 && y < y1 -> space.moveDown(delta)
                 x < x3 && y < y1 -> println("q3")
 
-                x < x1 && y < y2 -> space.rotateLeft(delta)
+                x < x1 && y < y2 -> space.moveLeft(delta)
                 x < x2 && y < y2 -> println("center")
-                x < x3 && y < y2 -> space.rotateRight(delta)
+                x < x3 && y < y2 -> space.moveRight(delta)
 
                 x < x1 && y < y3 -> println("q7")
-                x < x2 && y < y3 -> space.rotateUp(delta)
+                x < x2 && y < y3 -> space.moveUp(delta)
                 x < x3 && y < y3 -> println("q9")
 
             }
@@ -157,19 +152,47 @@ fun GuiButtons(space: Space){
 
 
 
-    var earth_button: Image? = null
-    earth_button = Image(Texture("Screen3D/earth_button.png"))
+    var earth_button: Image = Image(Texture("Screen3D/earth_button.png"))
     earth_button.setPosition(Gdx.graphics.width - 185.toFloat(), 60f)
     space.stage!!.addActor(earth_button)
     earth_button.addListener(object: ClickListener(){
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
         }
+
+        override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+            return super.touchDown(event, x, y, pointer, button)
+        }
+
+        override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+            super.touchDragged(event, x, y, pointer)
+            val o =  x - 50
+            val l = y - 50
+            val delta = Gdx.graphics.deltaTime
+            if( l > 0 && o.absoluteValue < l){
+                space.rotateUp(delta)
+            } else if ( l < 0 && o.absoluteValue < l.absoluteValue){
+                space.rotateDown(delta)
+            } else if(o < 0 && l.absoluteValue < o.absoluteValue){
+                space.rotateLeft(delta)
+            } else if(o > 0 && l.absoluteValue < o){
+                space.rotateRight(delta)
+            }
+//
+//
+//
+//            var dist = space.disntaceAB2(o,l,x,y)
+//            space.cam!!.rotate(
+//                    Vector3(space.cam!!.direction).rotate(Vector3(o,space.cam!!.up.y,l),90f),
+//                    Gdx.graphics.deltaTime*dist)
+//            space.cam!!.update()
+//            println("distance: $dist")
+
+        }
     })
 
 
-    var pause_button: Image? = null
-    pause_button = Image(Texture("Screen3D/pause_button.png"))
+    var pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
     pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
     space.stage!!.addActor(pause_button)
     pause_button.addListener(object : ClickListener() {
@@ -179,8 +202,7 @@ fun GuiButtons(space: Space){
         }
     })
 
-    var reset_button: Image? = null
-    reset_button = Image(Texture("Screen3D/reset_button.png"))
+    var reset_button: Image = Image(Texture("Screen3D/reset_button.png"))
     reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
     space.stage!!.addActor(reset_button)
     reset_button.addListener(object : ClickListener() {
@@ -192,13 +214,13 @@ fun GuiButtons(space: Space){
 
     val settings_dialog = settingsdialog(space)
 
-    var settings_button: Image? = null
-    settings_button = Image(Texture("Screen3D/setting_button.png"))
+    var settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
     settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(settings_button)
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
+            space.pause.set(false)
             settings_dialog.show(space.stage)
             space.pause()
 
@@ -206,8 +228,7 @@ fun GuiButtons(space: Space){
     })
 
 
-    var home_button: Image? = null
-    home_button = Image(Texture("Screen3D/home_button.png"))
+    var home_button: Image = Image(Texture("Screen3D/home_button.png"))
     home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(home_button)
     home_button.addListener(object : ClickListener() {

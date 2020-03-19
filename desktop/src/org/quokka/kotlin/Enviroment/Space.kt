@@ -38,6 +38,7 @@ class Space: Screen {
     lateinit var plexer: InputMultiplexer
     val local = true
     var axis = false
+    var newLidaarFPS = AtomicBoolean(false)
 
     //-------__Preferancess__---------
     var newLidaarFPS = AtomicBoolean(false)
@@ -48,7 +49,6 @@ class Space: Screen {
     var gradualCompression = true
     //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = false
-    var framesIndex = 2400 //this is basically the timestam
 
 
 
@@ -203,6 +203,8 @@ class Space: Screen {
         string!!.setLength(0)
         string!!.append(errMessage)
         string!!.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
+        string!!.append(" cma position : ").append(cam!!.position)
+        string!!.append(" cam pos origitn : ").append(cam!!.up)
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
@@ -321,6 +323,18 @@ class Space: Screen {
 //    }
 
 
+    //--------Buttons methods-------------
+
+    fun changeResolution(height: Int, width: Int){
+        Gdx.graphics.setWindowedMode(width, height);
+    }
+
+//    fun setFullscreen(boolean: Boolean) {
+//        Gdx.graphics.setFullscreenMode(
+//                DisplayMode(2, 2, 10, 3)0
+//    }
+
+
 
 
     //------------------------------------------------
@@ -395,6 +409,22 @@ class Space: Screen {
             return result
         }
 
+    fun distanceAB3(a: LidarCoord, b: Vector3):Float{
+        return sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+
+    fun distanceAB3(a: Vector3, b: Vector3):Float{
+        return sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+
+    fun disntaceAB2(x: Float,y:Float, a:Float, b:Float):Float{
+        return sqrt((x-a).pow(2) + (y-b).pow(2))
+    }
+
     /**
      * This methods decied the val of compression of a point
      * depending on the distance from the camera
@@ -405,7 +435,7 @@ class Space: Screen {
     fun decidDivisions(coord: LidarCoord): Int {
         val camp = cam?.position
         if (camp != null) {
-            val distance =
+            val distance = distanceAB3(coord,camp)
                     sqrt((coord.x - camp.x).pow(2)
                             + (coord.y - camp.y).pow(2)
                             + (coord.z - camp.z).pow(2))
@@ -575,7 +605,7 @@ class Space: Screen {
         val rotationAngle = 50f
 
     val camSpeed = 10f
-    val rotationAngle = 50f
+    val rotationAngle = 75f
 
         fun campButtonpress() {
 
@@ -612,10 +642,12 @@ class Space: Screen {
             cam!!.update()
         }
 
-        fun moveForward(delta: Float) {
-            cam!!.translate(Vector3(cam!!.direction).scl(delta * camSpeed))
-            cam!!.update()
-        }
+    fun resetCamera(){
+        cam!!.position[0f, 0f] = 30f
+        cam!!.lookAt(0f, 0f, 0f)
+        cam!!.up.set(0f,1f,0f)
+        cam!!.update()
+    }
 
         fun moveBackward(delta: Float) {
             cam!!.translate(Vector3(cam!!.direction).scl(-delta * camSpeed))
