@@ -4,10 +4,8 @@ import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
 import LidarData.LidarReader
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
-import com.badlogic.gdx.InputMultiplexer
-import com.badlogic.gdx.Screen
+import com.badlogic.gdx.*
+import com.badlogic.gdx.Graphics.DisplayMode
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -39,25 +37,19 @@ import kotlin.math.sqrt
 
 class Space: Screen {
     lateinit var plexer: InputMultiplexer
-    val compressed = true
     val local = true
     var axis = false
 
     //-------__Preferancess__---------
+    var newLidaarFPS = AtomicBoolean(false)
     var lidarFPS = 12 //lidar fps 5/10/20
     var playbackFPS = 0 // manually fix fps
     var memory =0 // we're not sure yet how this will work
-    var resolution = Pair( //will use this to change resolution
-            Gdx.graphics.getWidth(),
-            Gdx.graphics.getHeight())
-    var compresion = 1 //compression level
-    var gradualCompression = false
+    var compresion = 4 //compression level
+    var gradualCompression = true
     //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = false
-
-
-
-
+    var framesIndex = 2400 //this is basically the timestam
 
 
 
@@ -80,14 +72,11 @@ class Space: Screen {
 
 
     var spaceObjects: ArrayList<ModelInstance>? = null
-    var instance: ModelInstance? = null
 
     var bottomBlock: Model? = null
 
-    var pink: Texture? = null
 
     var frames: ConcurrentLinkedQueue<LidarFrame>? = null
-    var framesIndex = 2400
 
     var environment: Environment? = null
 
@@ -157,21 +146,6 @@ class Space: Screen {
         }
 
 
-        for(i in -50..50){
-            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dx.setPosition(i*-1f,-1f,-1f)
-            dx.lookAt(cam!!.position, cam!!.up)
-            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dy.setPosition(-1f,-1f*i,-1f)
-            dy.lookAt(cam!!.position, cam!!.up)
-            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dz.setPosition(-1f,-1f,i*-1f)
-            dz.lookAt(cam!!.position, cam!!.up)
-            axisDecals.add(dx)
-            axisDecals.add(dy)
-            axisDecals.add(dz)
-        }
-
         // -----------Bottom Text--------
         stage = Stage()
         font = BitmapFont()
@@ -234,8 +208,7 @@ class Space: Screen {
 
         string!!.setLength(0)
         string!!.append(errMessage)
-        string!!.append(" up : ").append(cam!!.up)
-        string!!.append(" direction: ").append(cam!!.direction)
+        string!!.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
@@ -247,23 +220,33 @@ class Space: Screen {
     /**
      * this methods is called every tenth of a seconds
      * to load new data in the environment
+     * the rate at which the method sis called results in
+     * the LiDAR FPS
      */
     fun newFrame() {
-        timer("Array Creator", period = 100, initialDelay = 100) {
-            if (pause.get() != false && frames!!.isNotEmpty()) {
-                if (compressed == false) {
-                    val f = frames!!.poll()
-                    decals = f.coords.map {
-                        val d = Decal.newDecal(0.08f, 0.08f, decalTextureRegion)
-                        d.setPosition(it.x, it.y, it.z)
-                        d.lookAt(cam!!.position, cam!!.up)
-                        colorDecal(d, blueRedFade)
-                        d
+
+        timer("Environment population", period = lidarFPS.toLong()*10 , initialDelay = 100) {
+            if(newLidaarFPS.get() == false) { // the lidarFPS has not been changed
+                if (pause.get() != false && frames!!.isNotEmpty()) {
+                    if (compresion == 0) {
+                        val f = frames!!.poll()
+                        decals = f.coords.map {
+                            val d = Decal.newDecal(0.08f, 0.08f, decalTextureRegion)
+                            d.setPosition(it.x, it.y, it.z)
+                            d.lookAt(cam!!.position, cam!!.up)
+                            colorDecal(d, blueRedFade)
+                            d
+                        }
+                    } else {
+                        decals = compressPoints()
+                        decals.forEach { d -> colorDecal(d, blueRedFade) }
                     }
-                } else {
-                    decals = compressPoints()
-                    decals.forEach { d -> colorDecal(d, blueRedFade) }
                 }
+            } else {    // lidarFPS was changed, cancel the current task and start a new one
+                        // with correct period
+                this.cancel()
+                newLidaarFPS.set(false)
+                newFrame()
             }
         }
     }
@@ -318,6 +301,23 @@ class Space: Screen {
     }
 
 
+
+    //--------Buttons methods-------------
+
+    fun changeResolution(height: Int, width: Int){
+        Gdx.graphics.setWindowedMode(width, height);
+    }
+
+//    fun setFullscreen(boolean: Boolean) {
+//        Gdx.graphics.setFullscreenMode(
+//                DisplayMode(2, 2, 10, 3)0
+//    }
+
+
+
+
+    //------------------------------------------------
+
     /**
      * this methods returns the parent of a point
      * the parent of a point is a point to which the initial point is aproximated
@@ -371,13 +371,13 @@ class Space: Screen {
                 in margin * -2..margin * -1 -> result = a.toInt() + margin * 1 * sign(a)
                 in margin * -3..margin * -2 -> result = a.toInt() + margin * 2 * sign(a)
             }
-        } else throw Error("Divisions not prepared for that ")
+        } else throw Error("Divisions not prepared for divisions to be $divisions  ")
         return result
     }
 
 
     /**
-     * This methods decied the vel of compression of a point
+     * This methods decied the val of compression of a point
      * depending on the distance from the camera
      * @param coord is the coordinate being checked
      * @return 1,2,3,4 number of divisions,
@@ -392,17 +392,36 @@ class Space: Screen {
                             + (coord.z - camp.z).pow(2))
 
             val substraction = distance - dfcm
-            if (substraction < 0) {
-                return 1
-            } else if (substraction < dfcm) {
-                return 4
-            } else if (substraction < 2 * dfcm) {
-                return 3
-            } else {
-                return 2
+
+
+
+            when (compresion) {
+                1 -> return 1
+                2 -> if (substraction < 0) {
+                        return 1
+                    } else if (substraction < dfcm) {
+                        return 4
+                    } else if (substraction < 2 * dfcm) {
+                        return 3
+                    } else {
+                        return 2
+                    }
+                3 -> if (substraction < 0) {
+                        return 1
+                    } else if (substraction < dfcm) {
+                        return 4
+                    } else {
+                        return 3
+                    }
+                4 -> if (substraction < 0) {
+                        return 1
+                    } else {
+                        return 4
+                    }
             }
 
         } else throw Error("Could not find camera position in decidDivisions")
+        return -1
     }
 
 
@@ -452,7 +471,10 @@ class Space: Screen {
         var crtFrame = frames!!.poll()//get next frame
 
         crtFrame.coords.forEach { c ->
-            val divisions = decidDivisions(c)
+            var divisions = compresion //level of compression
+            if(gradualCompression == true && compresion != 1) {
+                divisions = decidDivisions(c) //has to be deiced based on distance from camera
+            }
             //calculate the compression power(1/2/3/4) based on the distance from the camera
 
             //dummy value which contains the point to which the currently analyzed point is approximated to
@@ -507,13 +529,17 @@ class Space: Screen {
 
 
     /**
+     * methods for translating the camera through space
      * @author Robert
+     * go up down left right from the point of view of the camera
+     * go forward and backwards
+     * rotate up down left right
      */
     //-------Camera Control Methods-----------------------
 
 
-    val camSpeed = 100f
-    val rotationAngle = 500f
+    val camSpeed = 10f
+    val rotationAngle = 50f
 
 
     fun campButtonpress() {

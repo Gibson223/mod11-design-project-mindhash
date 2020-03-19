@@ -174,6 +174,7 @@ fun GuiButtons(space: Space){
     pause_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked PAUSE")
+            space.pause()
         }
     })
 
@@ -212,6 +213,25 @@ fun GuiButtons(space: Space){
             println("clicked HOME")
         }
     })
+
+
+    fun changLidarFPS(newLFPS: Int){
+        space.lidarFPS = newLFPS
+        space.newLidaarFPS.set(true)
+    }
+
+    fun changePlaybackFPS(newFPS: Int){
+        space.playbackFPS = newFPS
+    }
+
+    fun changeResolution(height: Int, width: Int){
+        space.changeResolution(height,width)
+    }
+
+    fun switchFixedCamera(){
+        space.fixedCamera == !space.fixedCamera
+    }
+
 
 
 }
