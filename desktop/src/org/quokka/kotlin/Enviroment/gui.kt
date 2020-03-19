@@ -4,10 +4,12 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
+import kotlin.math.absoluteValue
 
 class Settings(space: Space) {
     val font = BitmapFont()
@@ -149,7 +151,7 @@ fun GuiButtons(space: Space) {
     })
 
     var arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
-    arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
+    arrows_button.setPosition(Gdx.graphics.width - 1050.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -164,15 +166,15 @@ fun GuiButtons(space: Space) {
             val delta = Gdx.graphics.deltaTime
             when {
                 x < x1 && y < y1 -> println("q1")
-                x < x2 && y < y1 -> space.rotateDown(delta)
+                x < x2 && y < y1 -> space.moveDown(delta)
                 x < x3 && y < y1 -> println("q3")
 
-                x < x1 && y < y2 -> space.rotateLeft(delta)
+                x < x1 && y < y2 -> space.moveLeft(delta)
                 x < x2 && y < y2 -> println("center")
-                x < x3 && y < y2 -> space.rotateRight(delta)
+                x < x3 && y < y2 -> space.moveRight(delta)
 
                 x < x1 && y < y3 -> println("q7")
-                x < x2 && y < y3 -> space.rotateUp(delta)
+                x < x2 && y < y3 -> space.moveUp(delta)
                 x < x3 && y < y3 -> println("q9")
 
             }
@@ -186,6 +188,36 @@ fun GuiButtons(space: Space) {
     earth_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
+        }
+
+        override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+            return super.touchDown(event, x, y, pointer, button)
+        }
+
+        override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+            super.touchDragged(event, x, y, pointer)
+            val o =  x - 50
+            val l = y - 50
+            val delta = Gdx.graphics.deltaTime
+            if( l > 0 && o.absoluteValue < l){
+                space.rotateUp(delta)
+            } else if ( l < 0 && o.absoluteValue < l.absoluteValue){
+                space.rotateDown(delta)
+            } else if(o < 0 && l.absoluteValue < o.absoluteValue){
+                space.rotateLeft(delta)
+            } else if(o > 0 && l.absoluteValue < o){
+                space.rotateRight(delta)
+            }
+//
+//
+//
+//            var dist = space.disntaceAB2(o,l,x,y)
+//            space.cam!!.rotate(
+//                    Vector3(space.cam!!.direction).rotate(Vector3(o,space.cam!!.up.y,l),90f),
+//                    Gdx.graphics.deltaTime*dist)
+//            space.cam!!.update()
+//            println("distance: $dist")
+
         }
     })
 
