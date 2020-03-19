@@ -25,7 +25,9 @@ import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.Enviroment.GuiButtons
+import org.quokka.kotlin.Enviroment.Settings
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.timer
@@ -57,8 +59,10 @@ class Space: Screen {
 
 
 
-    var cam: PerspectiveCamera? = null
-    var camController: CameraInputController? = null
+    var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
+
+    var camController = CameraInputController(cam)
+
 
     /**
      * dfcm distance from camera margin
@@ -67,33 +71,52 @@ class Space: Screen {
      */
     val dfcm = 15
 
-    var modelBatch: ModelBatch? = null
+    var modelBatch = ModelBatch()
 
 
-    var spaceObjects: ArrayList<ModelInstance>? = null
+
+    var spaceObjects = ArrayList<ModelInstance>(1) // TODO: remove? no uses
+
 
     var bottomBlock: Model? = null
 
 
-    var frames: ConcurrentLinkedQueue<LidarFrame>? = null
+    var frames = ConcurrentLinkedQueue<LidarFrame>()
 
-    var environment: Environment? = null
 
-    var stage: Stage? = null
-    var font: BitmapFont? = null
-    var label: Label? = null
-    var string: StringBuilder? = null
+    var environment = Environment()
+
+
+    val stage = Stage()
+    val font = BitmapFont()
+    val label = Label(" ", LabelStyle(font, Color.WHITE))
+    val string = StringBuilder()
     var errMessage = " "
 
     val database: Database
-    var decalBatch: DecalBatch? = null
+    var decalBatch = DecalBatch(CameraGroupStrategy(cam))
+
+    val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+
+    val settings = Settings(this)
 
     var decals: List<Decal> = listOf()
     val axisDecals: ArrayList<Decal> = ArrayList(30)
 
-    lateinit var blueYellowFade: Array<TextureRegion>
-    lateinit var blueRedFade: Array<TextureRegion>
-    lateinit var decalTextureRegion: TextureRegion
+    val blueRedFade = Array(256) { i ->
+        val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+        pix.setColor(i / 255f, 0f, 1 - i / 255f, 1f)
+        pix.drawPixel(0, 0)
+        TextureRegion(Texture(pix))
+    }
+    val blueYellowFade = Array(256) { i ->
+        val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+        pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
+        pix.drawPixel(0, 0)
+        TextureRegion(Texture(pix))
+    }
+    var decalTextureRegion = TextureRegion(Texture(pix))
+
 
 
     init {
@@ -102,60 +125,37 @@ class Space: Screen {
     }
 
     fun create() {
-        modelBatch = ModelBatch()
+        GuiButtons(this)
         //-----------Camera Creation------------------
-        cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-        cam!!.position[0f, 0f] = 30f
-        cam!!.lookAt(0f, 0f, 0f)
-        cam!!.near = .01f
-        cam!!.far = 1000f
-        cam!!.update()
+        cam.position[0f, 0f] = 30f
+        cam.lookAt(0f, 0f, 0f)
+        cam.near = .01f
+        cam.far = 1000f
+        cam.update()
 
         //---------Camera controls--------
-        camController = CameraInputController(cam)
-        environment = Environment()
-        environment!!.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
-        environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
+        environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
+        environment.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
 
 
-        spaceObjects = ArrayList<ModelInstance>(1)
 
 
-        frames = ConcurrentLinkedQueue<LidarFrame>()
         //---------Model Population----------
-        decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
-        val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
-        decalTextureRegion = TextureRegion(Texture(pix))
 
-        blueRedFade = Array(256) { i ->
-            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-            pix.setColor(i / 255f, 0f, 1 - i / 255f, 1f)
-            pix.drawPixel(0, 0)
-            TextureRegion(Texture(pix))
-        }
-        blueYellowFade = Array(256) { i ->
-            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-            pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
-            pix.drawPixel(0, 0)
-            TextureRegion(Texture(pix))
-        }
+
 
 
         // -----------Bottom Text--------
-        stage = Stage()
-        font = BitmapFont()
-        label = Label(" ", LabelStyle(font, Color.WHITE))
-        stage!!.addActor(label)
-        string = StringBuilder()
+        stage.addActor(label)
         filepop()
         newFrame()
 
 
-        GuiButtons(this)
+
 
         plexer = InputMultiplexer(stage, camController)
         Gdx.input.inputProcessor = plexer
@@ -174,14 +174,14 @@ class Space: Screen {
 
 
     override fun render(delta: Float) {
-        //        camController!!.update()
+        //        camController.update()
 
 
         campButtonpress()
 
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
-            cam!!.lookAt(0f, 0f, 0f)
+            cam.lookAt(0f, 0f, 0f)
         }
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
@@ -189,30 +189,30 @@ class Space: Screen {
 
 
         decals.forEach {d ->
-            if (cam!!.frustum.boundsInFrustum(d.x,d.y,d.z,.3f,.3f,.3f) == true ) {
-                decalBatch!!.add(d)
+            if (cam.frustum.boundsInFrustum(d.x,d.y,d.z,.3f,.3f,.3f) == true ) {
+                decalBatch.add(d)
             }
         }
 
         if(axis == true ) {
             axisDecals.forEach { d ->
-                if (cam!!.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
-                    decalBatch!!.add(d)
+                if (cam.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
+                    decalBatch.add(d)
                 }
             }
         }
 
-        decalBatch!!.flush()
+        decalBatch.flush()
 
 
-        string!!.setLength(0)
-        string!!.append(errMessage)
-        string!!.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
-        string!!.append(" cma position : ").append(cam!!.position)
-        string!!.append(" cam pos origitn : ").append(cam!!.up)
-        label!!.setText(string)
-        stage!!.act(Gdx.graphics.getDeltaTime())
-        stage!!.draw()
+        string.setLength(0)
+        string.append(errMessage)
+        string.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
+        string.append(" cma position : ").append(cam.position)
+        string.append(" cam pos origitn : ").append(cam.up)
+        label.setText(string)
+        stage.act(Gdx.graphics.getDeltaTime())
+        stage.draw()
         errMessage = ""
 
 
@@ -228,13 +228,13 @@ class Space: Screen {
 
         timer("Environment population", period = lidarFPS.toLong()*10 , initialDelay = 100) {
             if(newLidaarFPS.get() == false) { // the lidarFPS has not been changed
-                if (pause.get() != false && frames!!.isNotEmpty()) {
+                if (pause.get() != false && frames.isNotEmpty()) {
                     if (compresion == 0) {
-                        val f = frames!!.poll()
+                        val f = frames.poll()
                         decals = f.coords.map {
                             val d = Decal.newDecal(0.08f, 0.08f, decalTextureRegion)
                             d.setPosition(it.x, it.y, it.z)
-                            d.lookAt(cam!!.position, cam!!.up)
+                            d.lookAt(cam.position, cam.up)
                             colorDecal(d, blueRedFade)
                             d
                         }
@@ -281,21 +281,21 @@ class Space: Screen {
                     var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + lidarFPS)
                     framesIndex += lidarFPS
                     intermetidate.forEach { f ->
-                        frames!!.add(f)
+                        frames.add(f)
                     }
                 } else { //if local == false then the data is take from the database
-                    if (frames!!.size < 20) {
+                    if (frames.size < 20) {
                         val intermetidate = database.getFrames(1, framesIndex, lidarFPS)
                         framesIndex += lidarFPS
                         intermetidate.forEach { f ->
-                            frames!!.add(f)
+                            frames.add(f)
                         }
 
                     }
                 }
             } else {
                 decals.forEach { d->
-                    d.lookAt(cam!!.position,cam!!.up)
+                    d.lookAt(cam.position,cam.up)
                 }
             }
         }
@@ -455,8 +455,8 @@ class Space: Screen {
 
 
     override fun dispose() {
-        modelBatch!!.dispose()
-        bottomBlock!!.dispose()
+        modelBatch.dispose()
+        bottomBlock?.dispose()
     }
 
     override fun resume() {}
@@ -488,16 +488,16 @@ class Space: Screen {
         //map containing the coordinates as key and the number of points approximated to that point as value
 
         //if the frame is empty (which should never be) add a dummy decal
-        if (frames!!.isEmpty()) {
+        if (frames.isEmpty()) {
             val d = Decal.newDecal(0.5f, 0.5f, decalTextureRegion)
             d.setPosition(0f, 0f, 0f)
-            d.lookAt(cam!!.position, cam!!.up)
+            d.lookAt(cam.position, cam.up)
             println("empty frame")
             objects.add(d)
             return objects
         }
 
-        var crtFrame = frames!!.poll()//get next frame
+        var crtFrame = frames.poll()//get next frame
 
         crtFrame.coords.forEach { c ->
             var divisions = compresion //level of compression
@@ -549,7 +549,7 @@ class Space: Screen {
                 d.setDimensions(0.3f,0.3f)
             }
             d.setPosition(k.x, k.y, k.z)
-            d.lookAt(cam!!.position, cam!!.up)
+            d.lookAt(cam.position, cam.up)
             objects.add(d)
         }
 
@@ -605,71 +605,71 @@ class Space: Screen {
     }
 
     fun resetCamera(){
-        cam!!.position[0f, 0f] = 30f
-        cam!!.lookAt(0f, 0f, 0f)
-        cam!!.up.set(0f,1f,0f)
-        cam!!.update()
+        cam.position[0f, 0f] = 30f
+        cam.lookAt(0f, 0f, 0f)
+        cam.up.set(0f,1f,0f)
+        cam.update()
     }
 
     fun moveForward(delta: Float){
-        cam!!.translate(Vector3(cam!!.direction).scl(delta * camSpeed))
-        cam!!.update()
+        cam.translate(Vector3(cam.direction).scl(delta * camSpeed))
+        cam.update()
     }
 
     fun moveBackward(delta: Float){
-        cam!!.translate(Vector3(cam!!.direction).scl(-delta * camSpeed))
-        cam!!.update()
+        cam.translate(Vector3(cam.direction).scl(-delta * camSpeed))
+        cam.update()
     }
 
     fun moveUp(delta: Float){
-        cam!!.translate(Vector3(cam!!.up).scl(delta * camSpeed))
-        cam!!.update()
+        cam.translate(Vector3(cam.up).scl(delta * camSpeed))
+        cam.update()
     }
 
     fun moveDown(delta: Float){
-        cam!!.translate(Vector3(cam!!.up).scl(-delta * camSpeed))
-        cam!!.update()
+        cam.translate(Vector3(cam.up).scl(-delta * camSpeed))
+        cam.update()
     }
 
     fun moveLeft(delta: Float){
-        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction,90f).scl(-delta * camSpeed))
-        cam!!.update()
+        cam.translate(Vector3(cam.up).rotate(cam.direction,90f).scl(-delta * camSpeed))
+        cam.update()
     }
 
     fun moveRight(delta: Float){
-        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction,90f).scl(delta * camSpeed))
-        cam!!.update()
+        cam.translate(Vector3(cam.up).rotate(cam.direction,90f).scl(delta * camSpeed))
+        cam.update()
     }
 
     fun rotateUp(delta: Float) {
-        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction,90f),delta*rotationAngle)
-        cam!!.update()
+        cam.rotate(Vector3(cam.up).rotate(cam.direction,90f),delta*rotationAngle)
+        cam.update()
     }
 
     fun rotateDown(delta: Float) {
-        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction,90f),-delta*rotationAngle)
-        cam!!.update()
+        cam.rotate(Vector3(cam.up).rotate(cam.direction,90f),-delta*rotationAngle)
+        cam.update()
     }
 
     fun rotateLeft(delta: Float) {
-        cam!!.rotate(cam!!.up,delta*rotationAngle)
-        cam!!.update()
+        cam.rotate(cam.up,delta*rotationAngle)
+        cam.update()
     }
 
     fun rotateRight(delta: Float) {
-        cam!!.rotate(cam!!.up,-delta*rotationAngle)
-        cam!!.update()
+        cam.rotate(cam.up,-delta*rotationAngle)
+        cam.update()
     }
 
     fun rotateZ(){
-        cam!!.rotate(Vector3(0f,0f,1f),rotationAngle)
-        cam!!.update()
+        cam.rotate(Vector3(0f,0f,1f),rotationAngle)
+        cam.update()
 
     }
 
     fun rotateZrev(){
-        cam!!.rotate(Vector3(0f,0f,1f),-rotationAngle)
-        cam!!.update()
+        cam.rotate(Vector3(0f,0f,1f),-rotationAngle)
+        cam.update()
 
     }
 

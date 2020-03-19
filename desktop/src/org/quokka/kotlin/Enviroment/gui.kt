@@ -119,7 +119,7 @@ class Settings(space: Space) {
     }
 
     private fun flushall() {
-        prefs.putInteger("LIDAR FPS", lidar_box.selected )
+        prefs.putInteger("LIDAR FPS", lidar_box.selected)
         prefs.putFloat("PLAYBACK FPS", playback_slider.value)
         prefs.putString("RESOLUTION", resolution_box.selected)
         prefs.putInteger("COMPRESSION", compression_box.selected)
@@ -130,22 +130,35 @@ class Settings(space: Space) {
 }
 
 fun GuiButtons(space: Space) {
-    val settings = Settings(space)
+    val settings = space.settings
 
-    var minus = Image(Texture("Screen3D/minus.png"))
+    val home_button: Image = Image(Texture("Screen3D/home_button.png"))
+    val settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
+
+    val settings_dialog = settings.dialog
+    val reset_button = Image(Texture("Screen3D/reset_button.png"))
+
+    val pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
+    val earth_button: Image = Image(Texture("Screen3D/earth_button.png"))
+    val arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
+    val ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
+    val bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
+    val plus = Image(Texture("Screen3D/plus.png"))
+    val minus = Image(Texture("Screen3D/minus.png"))
     val scaleMinusPlus = 0.2f
+
+
     minus.setScale(scaleMinusPlus)
-    minus.setPosition(Gdx.graphics.width - minus.width*scaleMinusPlus, Gdx.graphics.height*0.3f)
+    minus.setPosition(Gdx.graphics.width - minus.width * scaleMinusPlus, Gdx.graphics.height * 0.3f)
     space.stage!!.addActor(minus)
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
         }
-    })
 
-    var plus = Image(Texture("Screen3D/plus.png"))
+    })
     plus.setScale(scaleMinusPlus)
-    plus.setPosition(minus.x, minus.y + minus.height*scaleMinusPlus)
+    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
     space.stage!!.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -153,7 +166,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    var bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
     space.stage!!.addActor(bf_button)
     bf_button.addListener(object : ClickListener() {
@@ -162,7 +174,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    var ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
     ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
     space.stage!!.addActor(ff_button)
     ff_button.addListener(object : ClickListener() {
@@ -171,7 +182,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    var arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
     arrows_button.setPosition(Gdx.graphics.width - 1050.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
@@ -203,7 +213,6 @@ fun GuiButtons(space: Space) {
     })
 
 
-    var earth_button: Image = Image(Texture("Screen3D/earth_button.png"))
     earth_button.setPosition(Gdx.graphics.width - 185.toFloat(), 60f)
     space.stage!!.addActor(earth_button)
     earth_button.addListener(object : ClickListener() {
@@ -217,16 +226,16 @@ fun GuiButtons(space: Space) {
 
         override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
             super.touchDragged(event, x, y, pointer)
-            val o =  x - 50
+            val o = x - 50
             val l = y - 50
             val delta = Gdx.graphics.deltaTime
-            if( l > 0 && o.absoluteValue < l){
+            if (l > 0 && o.absoluteValue < l) {
                 space.rotateUp(delta)
-            } else if ( l < 0 && o.absoluteValue < l.absoluteValue){
+            } else if (l < 0 && o.absoluteValue < l.absoluteValue) {
                 space.rotateDown(delta)
-            } else if(o < 0 && l.absoluteValue < o.absoluteValue){
+            } else if (o < 0 && l.absoluteValue < o.absoluteValue) {
                 space.rotateLeft(delta)
-            } else if(o > 0 && l.absoluteValue < o){
+            } else if (o > 0 && l.absoluteValue < o) {
                 space.rotateRight(delta)
             }
 //
@@ -243,7 +252,6 @@ fun GuiButtons(space: Space) {
     })
 
 
-    var pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
     pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
     space.stage!!.addActor(pause_button)
     pause_button.addListener(object : ClickListener() {
@@ -253,7 +261,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    var reset_button: Image = Image(Texture("Screen3D/reset_button.png"))
     reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
     space.stage!!.addActor(reset_button)
     reset_button.addListener(object : ClickListener() {
@@ -263,9 +270,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    val settings_dialog = settings.dialog
-
-    var settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
     settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(settings_button)
     settings_button.addListener(object : ClickListener() {
@@ -273,10 +277,9 @@ fun GuiButtons(space: Space) {
             println("clicked SETTINGS and opened settings")
             space.pause.set(false)
             settings_dialog.show(space.stage)
-
         }
     })
-
+    // TODO add more settings to be stored
     settings.back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             space.changeLidarFPS(settings.lidar_box.selected)
@@ -285,14 +288,10 @@ fun GuiButtons(space: Space) {
 
             val (wi, hei) = settings.resolution_box.selected.split("x")
             space.changeResolution(hei.toInt(), wi.toInt())
-
-
         }
 
     })
 
-
-    var home_button: Image = Image(Texture("Screen3D/home_button.png"))
     home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(home_button)
     home_button.addListener(object : ClickListener() {
@@ -300,5 +299,4 @@ fun GuiButtons(space: Space) {
             println("clicked HOME")
         }
     })
-
 }

@@ -5,18 +5,22 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.mygdx.game.desktop.Space
+import org.quokka.kotlin.Enviroment.Settings
 
 
 class GameInitializer : Game() {
     lateinit var batch: SpriteBatch
     lateinit var font: BitmapFont
-
+    lateinit var game : Space
+    lateinit var settings : Settings
 
     override fun create() {
         batch = SpriteBatch()
+        font = BitmapFont() //
         //Use LibGDX's default Arial font.
-        font = BitmapFont()
-        this.setScreen(Space())
+        game = Space()
+        settings = Settings(game)
+        this.setScreen(game)
     }
 
     override fun render() {
