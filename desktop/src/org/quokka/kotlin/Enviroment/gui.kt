@@ -256,6 +256,20 @@ fun GuiButtons(space: Space) {
         }
     })
 
+    settings.back_button.addListener(object : ClickListener() {
+        override fun clicked(event: InputEvent?, x: Float, y: Float) {
+            space.changeLidarFPS(settings.lidar_box.selected)
+            space.changePlaybackFPS(settings.playback_slider.value.toInt())
+            space.switchFixedCamera(settings.camera_checkbox.isChecked)
+
+            val (wi, hei) = settings.resolution_box.selected.split("x")
+            space.changeResolution(hei.toInt(), wi.toInt())
+
+
+        }
+
+    })
+
 
     var home_button: Image = Image(Texture("Screen3D/home_button.png"))
     home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
@@ -265,24 +279,5 @@ fun GuiButtons(space: Space) {
             println("clicked HOME")
         }
     })
-
-
-    fun changLidarFPS(newLFPS: Int) {
-        space.lidarFPS = newLFPS
-        space.newLidaarFPS.set(true)
-    }
-
-    fun changePlaybackFPS(newFPS: Int) {
-        space.playbackFPS = newFPS
-    }
-
-    fun changeResolution(height: Int, width: Int) {
-        space.changeResolution(height, width)
-    }
-
-    fun switchFixedCamera(fixed: Boolean) {
-        space.fixedCamera = fixed
-    }
-
 
 }

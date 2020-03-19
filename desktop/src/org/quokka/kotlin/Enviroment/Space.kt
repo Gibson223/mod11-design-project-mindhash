@@ -309,6 +309,19 @@ class Space: Screen {
         Gdx.graphics.setWindowedMode(width, height);
     }
 
+    fun changeLidarFPS(newLFPS: Int) {
+        this.lidarFPS = newLFPS
+        this.newLidaarFPS.set(true)
+    }
+
+    fun changePlaybackFPS(newFPS: Int) {
+        this.playbackFPS = newFPS
+    }
+
+
+    fun switchFixedCamera(fixed: Boolean) {
+        this.fixedCamera = fixed
+    }
 //    fun setFullscreen(boolean: Boolean) {
 //        Gdx.graphics.setFullscreenMode(
 //                DisplayMode(2, 2, 10, 3)0
@@ -659,8 +672,6 @@ class Space: Screen {
         cam!!.update()
 
     }
-
-
 
 }
 
