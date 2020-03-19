@@ -12,7 +12,7 @@ object GlobalConfig {
     // The size of the buffer for stored frames in seconds.
     var bufferSize = 10;
     // Resolution of the screen
-    var resolution = Resolution(1600, 900)
+    var resolution = Resolution(1920, 1080)
     // Fullscreen or not
     var fullscreen = false
     // Compression level
