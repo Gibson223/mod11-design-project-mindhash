@@ -1,7 +1,9 @@
 package com.mygdx.game.desktop
 
+import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
+import LidarData.LidarReader
 import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
@@ -35,9 +37,7 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local: Boolean = false,
-            path: String = "core/assets/sample.bag", val axis: Boolean = false) : InputAdapter(), ApplicationListener {
-
+class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : InputAdapter(), ApplicationListener {
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
 
@@ -66,7 +66,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     var pink: Texture? = null
 
     val buffer = Buffer(recordingId)
-    var framesIndex = 2400
+    var framesIndex = Database.getRecording(recordingId)!!.minFrame
 
     var environment: Environment? = null
 
@@ -238,7 +238,11 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     fun initLocalFileThread() {
         timer("File Parser", period = 2000) {
-            // TODO
+            if (localFrames.size < 60) {
+                val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 20)
+                framesIndex += 20
+                localFrames.addAll(frames)
+            }
         }
     }
 
