@@ -1,57 +1,51 @@
 package com.mygdx.game.desktop
 
-import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
-import LidarData.LidarReader
-import com.badlogic.gdx.*
+import com.badlogic.gdx.ApplicationListener
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
+import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.*
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.graphics.g3d.*
+import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.ModelBatch
+import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
-import com.badlogic.gdx.utils.viewport.ScreenViewport
-import net.java.games.input.Component
-import org.quokka.kotlin.Enviroment.UIobserver
 import org.quokka.kotlin.internals.Buffer
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.concurrent.timer
 import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space : InputAdapter(), ApplicationListener, Observer {
-
-    val compressed = false
-    val local = false
+class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local: Boolean = false,
+            path: String = "core/assets/sample.bag", val axis: Boolean = false) : InputAdapter(), ApplicationListener {
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(false)
 
     //-------GUI controlls-----
-    var fixedCamera = true
+    var fixedCamera = false
 
 
     var cam: PerspectiveCamera? = null
-    var plexer: InputMultiplexer? = null
     var camController: CameraInputController? = null
 
     /**
@@ -67,12 +61,11 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     var spaceObjects: ArrayList<ModelInstance>? = null
     var instance: ModelInstance? = null
 
-    var bottomBlock: Model? = null
+    //var bottomBlock: Model? = null
 
     var pink: Texture? = null
 
-    val buffer = Buffer(1)
-    var frames: ConcurrentLinkedQueue<LidarFrame>? = null
+    val buffer = Buffer(recordingId)
     var framesIndex = 2400
 
     var environment: Environment? = null
@@ -85,10 +78,13 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     var decalBatch: DecalBatch? = null
 
-    var decals: List<Decal> = listOf()
-    var compressedDecals: List<Decal> = listOf()
+    lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
 
-    lateinit var blueYellowFade: Array<TextureRegion>
+
+    var decals: List<Decal> = listOf()
+    val axisDecals: ArrayList<Decal> = ArrayList(30)
+
+
     lateinit var blueRedFade: Array<TextureRegion>
     lateinit var decalTextureRegion: TextureRegion
 
@@ -106,16 +102,13 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         //---------Camera controls--------
         camController = CameraInputController(cam)
         Gdx.input.inputProcessor = camController
+
+
         environment = Environment()
         environment!!.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
         environment!!.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
 
-
-        spaceObjects = ArrayList<ModelInstance>(1)
-
-
-        frames = ConcurrentLinkedQueue<LidarFrame>()
         //---------Model Population----------
         var modelBuilder = ModelBuilder()
 
@@ -133,26 +126,23 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             pix.drawPixel(0, 0)
             TextureRegion(Texture(pix))
         }
-        blueYellowFade = Array(256) { i ->
-            val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-            pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
-            pix.drawPixel(0, 0)
-            TextureRegion(Texture(pix))
+
+
+        for (i in -50..50) {
+            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dx.setPosition(i * -1f, -1f, -1f)
+            dx.lookAt(cam!!.position, cam!!.up)
+            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dy.setPosition(-1f, -1f * i, -1f)
+            dy.lookAt(cam!!.position, cam!!.up)
+            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
+            dz.setPosition(-1f, -1f, i * -1f)
+            dz.lookAt(cam!!.position, cam!!.up)
+            axisDecals.add(dx)
+            axisDecals.add(dy)
+            axisDecals.add(dz)
         }
 
-
-        modelBuilder.begin()
-        modelBuilder.node().id = "Floor"
-        pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
-        pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
-        pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
-        var material = Material(TextureAttribute.createDiffuse(pink))
-        modelBuilder.end()
-        bottomBlock = modelBuilder.createBox(
-                10f, 10f, .5f,
-                material,
-                (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
-        )
 
         // -----------Bottom Text--------
         stage = Stage()
@@ -161,16 +151,27 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         stage!!.addActor(label)
         string = StringBuilder()
 
-        plexer = InputMultiplexer(this as InputProcessor, camController)
 
-        // filepop()
-        newFrame()
+        if (local) {
+            localFrames = ConcurrentLinkedQueue()
+            initLocalFileThread()
+        }
+        initFrameUpdateThread()
     }
 
 
+    /**
+     * this is the render method
+     * it is called 60 times per second
+     * it renders the environment and the camera within
+     */
     override fun render() {
-        camController!!.update()
+//        camController!!.update()
 
+
+        campButtonpress()
+
+        //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             cam!!.lookAt(0f, 0f, 0f)
         }
@@ -179,23 +180,27 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
-        if (compressed == false) {
-            decals.forEach {
-                it.lookAt(cam!!.position, cam!!.up)
-                decalBatch!!.add(it)
-            }
-        } else {
-            compressedDecals.forEach {
-                decalBatch!!.add(it)
+        decals.forEach { d ->
+            if (cam!!.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
+                decalBatch!!.add(d)
             }
         }
+
+        if (axis == true) {
+            axisDecals.forEach { d ->
+                if (cam!!.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
+                    decalBatch!!.add(d)
+                }
+            }
+        }
+
         decalBatch!!.flush()
 
 
         string!!.setLength(0)
         string!!.append(errMessage)
-        string!!.append(" FPS: ").append(Gdx.graphics.framesPerSecond)
-        string!!.append(" paused: ").append(pause.get())
+        string!!.append(" up : ").append(cam!!.up)
+        string!!.append(" direction: ").append(cam!!.direction)
         label!!.setText(string)
         stage!!.act(Gdx.graphics.getDeltaTime())
         stage!!.draw()
@@ -205,41 +210,60 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     /**
      * this methods is called every tenth of a seconds
-     * to load new data in the environment
+     * to load new data in the environment by changing
+     * the global variable decal
+     * which is both a List<Decal>
+     * @author Robert
      */
-    fun newFrame() {
+    fun initFrameUpdateThread() {
         timer("Array Creator", period = 100, initialDelay = 100) {
             if (!pause.get()) {
-                var nextFrame: LidarFrame? = null
-                nextFrame = buffer.nextFrame()
-                nextFrame?.let { f ->
-                    decals = f.coords.map {
-                        val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
-                        d.setPosition(it.x, it.y, it.z)
-                        colorDecal(d, blueRedFade)
-                        d
+                if (compressed) {
+                    decals = compressPoints() ?: decals
+                    decals.forEach { colorDecal(it, blueRedFade) }
+                } else {
+                    val nextFrame = fetchNextFrame()
+                    nextFrame?.let { f ->
+                        decals = f.coords.map {
+                            val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+                            d.setPosition(it.x, it.y, it.z)
+                            colorDecal(d, blueRedFade)
+                            d
+                        }
                     }
                 }
             }
         }
-        /*
-            if (pause.get() == false && frames!!.isNotEmpty()) {
-                if (compressed == false) {
-                    val f = frames!!.poll()
-                    decals = f.coords.map {
-                        val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
-                        d.setPosition(it.x, it.y, it.z)
-                        colorDecal(d, blueRedFade)
-                        d
-                    }
-                } else {
-                    compressedDecals = compressPoints()
-                    compressedDecals.forEach { d -> colorDecal(d, blueRedFade) }
-                }
-            }
-         */
     }
 
+    fun initLocalFileThread() {
+        timer("File Parser", period = 2000) {
+            // TODO
+        }
+    }
+
+    /**
+     * Fetches a new frame from either local or database source.
+     *
+     * @return Null or a lidar frame
+     */
+    fun fetchNextFrame() : LidarFrame? {
+        if (local) {
+            return localFrames.poll()
+        } else {
+            return buffer.nextFrame()
+        }
+    }
+
+    /**
+     * Helper function which changes the texture of a decal based on its Z coordinate.
+     * The percentage of its z coordinate on a relative scale is calculated and then the
+     * appropriate texture region is chosen.
+     * The effect works best if the array of textures is a color gradient.
+     *
+     * @param d The decal to be recolored.
+     * @param textures An array of texture regions to pick from. Must be non empty.
+     */
     fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
         val minZ = -10
         val maxZ = 15
@@ -252,31 +276,47 @@ class Space : InputAdapter(), ApplicationListener, Observer {
     }
 
 
+    /**
+     * this method retrieves information from the DB
+     * it is called periodically every second
+     * and retrieves lidarFPS(global variable) number of frames
+     * the lidar data is generate at 10 frames per second
+     * @author Robert
+     */
+    /*
     fun filepop() {
         timer("Array Creator", period = 1000, initialDelay = 0) {
-            val fps = 12
             if (pause.get() == false) {
-                if (local == true) {
+                if (local == true) { // local for testing purposes only, it uses data from a .bag file
                     val ldrrdr = LidarReader()
-                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + fps)
-                    framesIndex += fps
+                    var intermetidate = ldrrdr.readLidarFramesInterval("core/assets/sample.bag", framesIndex, framesIndex + lidarFPS)
+                    framesIndex += lidarFPS
                     intermetidate.forEach { f ->
                         frames!!.add(f)
                     }
-                } else {
+                } else { //if local == false then the data is take from the database
                     if (frames!!.size < 20) {
+<<<<<<< HEAD
                         val intermetidate = Database.getFrames(1, framesIndex, fps)
                         framesIndex += fps
+=======
+                        val intermetidate = database.getFrames(1, framesIndex, lidarFPS)
+                        framesIndex += lidarFPS
+>>>>>>> 8fd6b2bd776bc9873d53cea617b2e60be032a214
                         intermetidate.forEach { f ->
                             frames!!.add(f)
                         }
 
                     }
                 }
+            } else {
+                decals.forEach { d->
+                    d.lookAt(cam!!.position,cam!!.up)
+                }
             }
         }
-//        println("New batch loaded")
     }
+     */
 
 
     /**
@@ -286,6 +326,7 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * @param divisions is the number of divisions meaning
      * if it is 1 then then the number is aproximated to itself
      * if it is 2 then then number is approximated to closes .5 or .0
+     * @author Robert
      */
     fun returnCPP(a: Float, divisions: Int): Float {
         var result = 0f
@@ -343,14 +384,12 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * @param coord is the coordinate being checked
      * @return 1,2,3,4 number of divisions,
      * will be fed into returnCPP
+     * @author Robert
      */
     fun decidDivisions(coord: LidarCoord): Int {
         val camp = cam?.position
         if (camp != null) {
-            val distance =
-                    sqrt((coord.x - camp.x).pow(2)
-                            + (coord.y - camp.y).pow(2)
-                            + (coord.z - camp.z).pow(2))
+            val distance = distanceBetween2points(coord, camp)
 
             val substraction = distance - dfcm
             if (substraction < 0) {
@@ -369,7 +408,6 @@ class Space : InputAdapter(), ApplicationListener, Observer {
 
     override fun dispose() {
         modelBatch!!.dispose()
-        bottomBlock!!.dispose()
     }
 
     override fun resume() {
@@ -394,24 +432,20 @@ class Space : InputAdapter(), ApplicationListener, Observer {
      * and puts points which are close enough to each other in one point
      * then gives the remaining points a suitably sized decal
      * based on the amount of points which are compressed into that point
+     * @author Robert
      */
-    fun compressPoints(): ArrayList<Decal> {
+    fun compressPoints(): ArrayList<Decal>? {
         var objects = ArrayList<Decal>(15) //end result of the method
 
         var map = HashMap<LidarCoord, Int>()
         //map containing the coordinates as key and the number of points approximated to that point as value
 
-        //if the frame is empty (which should never be) add a dummy decal
-        if (frames!!.isEmpty()) {
-            val d = Decal.newDecal(0.5f, 0.5f, decalTextureRegion)
-            d.setPosition(0f, 0f, 0f)
-            d.lookAt(cam!!.position, cam!!.up)
-            println("empty frame")
-            objects.add(d)
-            return objects
-        }
+        var crtFrame = fetchNextFrame()
 
-        var crtFrame = frames!!.poll()//get next frame
+        // Return null if no new frame is available
+        if (crtFrame == null) {
+            return null
+        }
 
         crtFrame.coords.forEach { c ->
             val divisions = decidDivisions(c)
@@ -420,9 +454,9 @@ class Space : InputAdapter(), ApplicationListener, Observer {
             //dummy value which contains the point to which the currently analyzed point is approximated to
             // it is the point itself if the camera is close enough
             val tripp = LidarCoord(
-                    returnCPP(c.x, 1),
-                    returnCPP(c.y, 1),
-                    returnCPP(c.z, 1))
+                    returnCPP(c.x, divisions),
+                    returnCPP(c.y, divisions),
+                    returnCPP(c.z, divisions))
 
             //if the point has not been added before initialize it with one
             //otherwise update its value in the map
@@ -440,24 +474,12 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         map.keys.forEach { k ->
 
             var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
+            val baseSizeofDecal = .2f
 
-            if (map.get(k) in 1..margin) {
-                d.setDimensions(0.1f, 0.1f)
-
-            } else if (map.get(k) in 1 * margin..2 * margin) {
-                d.setDimensions(0.2f, 0.2f)
-
-            } else if (map.get(k) in 3 * margin..4 * margin) {
-                d.setDimensions(0.2f, 0.2f)
-
-            } else if (map.get(k) in 4 * margin..5 * margin) {
-                d.setDimensions(0.25f, 0.25f)
-
-            } else if (map.get(k) in 5 * margin..6 * margin) {
-                d.setDimensions(0.25f, 0.25f)
-
-            } else if (map.get(k) in 6 * margin..100) {
-                d.setDimensions(0.3f, 0.3f)
+            for (i in 0..8) {
+                if (map.get(k) in i * margin..(i + 1) * margin) {
+                    d.setDimensions(baseSizeofDecal + i * 0.02f, baseSizeofDecal + i * 0.02f)
+                }
             }
             d.setPosition(k.x, k.y, k.z)
             d.lookAt(cam!!.position, cam!!.up)
@@ -467,14 +489,145 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         return objects
     }
 
-    override fun update(o: Observable?, arg: Any?) {
-        println("called upadte")
-        if (o is UIobserver) {
-            if (arg == Component.Identifier.Key.SPACE) {
-                pause()
-            }
+
+    /**
+     * calculates the distance betwwen two points
+     * the points can be represented as
+     * either Vector3 or LidarCoord
+     * @author Robet
+     */
+    fun distanceBetween2points(a: LidarCoord, b: LidarCoord): Float {
+        return sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+
+    fun distanceBetween2points(a: Vector3, b: LidarCoord): Float {
+        return sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+
+    fun distanceBetween2points(a: LidarCoord, b: Vector3): Float {
+        return sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+
+    fun distanceBetween2points(a: Vector3, b: Vector3): Float {
+        return sqrt((a.x - b.x).pow(2)
+                + (a.y - b.y).pow(2)
+                + (a.z - b.z).pow(2))
+    }
+
+    /**
+     * @author Robert
+     */
+    //-------Camera Control Methods-----------------------
+
+
+    val camSpeed = 10f
+    val rotationAngle = 50f
+
+
+    fun campButtonpress() {
+
+        val delta = Gdx.graphics.deltaTime
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            moveLeft(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            moveRight(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.I)) {
+            moveForward(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.K)) {
+            moveBackward(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            moveUp(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            moveDown(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            rotateUp(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            rotateDown(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            rotateLeft(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            rotateRight(delta)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+            resetCamera()
         }
     }
+
+    fun resetCamera() {
+        cam!!.position[0f, 0f] = 30f
+        cam!!.lookAt(0f, 0f, 0f)
+        cam!!.update()
+    }
+
+    fun moveForward(delta: Float) {
+        cam!!.translate(Vector3(cam!!.direction).scl(delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveBackward(delta: Float) {
+        cam!!.translate(Vector3(cam!!.direction).scl(-delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveUp(delta: Float) {
+        cam!!.translate(Vector3(cam!!.up).scl(delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveDown(delta: Float) {
+        cam!!.translate(Vector3(cam!!.up).scl(-delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveLeft(delta: Float) {
+        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction, 90f).scl(-delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun moveRight(delta: Float) {
+        cam!!.translate(Vector3(cam!!.up).rotate(cam!!.direction, 90f).scl(delta * camSpeed))
+        cam!!.update()
+    }
+
+    fun rotateUp(delta: Float) {
+        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction, 90f), delta * rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateDown(delta: Float) {
+        cam!!.rotate(Vector3(cam!!.up).rotate(cam!!.direction, 90f), -delta * rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateLeft(delta: Float) {
+        cam!!.rotate(cam!!.up, delta * rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateRight(delta: Float) {
+        cam!!.rotate(cam!!.up, -delta * rotationAngle)
+        cam!!.update()
+    }
+
+    fun rotateZ() {
+        cam!!.rotate(Vector3(0f, 0f, 1f), rotationAngle)
+        cam!!.update()
+
+    }
+
+    fun rotateZrev() {
+        cam!!.rotate(Vector3(0f, 0f, 1f), -rotationAngle)
+        cam!!.update()
+
+    }
+
+
 }
 
 

@@ -10,5 +10,6 @@ fun main() {
     config.height = GlobalConfig.resolution.height
     config.width = GlobalConfig.resolution.width
     config.fullscreen = GlobalConfig.fullscreen
-    LwjglApplication(Space(), config)
+    LwjglApplication(Space(recordingId = 1, compressed = false, local = false, axis = false), config)
+    //LwjglApplication(Space(recordingId = 1, compressed = false, local = true, path = "core/assets/sample.bag",axis = false), config)
 }

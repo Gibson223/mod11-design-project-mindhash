@@ -1,5 +1,45 @@
 import LidarData.LidarFrame
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g3d.Material
+import com.badlogic.gdx.graphics.g3d.Model
 import com.badlogic.gdx.graphics.g3d.ModelInstance
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
+
+
+//----------Add object with material and texture---------
+
+
+
+//spaceObjects = ArrayList<ModelInstance>(1)
+//var spaceObjects: ArrayList<ModelInstance>? = null
+//var instance: ModelInstance? = null
+//
+//var bottomBlock: Model? = null
+//
+//var pink: Texture? = null
+//blueYellowFade = Array(256) { i ->
+//    val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+//    pix.setColor(i / 255f, i / 255f, 1 - i / 255f, 1f)
+//    pix.drawPixel(0, 0)
+//    TextureRegion(Texture(pix))
+//}
+//
+//
+//modelBuilder.begin()
+//modelBuilder.node().id = "Floor"
+//pink = Texture(Gdx.files.internal("core/assets/badlogic.jpg"), false)
+//pink!!.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat)
+//pink!!.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+//var material = Material(TextureAttribute.createDiffuse(pink))
+//modelBuilder.end()
+//
+//bottomBlock = modelBuilder.createBox(
+//10f, 10f, .5f,
+//material,
+//(VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()
+//)
+
+
 
 //package org.quokka.kotlin.Enviroment
 //
