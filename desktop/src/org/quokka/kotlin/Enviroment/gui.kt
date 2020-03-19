@@ -81,7 +81,7 @@ fun settingsdialog(space: Space): Dialog {
     back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("quit settings menu")
-            space.pause()
+            space.pause.set(true)
             dialog.hide()
         }
     })
@@ -188,8 +188,8 @@ fun GuiButtons(space: Space){
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
+            space.pause.set(false)
             settings_dialog.show(space.stage)
-            space.pause()
 
         }
     })

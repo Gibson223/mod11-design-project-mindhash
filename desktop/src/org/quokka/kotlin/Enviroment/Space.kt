@@ -39,9 +39,9 @@ class Space: Screen {
     lateinit var plexer: InputMultiplexer
     val local = true
     var axis = false
+    var newLidaarFPS = AtomicBoolean(false)
 
     //-------__Preferancess__---------
-    var newLidaarFPS = AtomicBoolean(false)
     var lidarFPS = 12 //lidar fps 5/10/20
     var playbackFPS = 0 // manually fix fps
     var memory =0 // we're not sure yet how this will work
