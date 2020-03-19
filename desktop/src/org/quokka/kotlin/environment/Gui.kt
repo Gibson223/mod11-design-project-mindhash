@@ -1,4 +1,4 @@
-package org.quokka.kotlin.Enviroment
+package org.quokka.kotlin.environment
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color

@@ -1,9 +1,4 @@
-import LidarData.LidarFrame
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g3d.Material
-import com.badlogic.gdx.graphics.g3d.Model
-import com.badlogic.gdx.graphics.g3d.ModelInstance
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
+import org.quokka.kotlin.internals.LidarFrame
 
 
 //----------Add object with material and texture---------
@@ -43,7 +38,7 @@ import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
 
 //package org.quokka.kotlin.Enviroment
 //
-//import LidarData.LidarReader
+//import org.quokka.kotlin.internals.LidarReader
 //import com.badlogic.gdx.graphics.g3d.ModelInstance
 //
 //fun populate(){

@@ -1,8 +1,8 @@
 package com.mygdx.game.desktop
 
-import LidarData.LidarCoord
-import LidarData.LidarFrame
-import LidarData.LidarReader
+import org.quokka.kotlin.internals.LidarCoord
+import org.quokka.kotlin.internals.LidarFrame
+import org.quokka.kotlin.internals.LidarReader
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputMultiplexer
@@ -24,8 +24,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.kotlin.internals.Buffer
 import java.util.*
-import org.quokka.kotlin.Enviroment.GuiButtons
-import org.quokka.kotlin.Enviroment.Settings
+import org.quokka.kotlin.environment.GuiButtons
+import org.quokka.kotlin.environment.Settings
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList

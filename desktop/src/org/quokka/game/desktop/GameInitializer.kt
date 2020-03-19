@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.mygdx.game.desktop.Space
-import org.quokka.kotlin.Enviroment.Settings
+import org.quokka.kotlin.environment.Settings
 
 
 class GameInitializer : Game() {

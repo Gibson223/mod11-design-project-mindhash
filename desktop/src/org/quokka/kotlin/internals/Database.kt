@@ -1,4 +1,4 @@
-package LidarData
+package org.quokka.kotlin.internals
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -6,7 +6,6 @@ import org.quokka.kotlin.config.LidarFps
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
-import kotlin.system.measureTimeMillis
 
 // Constants for setting up database connection
 const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
