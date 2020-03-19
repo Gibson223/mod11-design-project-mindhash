@@ -11,6 +11,7 @@ class GameInitializer : Game() {
     lateinit var batch: SpriteBatch
     lateinit var font: BitmapFont
 
+
     override fun create() {
         batch = SpriteBatch()
         //Use LibGDX's default Arial font.
