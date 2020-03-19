@@ -10,10 +10,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
 
-fun save_settings(setdialog: Dialog){
-    val prefs: Preferences = Gdx.app.getPreferences("MindhashPrefs")
-
-}
 
 fun settingsdialog(space: Space): Dialog {
     val font = BitmapFont()
