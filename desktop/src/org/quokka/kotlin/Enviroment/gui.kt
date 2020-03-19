@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
@@ -132,6 +131,28 @@ class Settings(space: Space) {
 
 fun GuiButtons(space: Space) {
     val settings = Settings(space)
+
+    var minus = Image(Texture("Screen3D/minus.png"))
+    val scaleMinusPlus = 0.2f
+    minus.setScale(scaleMinusPlus)
+    minus.setPosition(Gdx.graphics.width - minus.width*scaleMinusPlus, Gdx.graphics.height*0.3f)
+    space.stage!!.addActor(minus)
+    minus.addListener(object : ClickListener() {
+        override fun clicked(event: InputEvent, x: Float, y: Float) {
+            println("clicked zoom out")
+        }
+    })
+
+    var plus = Image(Texture("Screen3D/plus.png"))
+    plus.setScale(scaleMinusPlus)
+    plus.setPosition(minus.x, minus.y + minus.height*scaleMinusPlus)
+    space.stage!!.addActor(plus)
+    plus.addListener(object : ClickListener() {
+        override fun clicked(event: InputEvent, x: Float, y: Float) {
+            println("clicked zoom out")
+        }
+    })
+
     var bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
     space.stage!!.addActor(bf_button)
