@@ -15,7 +15,7 @@ fun save_settings(setdialog: Dialog){
 
 }
 
-fun settingsdialog(): Dialog {
+fun settingsdialog(space: Space): Dialog {
     val font = BitmapFont()
     val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
 
@@ -81,6 +81,7 @@ fun settingsdialog(): Dialog {
     back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("quit settings menu")
+            space.pause()
             dialog.hide()
         }
     })
@@ -189,7 +190,7 @@ fun GuiButtons(space: Space){
         }
     })
 
-    val settings_dialog = settingsdialog()
+    val settings_dialog = settingsdialog(space)
 
     var settings_button: Image? = null
     settings_button = Image(Texture("Screen3D/setting_button.png"))
@@ -199,6 +200,7 @@ fun GuiButtons(space: Space){
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
             settings_dialog.show(space.stage)
+            space.pause()
 
         }
     })

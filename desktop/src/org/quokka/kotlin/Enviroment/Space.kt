@@ -393,9 +393,8 @@ class Space: Screen {
 
             val substraction = distance - dfcm
 
-
-
-            when (compresion) {
+            when (compresion) { //compresion is the maximum level of compression
+                                // 1 is least, then 4, 3 and finally 2
                 1 -> return 1
                 2 -> if (substraction < 0) {
                         return 1
