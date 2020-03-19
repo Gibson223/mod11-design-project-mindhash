@@ -96,15 +96,10 @@ fun settingsdialog(space: Space): Dialog {
     dialog.contentTable.add(save_button)
 
     return dialog
-
-    fun save_settings(){
-
-    }
 }
 
 fun GuiButtons(space: Space){
-    var bf_button: Image? = null
-    bf_button = Image(Texture("Screen3D/bf_button.png"))
+    var bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
     space.stage!!.addActor(bf_button)
     bf_button.addListener(object : ClickListener() {
@@ -113,8 +108,7 @@ fun GuiButtons(space: Space){
         }
     })
 
-    var ff_button: Image? = null
-    ff_button = Image(Texture("Screen3D/ff_button.png"))
+    var ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
     ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
     space.stage!!.addActor(ff_button)
     ff_button.addListener(object : ClickListener() {
@@ -123,8 +117,7 @@ fun GuiButtons(space: Space){
         }
     })
 
-    var arrows_button: Image? = null
-    arrows_button = Image(Texture("Screen3D/arrows_button.png"))
+    var arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
     arrows_button.setPosition(Gdx.graphics.width - 251.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object: ClickListener(){
@@ -157,8 +150,7 @@ fun GuiButtons(space: Space){
 
 
 
-    var earth_button: Image? = null
-    earth_button = Image(Texture("Screen3D/earth_button.png"))
+    var earth_button: Image = Image(Texture("Screen3D/earth_button.png"))
     earth_button.setPosition(Gdx.graphics.width - 185.toFloat(), 60f)
     space.stage!!.addActor(earth_button)
     earth_button.addListener(object: ClickListener(){
@@ -168,8 +160,7 @@ fun GuiButtons(space: Space){
     })
 
 
-    var pause_button: Image? = null
-    pause_button = Image(Texture("Screen3D/pause_button.png"))
+    var pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
     pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
     space.stage!!.addActor(pause_button)
     pause_button.addListener(object : ClickListener() {
@@ -179,8 +170,7 @@ fun GuiButtons(space: Space){
         }
     })
 
-    var reset_button: Image? = null
-    reset_button = Image(Texture("Screen3D/reset_button.png"))
+    var reset_button: Image = Image(Texture("Screen3D/reset_button.png"))
     reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
     space.stage!!.addActor(reset_button)
     reset_button.addListener(object : ClickListener() {
@@ -192,8 +182,7 @@ fun GuiButtons(space: Space){
 
     val settings_dialog = settingsdialog(space)
 
-    var settings_button: Image? = null
-    settings_button = Image(Texture("Screen3D/setting_button.png"))
+    var settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
     settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(settings_button)
     settings_button.addListener(object : ClickListener() {
@@ -206,8 +195,7 @@ fun GuiButtons(space: Space){
     })
 
 
-    var home_button: Image? = null
-    home_button = Image(Texture("Screen3D/home_button.png"))
+    var home_button: Image = Image(Texture("Screen3D/home_button.png"))
     home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(home_button)
     home_button.addListener(object : ClickListener() {
