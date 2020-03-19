@@ -1,6 +1,5 @@
 package com.mygdx.game.desktop
 
-import LidarData.Database
 import LidarData.LidarCoord
 import LidarData.LidarFrame
 import LidarData.LidarReader
@@ -13,7 +12,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.Environment
 import com.badlogic.gdx.graphics.g3d.ModelBatch
-import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
@@ -26,7 +24,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.kotlin.internals.Buffer
 import java.util.*
-import java.util.concurrent.ConcurrentLinkedDeque
 import org.quokka.kotlin.Enviroment.GuiButtons
 import org.quokka.kotlin.Enviroment.Settings
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -45,7 +42,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     //-------__Preferancess__---------
     var lidarFPS = 12 //lidar fps 5/10/20
     var playbackFPS = 0 // manually fix fps
-    var memory = 0 // we're not sure yet how this will work
     var compresion = 4 //compression level
     var gradualCompression = true
 
@@ -185,6 +181,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         decals.forEach { d ->
             if (cam.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
                 decalBatch.add(d)
+                d.lookAt(cam.position, cam.up)
             }
         }
 
@@ -523,7 +520,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
                 }
             }
             d.setPosition(k.x, k.y, k.z)
-            d.lookAt(cam.position, cam.up)
             objects.add(d)
         }
         return objects
