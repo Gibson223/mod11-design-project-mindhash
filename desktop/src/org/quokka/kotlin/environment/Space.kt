@@ -174,7 +174,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
         campButtonpress()
         //if the camera is fixed that means it's always looking at the center of the environment
-        if (fixedCamera.get() == true) {
+        if (fixedCamera == true) {
             cam.lookAt(0f, 0f, 0f)
         }
 
@@ -306,18 +306,18 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     fun changePlaybackFPS(newFPS: Int) {
-        this.playbackFPS.set(newFPS)
+        this.playbackFPS = newFPS
     }
 
     fun switchFixedCamera(fixed: Boolean) {
-        this.fixedCamera.set(fixed)
+        this.fixedCamera = fixed
     }
 
-    fun changeCompressionlvl(newcomp:Int){
+    fun changeCompression(newcomp:Int){
         this.compresion = newcomp
     }
 
-    fun changeGradualCompression(newset: Boolean){
+    fun switchGradualCompression(newset: Boolean){
         this.gradualCompression = newset
     }
 
@@ -337,7 +337,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         }
     }
 
-    fun changedDFCM(dd:Int){
+    fun changeDFCM(dd:Int){
         this.dfcm = dd
     }
 
@@ -436,10 +436,10 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
                     + (coord.y - camp.y).pow(2)
                     + (coord.z - camp.z).pow(2))
 
-            val dfcmCopy = dfcm.get()
+            val dfcmCopy = dfcm
             val substraction = distance - dfcmCopy
 
-            when (compresion.get()) { //compresion is the maximum level of compression
+            when (compresion) { //compresion is the maximum level of compression
                 // 1 is least, then 4, 3 and finally 2
                 1 -> return 1
                 2 -> if (substraction < 0) {
@@ -511,8 +511,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         }
 
         crtFrame.coords.forEach { c ->
-            var divisions = compresion.get() //level of compression
-            if (gradualCompression.get() == true && compresion.get() != 1) {
+            var divisions = compresion //level of compression
+            if (gradualCompression == true && compresion != 1) {
                 divisions = decidDivisions(c) //has to be deiced based on distance from camera
             }
             //calculate the compression power(1/2/3/4) based on the distance from the camera

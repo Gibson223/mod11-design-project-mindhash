@@ -325,8 +325,8 @@ fun GuiButtons(space: Space) {
             space.changeLidarFPS(settings.lidar_box.selected)
             space.changePlaybackFPS(settings.playback_slider.value.toInt())
             space.switchFixedCamera(settings.camera_checkbox.isChecked)
-            space.changeCompressionlvl(settings.compression_box.selected)
-            space.changeGradualCompression(settings.gradualBox.isChecked)
+//            space.changeCompressionlvl(settings.compression_box.selected)
+//            space.changeGradualCompression(settings.gradualBox.isChecked)
 
             val (wi, hei) = settings.resolution_box.selected.split("x")
             space.changeResolution(hei.toInt(), wi.toInt())
