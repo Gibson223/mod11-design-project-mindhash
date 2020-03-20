@@ -19,12 +19,13 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import java.util.*
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
+import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.pow
@@ -57,8 +58,14 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      */
     var dfcm = 15//prefs.getInteger("DISTANCE")
 
-    var running = AtomicBoolean(true)
-    var pause = AtomicBoolean(true)
+    val settings = Settings(this)
+
+    init {
+        settings.updateSpace()
+    }
+
+
+    var pause = AtomicBoolean(false)
     val buffer = Buffer(recordingId)
     // this is basically the timestamp
     var framesIndex = Database.getRecording(recordingId)!!.minFrame
@@ -85,7 +92,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
 
-    val settings = Settings(this)
 
     lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
 
@@ -121,21 +127,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
 
-        for (i in -50..50) {
-            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dx.setPosition(i * -1f, -1f, -1f)
-            dx.lookAt(cam!!.position, cam!!.up)
-            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dy.setPosition(-1f, -1f * i, -1f)
-            dy.lookAt(cam!!.position, cam!!.up)
-            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dz.setPosition(-1f, -1f, i * -1f)
-            dz.lookAt(cam!!.position, cam!!.up)
-            axisDecals.add(dx)
-            axisDecals.add(dy)
-            axisDecals.add(dz)
-        }
-
 
         // -----------Bottom Text--------
         stage.addActor(label)
@@ -155,7 +146,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun hide() {
-        TODO("Not yet implemented")
+//        TODO("Not yet implemented")
     }
 
     override fun show() {
@@ -164,6 +155,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
 
     override fun render(delta: Float) {
+        Gdx.gl.glClearColor(0f,0f,0f, 1f)
+
         campButtonpress()
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
@@ -195,8 +188,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         string.setLength(0)
         string.append(errMessage)
         string.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
-        string.append(" cma position : ").append(cam.position)
-        string.append(" cam pos origitn : ").append(cam.up)
+        string.append(" paused : ").append(pause)
+        string.append(" frame index : ").append(framesIndex)
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
@@ -305,11 +298,11 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         this.fixedCamera = fixed
     }
 
-    fun changeCompressionlvl(newcomp:Int){
+    fun changeCompression(newcomp:Int){
         this.compresion = newcomp
     }
 
-    fun changeGradualCompression(newset: Boolean){
+    fun switchGradualCompression(newset: Boolean){
         this.gradualCompression = newset
     }
 
@@ -329,7 +322,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         }
     }
 
-    fun changedDFCM(dd:Int){
+    fun changeDFCM(dd:Int){
         this.dfcm = dd
     }
 
@@ -428,23 +421,24 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
                     + (coord.y - camp.y).pow(2)
                     + (coord.z - camp.z).pow(2))
 
-            val substraction = distance - dfcm
+            val dfcmCopy = dfcm
+            val substraction = distance - dfcmCopy
 
             when (compresion) { //compresion is the maximum level of compression
                 // 1 is least, then 4, 3 and finally 2
                 1 -> return 1
                 2 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcm) {
+                } else if (substraction < dfcmCopy) {
                     return 4
-                } else if (substraction < 2 * dfcm) {
+                } else if (substraction < 2 * dfcmCopy) {
                     return 3
                 } else {
                     return 2
                 }
                 3 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcm) {
+                } else if (substraction < dfcmCopy) {
                     return 4
                 } else {
                     return 3
@@ -467,6 +461,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun resume() {
+        pause.set(false)
     }
 
     override fun resize(width: Int, height: Int) {
@@ -474,12 +469,9 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun pause() {
-        pause.set(!pause.get())
+        pause.set(true)
     }
 
-    fun getRunning(): Boolean {
-        return running.get()
-    }
 
 
     /**

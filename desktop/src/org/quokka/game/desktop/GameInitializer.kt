@@ -8,7 +8,7 @@ import com.mygdx.game.desktop.Space
 import org.quokka.kotlin.environment.Settings
 
 
-class GameInitializer : Game() {
+object GameInitializer : Game() {
     lateinit var batch: SpriteBatch
     lateinit var font: BitmapFont
     lateinit var game : Space
@@ -40,7 +40,7 @@ class GameInitializer : Game() {
 //    }
 
     override fun dispose() {
-        batch!!.dispose()
-        font!!.dispose()
+        batch.dispose()
+        font.dispose()
     }
 }
