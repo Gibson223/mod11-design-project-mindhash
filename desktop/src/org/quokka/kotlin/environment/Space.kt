@@ -33,7 +33,7 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
+class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
     var newLidaarFPS = AtomicBoolean(false)
 
@@ -206,7 +206,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     fun initFrameUpdateThread() {
         timer("Array Creator", period = 100, initialDelay = 100) {
             if (!pause.get()) {
-                if (compressed) {
+                if (compresion != 1) {
                     decals = compressPoints() ?: decals
                     decals.forEach { colorDecal(it, blueRedFade) }
                 } else {
@@ -341,7 +341,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      */
     fun returnCPP(a: Float, divisions: Int): Float {
         var result = 0f
-        var auxxx = 0f
+        var auxxx: Float
         if (a > -1 && a < 1) {
             auxxx = a
         } else {
@@ -414,7 +414,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      * @author Robert
      */
     fun decidDivisions(coord: LidarCoord): Int {
-        val camp = cam?.position
+        val camp = cam.position
         if (camp != null) {
             val distance = distanceAB3(coord, camp)
             sqrt((coord.x - camp.x).pow(2)
@@ -465,7 +465,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun resize(width: Int, height: Int) {
-        stage?.getViewport()?.update(width, height, true);
+        stage.getViewport()?.update(width, height, true);
     }
 
     override fun pause() {

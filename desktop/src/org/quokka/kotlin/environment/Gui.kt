@@ -178,7 +178,7 @@ fun GuiButtons(space: Space) {
     val scaleMinusPlus = 0.2f
 
 
-    space.stage!!.addActor(minus)
+    space.stage.addActor(minus)
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
@@ -188,7 +188,7 @@ fun GuiButtons(space: Space) {
 
     plus.setScale(scaleMinusPlus)
     plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
-    space.stage!!.addActor(plus)
+    space.stage.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom in")
@@ -196,7 +196,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(bf_button)
+    space.stage.addActor(bf_button)
     bf_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked BF")
@@ -204,7 +204,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(ff_button)
+    space.stage.addActor(ff_button)
     ff_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked FF")
@@ -212,7 +212,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(arrows_button)
+    space.stage.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
 
 //        override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -263,7 +263,7 @@ fun GuiButtons(space: Space) {
     })
 
 
-    space.stage!!.addActor(earth_button)
+    space.stage.addActor(earth_button)
     earth_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
@@ -307,7 +307,7 @@ fun GuiButtons(space: Space) {
     })
 
 
-    space.stage!!.addActor(pause_button)
+    space.stage.addActor(pause_button)
     pause_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked PAUSE")
@@ -315,7 +315,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(reset_button)
+    space.stage.addActor(reset_button)
     reset_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked RESET")
@@ -323,7 +323,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(settings_button)
+    space.stage.addActor(settings_button)
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
@@ -345,7 +345,7 @@ fun GuiButtons(space: Space) {
 
     })
 
-    space.stage!!.addActor(home_button)
+    space.stage.addActor(home_button)
     home_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked HOME")
