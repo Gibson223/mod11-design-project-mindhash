@@ -19,10 +19,10 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import java.util.*
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
+import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -161,7 +161,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun hide() {
-        TODO("Not yet implemented")
+//        TODO("Not yet implemented")
     }
 
     override fun show() {
@@ -170,6 +170,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
 
     override fun render(delta: Float) {
+        Gdx.gl.glClearColor(0f,0f,0f, 1f)
+
         campButtonpress()
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera.get() == true) {
