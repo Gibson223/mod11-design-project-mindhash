@@ -67,7 +67,7 @@ class Settings(val space: Space) {
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
-        compression_box.setItems(1, 2, 3, 4)
+        compression_box.setItems(1, 4, 3, 2)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
@@ -249,7 +249,6 @@ fun GuiButtons(space: Space) {
             super.touchDragged(event, x, y, pointer)
             val o = x - 110
             val l = y - 110
-            println("l $l and o $o")
             val delta = Gdx.graphics.deltaTime
             if(o.absoluteValue < l.absoluteValue){
                 if(l>0){
