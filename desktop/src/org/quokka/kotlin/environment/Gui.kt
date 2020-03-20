@@ -63,8 +63,8 @@ class Settings(val space: Space) {
         distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
 
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
-        resolution_box.setItems("1920x1080", "1080x720", "FULLSCREEN")
-        resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
+        resolution_box.setItems("1920x1080", "1280x720", "FULLSCREEN")
+        resolution_box.selected = prefs.getString("RESOLUTION", "1280x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
         compression_box.setItems(1, 4, 3, 2)
