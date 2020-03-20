@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
@@ -158,14 +159,14 @@ fun GuiButtons(space: Space) {
             println("clicked zoom out")
             space.moveBackward(Gdx.graphics.deltaTime)
         }
-
     })
+
     plus.setScale(scaleMinusPlus)
     plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
     space.stage!!.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked zoom out")
+            println("clicked zoom in")
             space.moveForward(Gdx.graphics.deltaTime)
         }
     })
@@ -176,7 +177,6 @@ fun GuiButtons(space: Space) {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked BF")
             space.skipBackwards10Frames()
-
         }
     })
 
@@ -192,29 +192,51 @@ fun GuiButtons(space: Space) {
     arrows_button.setPosition(Gdx.graphics.width - 1050.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            val x1 = arrows_button.width / 3
-            val x2 = 2 * arrows_button.width / 3
-            val x3 = arrows_button.width
 
-            val y1 = arrows_button.height / 3
-            val y2 = 2 * arrows_button.height / 3
-            val y3 = arrows_button.height
+//        override fun clicked(event: InputEvent?, x: Float, y: Float) {
+//            val x1 = arrows_button.width / 3
+//            val x2 = 2 * arrows_button.width / 3
+//            val x3 = arrows_button.width
+//
+//            val y1 = arrows_button.height / 3
+//            val y2 = 2 * arrows_button.height / 3
+//            val y3 = arrows_button.height
+//
+//            val delta = Gdx.graphics.deltaTime
+//            when {
+//                x < x1 && y < y1 -> println("q1")
+//                x < x2 && y < y1 -> space.moveDown(delta)
+//                x < x3 && y < y1 -> println("q3")
+//
+//                x < x1 && y < y2 -> space.moveLeft(delta)
+//                x < x2 && y < y2 -> println("center")
+//                x < x3 && y < y2 -> space.moveRight(delta)
+//
+//                x < x1 && y < y3 -> println("q7")
+//                x < x2 && y < y3 -> space.moveUp(delta)
+//                x < x3 && y < y3 -> println("q9")
+//
+//            }
+//        }
 
+        override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+            super.touchDragged(event, x, y, pointer)
+            val o = x - 110
+            val l = y - 110
+            println("l $l and o $o")
             val delta = Gdx.graphics.deltaTime
-            when {
-                x < x1 && y < y1 -> println("q1")
-                x < x2 && y < y1 -> space.moveDown(delta)
-                x < x3 && y < y1 -> println("q3")
-
-                x < x1 && y < y2 -> space.moveLeft(delta)
-                x < x2 && y < y2 -> println("center")
-                x < x3 && y < y2 -> space.moveRight(delta)
-
-                x < x1 && y < y3 -> println("q7")
-                x < x2 && y < y3 -> space.moveUp(delta)
-                x < x3 && y < y3 -> println("q9")
-
+            if(o.absoluteValue < l.absoluteValue){
+                if(l>0){
+                    space.moveUp(delta)
+                } else {
+                    space.moveDown(delta)
+                }
+            } else {
+                if (o < 0){
+                    space.moveLeft(delta)
+                } else {
+                    space.moveRight(delta)
+                }
             }
         }
     })
@@ -236,16 +258,19 @@ fun GuiButtons(space: Space) {
             val o = x - 50
             val l = y - 50
             val delta = Gdx.graphics.deltaTime
-            if (l > 0 && o.absoluteValue < l) {
-                space.rotateUp(delta)
-            } else if (l < 0 && o.absoluteValue < l.absoluteValue) {
-                space.rotateDown(delta)
-            } else if (o < 0 && l.absoluteValue < o.absoluteValue) {
-                space.rotateLeft(delta)
-            } else if (o > 0 && l.absoluteValue < o) {
-                space.rotateRight(delta)
+            if(o.absoluteValue < l.absoluteValue){
+                if(l>0){
+                    space.rotateUp(delta)
+                } else {
+                    space.rotateDown(delta)
+                }
+            } else {
+                if (o < 0){
+                    space.rotateLeft(delta)
+                } else {
+                    space.rotateRight(delta)
+                }
             }
-
         }
     })
 

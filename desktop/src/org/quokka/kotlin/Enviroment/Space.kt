@@ -55,8 +55,14 @@ class Space: Screen {
     //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     var framesIndex = 2400 //this is basically the timestamp
+    var resolution  = Pair(Gdx.graphics.width,Gdx.graphics.height)
 
-
+    /**
+     * dfcm distance from camera margin
+     * used in deciding how compressed the data is
+     * based on the point's distance from the camera
+     */
+    var dfcm = 15//prefs.getInteger("DISTANCE")
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(true)
@@ -67,13 +73,6 @@ class Space: Screen {
 
     var camController = CameraInputController(cam)
 
-
-    /**
-     * dfcm distance from camera margin
-     * used in deciding how compressed the data is
-     * based on the point's distance from the camera
-     */
-    val dfcm = 15
 
     var modelBatch = ModelBatch()
 
@@ -126,6 +125,7 @@ class Space: Screen {
     init {
         database = Database()
         database.connect("lidar", "mindhash")
+        initializeLidarspeed()
     }
 
     fun create() {
@@ -142,7 +142,6 @@ class Space: Screen {
         environment.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
 
-
         spaceObjects = ArrayList<ModelInstance>(1)
         frames = ConcurrentLinkedQueue<LidarFrame>()
 
@@ -154,14 +153,8 @@ class Space: Screen {
         filepop()
         newFrame()
 
-
-
         // -----------Bottom Text--------
         stage.addActor(label)
-
-
-
-
 
         plexer = InputMultiplexer(stage, camController)
         Gdx.input.inputProcessor = plexer
@@ -179,10 +172,7 @@ class Space: Screen {
 
 
     override fun render(delta: Float) {
-
-
         campButtonpress()
-
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             cam.lookAt(0f, 0f, 0f)
@@ -218,8 +208,6 @@ class Space: Screen {
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
         errMessage = ""
-
-
     }
 
     /**
@@ -347,7 +335,17 @@ class Space: Screen {
         this.framesIndex -= 10
     }
 
+    fun initializeLidarspeed(){
+        when(lidarFPS){
+            7 -> lidarFPStimer = 20
+            12 -> lidarFPStimer = 10
+            22 -> lidarFPStimer = 5
+        }
+    }
 
+    fun changedDFCM(dd:Int){
+        this.dfcm = dd
+    }
 
     //------------------------------------------------
 
@@ -586,7 +584,7 @@ class Space: Screen {
     //-------Camera Control Methods-----------------------
 
 
-    val camSpeed = 10f
+    val camSpeed = 20f
     val rotationAngle = 75f
 
 
