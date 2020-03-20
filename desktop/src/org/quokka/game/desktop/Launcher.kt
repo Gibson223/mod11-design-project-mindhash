@@ -8,8 +8,8 @@ import org.quokka.kotlin.config.Resolution
 fun main() {
     val config = LwjglApplicationConfiguration()
     GlobalConfig.resolution = Resolution(1920, 1080)
-    config.height = GlobalConfig.resolution.height
-    config.width = GlobalConfig.resolution.width
+//    config.height = GlobalConfig.resolution.height
+//    config.width = GlobalConfig.resolution.width
     config.fullscreen = GlobalConfig.fullscreen
     LwjglApplication(GameInitializer, config)
 }
