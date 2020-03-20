@@ -1,8 +1,5 @@
 package com.mygdx.game.desktop
 
-import org.quokka.kotlin.internals.LidarCoord
-import org.quokka.kotlin.internals.LidarFrame
-import org.quokka.kotlin.internals.LidarReader
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputMultiplexer
@@ -22,10 +19,10 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import org.quokka.kotlin.internals.Buffer
 import java.util.*
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
+import org.quokka.kotlin.internals.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.ArrayList
@@ -47,12 +44,13 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = false
-    var framesIndex = 2400 //this is basically the timestamp
 
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(true)
     val buffer = Buffer(recordingId)
+    // this is basically the timestamp
+    var framesIndex = Database.getRecording(recordingId)!!.minFrame
 
 
     var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
