@@ -63,7 +63,7 @@ class Settings(val space: Space) {
         distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
 
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
-        resolution_box.setItems("1920x1080", "1080x720")
+        resolution_box.setItems("1920x1080", "1080x720", "FULLSCREEN")
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
@@ -132,8 +132,12 @@ class Settings(val space: Space) {
     fun updateSpace(){
         space.changeLidarFPS(lidar_box.selected)
         space.changePlaybackFPS(playback_slider.value.toInt())
-        val (wi, hei) = resolution_box.selected.split("x")
-        space.changeResolution(hei.toInt(), wi.toInt())
+        if (resolution_box.selected == "FULLSCREEN") {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.displayMode)
+        } else {
+            val (wi, hei) = resolution_box.selected.split("x")
+            space.changeResolution(hei.toInt(), wi.toInt())
+        }
         space.switchFixedCamera(camera_checkbox.isChecked)
 
         space.changeCompression(compression_box.selected)
@@ -322,14 +326,7 @@ fun GuiButtons(space: Space) {
     })
     settings.back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            space.changeLidarFPS(settings.lidar_box.selected)
-            space.changePlaybackFPS(settings.playback_slider.value.toInt())
-            space.switchFixedCamera(settings.camera_checkbox.isChecked)
-//            space.changeCompressionlvl(settings.compression_box.selected)
-//            space.changeGradualCompression(settings.gradualBox.isChecked)
-
-            val (wi, hei) = settings.resolution_box.selected.split("x")
-            space.changeResolution(hei.toInt(), wi.toInt())
+            settings.updateSpace()
         }
 
     })
