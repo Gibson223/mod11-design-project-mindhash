@@ -42,7 +42,7 @@ class Settings(space: Space) {
 
 
     val distance = Label("DISTANCE", shared_style)
-    val distance_field = TextField("", skin) // Todo: where was this for
+    val distance_field = TextField("", skin) // Todo: where was this for dfcm
 
     val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
@@ -100,7 +100,7 @@ class Settings(space: Space) {
         back_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 println("quit settings menu")
-                space.pause.set(true)
+                space.resume()
                 dialog.hide()
 
             }
@@ -248,7 +248,7 @@ fun GuiButtons(space: Space) {
     pause_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked PAUSE")
-            space.pause()
+            space.pause.set(!space.pause.get())
         }
     })
 
@@ -266,7 +266,7 @@ fun GuiButtons(space: Space) {
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
-            space.pause.set(false)
+            space.pause()
             settings_dialog.show(space.stage)
         }
     })

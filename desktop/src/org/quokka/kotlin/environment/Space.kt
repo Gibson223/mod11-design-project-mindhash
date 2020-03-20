@@ -46,8 +46,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     var fixedCamera = false
 
 
-    var running = AtomicBoolean(true)
-    var pause = AtomicBoolean(true)
+    var pause = AtomicBoolean(false)
     val buffer = Buffer(recordingId)
     // this is basically the timestamp
     var framesIndex = Database.getRecording(recordingId)!!.minFrame
@@ -444,6 +443,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun resume() {
+        pause.set(false)
     }
 
     override fun resize(width: Int, height: Int) {
@@ -451,12 +451,9 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun pause() {
-        pause.set(!pause.get())
+        pause.set(true)
     }
 
-    fun getRunning(): Boolean {
-        return running.get()
-    }
 
 
     /**
