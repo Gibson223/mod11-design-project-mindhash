@@ -1,4 +1,4 @@
-package LidarData
+package org.quokka.kotlin.internals
 
 import com.github.swrirobotics.bags.reader.BagFile
 import com.github.swrirobotics.bags.reader.BagReader
@@ -247,9 +247,7 @@ data class LidarCoord(
  */
 data class LidarFrame(
         val frameId: Int,
-        val coords: List<LidarCoord>,
-        val maxZ: Float = 7f,
-        val minZ: Float = -7f
+        val coords: List<LidarCoord>
 ) {
     /**
      * Create a ply file which contains a point cloud of the points in the frame.
