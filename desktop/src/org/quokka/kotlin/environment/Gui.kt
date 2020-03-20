@@ -278,19 +278,31 @@ fun GuiButtons(space: Space) {
             val o = x - 50
             val l = y - 50
             val delta = Gdx.graphics.deltaTime
-            if(o.absoluteValue < l.absoluteValue){
-                if(l>0){
-                    space.rotateUp(delta)
-                } else {
-                    space.rotateDown(delta)
-                }
-            } else {
-                if (o < 0){
-                    space.rotateLeft(delta)
-                } else {
-                    space.rotateRight(delta)
-                }
+            if (o > 0){
+                space.rotateRight(delta*o/10)
             }
+            if (o < 0){
+                space.rotateLeft(delta*(-1)*o/10)
+            }
+            if (l > 0){
+                space.rotateUp(delta*l/10)
+            }
+            if (l < 0){
+                space.rotateDown(delta*(-1)*l/10)
+            }
+//            if(o.absoluteValue < l.absoluteValue){
+//                if(l>0){
+//                    space.rotateUp(delta)
+//                } else {
+//                    space.rotateDown(delta)
+//                }
+//            } else {
+//                if (o < 0){
+//                    space.rotateLeft(delta)
+//                } else {
+//                    space.rotateRight(delta)
+//                }
+//            }
         }
     })
 
