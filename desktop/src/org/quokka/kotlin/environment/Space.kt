@@ -37,6 +37,9 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     lateinit var plexer: InputMultiplexer
     var newLidaarFPS = AtomicBoolean(false)
 
+
+
+    val prefs = Gdx.app.getPreferences("My Preferences")
     //-------__Preferancess__---------
     var lidarFPS = AtomicInteger() //lidar fps 5/10/20
     var playbackFPS = AtomicInteger() // manually fix fps
@@ -121,7 +124,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
 
-
         for (i in -50..50) {
             val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
             dx.setPosition(i * -1f, -1f, -1f)
@@ -155,7 +157,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         Gdx.input.inputProcessor = plexer
     }
 
-
     override fun hide() {
         TODO("Not yet implemented")
     }
@@ -166,11 +167,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
 
     override fun render(delta: Float) {
-        //        camController.update()
-
-
         campButtonpress()
-
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera.get() == true) {
             cam.lookAt(0f, 0f, 0f)
@@ -207,8 +204,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
         errMessage = ""
-
-
     }
 
     /**
@@ -296,14 +291,18 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     fun changeLidarFPS(newLFPS: Int) {
-        this.lidarFPS.set(newLFPS)
+        this.lidarFPS.set(newLFPS+2)
+        when(lidarFPS){
+            7 -> lidarFPStimer = 20
+            12 -> lidarFPStimer = 10
+            22 -> lidarFPStimer = 5
+        }
         this.newLidaarFPS.set(true)
     }
 
     fun changePlaybackFPS(newFPS: Int) {
         this.playbackFPS.set(newFPS)
     }
-
 
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera.set(fixed)
@@ -320,11 +319,34 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     fun changeCompression(new: Int){
         this.compresion.set(new)
     }
-//    fun setFullscreen(boolean: Boolean) {
-//        Gdx.graphics.setFullscreenMode(
-//                DisplayMode(2, 2, 10, 3)0
-//    }
 
+    fun changeCompressionlvl(newcomp:Int){
+        this.compresion = newcomp
+    }
+
+    fun changeGradualCompression(newset: Boolean){
+        this.gradualCompression = newset
+    }
+
+    fun skipForward10frames(){
+        this.framesIndex += 10
+    }
+
+    fun skipBackwards10Frames(){
+        this.framesIndex -= 10
+    }
+
+    fun initializeLidarspeed(){
+        when(lidarFPS){
+            7 -> lidarFPStimer = 20
+            12 -> lidarFPStimer = 10
+            22 -> lidarFPStimer = 5
+        }
+    }
+
+    fun changedDFCM(dd:Int){
+        this.dfcm = dd
+    }
 
     //------------------------------------------------
 
@@ -575,14 +597,14 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     //-------Camera Control Methods-----------------------
 
 
-    val camSpeed = 10f
+    val camSpeed = 20f
     val rotationAngle = 75f
 
 
+    // this methods can be deleted later
     fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
-
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             moveLeft(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
@@ -678,7 +700,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         cam.rotate(Vector3(0f, 0f, 1f), -rotationAngle)
         cam.update()
     }
-
 }
 
 
