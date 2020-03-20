@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
@@ -55,10 +56,10 @@ class Settings(val space: Space) {
     val dialog = Dialog("", skin)
 
     init {
+        lidar_box.setItems(5, 10, 20)
+        lidar_box.selected = prefs.getInteger("LIDAR FPS", 10)
         distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
 
-        lidar_box.setItems(1, 2, 5, 10, 12, 20)
-        lidar_box.selected = prefs.getInteger("LIDAR FPS", 12)
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
         resolution_box.setItems("1920x1080", "1080x720")
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
@@ -69,6 +70,7 @@ class Settings(val space: Space) {
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
 
+        camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", false)
 
         dialog.setSize(200f, 250f)
         dialog.setPosition(Gdx.graphics.width / 2 - 100f, Gdx.graphics.height / 2 - 101f)
@@ -147,6 +149,7 @@ class Settings(val space: Space) {
 
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
+        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.putInteger("DFCM", distance_field.text.toInt())
 
         prefs.flush()
@@ -177,13 +180,17 @@ fun GuiButtons(space: Space) {
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
+            space.moveBackward(Gdx.graphics.deltaTime)
         }
-
     })
+
+    plus.setScale(scaleMinusPlus)
+    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
     space.stage!!.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked zoom out")
+            println("clicked zoom in")
+            space.moveForward(Gdx.graphics.deltaTime)
         }
     })
 
@@ -191,6 +198,7 @@ fun GuiButtons(space: Space) {
     bf_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked BF")
+            space.skipBackwards10Frames()
         }
     })
 
@@ -198,34 +206,57 @@ fun GuiButtons(space: Space) {
     ff_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked FF")
+            space.skipForward10frames()
         }
     })
 
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            val x1 = arrows_button.width / 3
-            val x2 = 2 * arrows_button.width / 3
-            val x3 = arrows_button.width
 
-            val y1 = arrows_button.height / 3
-            val y2 = 2 * arrows_button.height / 3
-            val y3 = arrows_button.height
+//        override fun clicked(event: InputEvent?, x: Float, y: Float) {
+//            val x1 = arrows_button.width / 3
+//            val x2 = 2 * arrows_button.width / 3
+//            val x3 = arrows_button.width
+//
+//            val y1 = arrows_button.height / 3
+//            val y2 = 2 * arrows_button.height / 3
+//            val y3 = arrows_button.height
+//
+//            val delta = Gdx.graphics.deltaTime
+//            when {
+//                x < x1 && y < y1 -> println("q1")
+//                x < x2 && y < y1 -> space.moveDown(delta)
+//                x < x3 && y < y1 -> println("q3")
+//
+//                x < x1 && y < y2 -> space.moveLeft(delta)
+//                x < x2 && y < y2 -> println("center")
+//                x < x3 && y < y2 -> space.moveRight(delta)
+//
+//                x < x1 && y < y3 -> println("q7")
+//                x < x2 && y < y3 -> space.moveUp(delta)
+//                x < x3 && y < y3 -> println("q9")
+//
+//            }
+//        }
 
+        override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+            super.touchDragged(event, x, y, pointer)
+            val o = x - 110
+            val l = y - 110
+            println("l $l and o $o")
             val delta = Gdx.graphics.deltaTime
-            when {
-                x < x1 && y < y1 -> println("q1")
-                x < x2 && y < y1 -> space.moveDown(delta)
-                x < x3 && y < y1 -> println("q3")
-
-                x < x1 && y < y2 -> space.moveLeft(delta)
-                x < x2 && y < y2 -> println("center")
-                x < x3 && y < y2 -> space.moveRight(delta)
-
-                x < x1 && y < y3 -> println("q7")
-                x < x2 && y < y3 -> space.moveUp(delta)
-                x < x3 && y < y3 -> println("q9")
-
+            if(o.absoluteValue < l.absoluteValue){
+                if(l>0){
+                    space.moveUp(delta)
+                } else {
+                    space.moveDown(delta)
+                }
+            } else {
+                if (o < 0){
+                    space.moveLeft(delta)
+                } else {
+                    space.moveRight(delta)
+                }
             }
         }
     })
@@ -246,16 +277,19 @@ fun GuiButtons(space: Space) {
             val o = x - 50
             val l = y - 50
             val delta = Gdx.graphics.deltaTime
-            if (l > 0 && o.absoluteValue < l) {
-                space.rotateUp(delta)
-            } else if (l < 0 && o.absoluteValue < l.absoluteValue) {
-                space.rotateDown(delta)
-            } else if (o < 0 && l.absoluteValue < o.absoluteValue) {
-                space.rotateLeft(delta)
-            } else if (o > 0 && l.absoluteValue < o) {
-                space.rotateRight(delta)
+            if(o.absoluteValue < l.absoluteValue){
+                if(l>0){
+                    space.rotateUp(delta)
+                } else {
+                    space.rotateDown(delta)
+                }
+            } else {
+                if (o < 0){
+                    space.rotateLeft(delta)
+                } else {
+                    space.rotateRight(delta)
+                }
             }
-
         }
     })
 
@@ -286,7 +320,14 @@ fun GuiButtons(space: Space) {
     })
     settings.back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            settings.updateSpace()
+            space.changeLidarFPS(settings.lidar_box.selected)
+            space.changePlaybackFPS(settings.playback_slider.value.toInt())
+            space.switchFixedCamera(settings.camera_checkbox.isChecked)
+            space.changeCompressionlvl(settings.compression_box.selected)
+            space.changeGradualCompression(settings.gradualBox.isChecked)
+
+            val (wi, hei) = settings.resolution_box.selected.split("x")
+            space.changeResolution(hei.toInt(), wi.toInt())
         }
 
     })
