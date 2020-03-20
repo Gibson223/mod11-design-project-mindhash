@@ -25,6 +25,7 @@ import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.pow
@@ -37,13 +38,25 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     var newLidaarFPS = AtomicBoolean(false)
 
     //-------__Preferancess__---------
-    var lidarFPS = 12 //lidar fps 5/10/20
-    var playbackFPS = 0 // manually fix fps
-    var compresion = 4 //compression level
-    var gradualCompression = true
-
+    var lidarFPS = AtomicInteger() //lidar fps 5/10/20
+    var playbackFPS = AtomicInteger() // manually fix fps
     //camera setting, if the camera is closer the compression will decrease
-    var fixedCamera = false
+    var fixedCamera = AtomicBoolean()
+    var compresion = AtomicInteger() //compression level
+
+    var gradualCompression = AtomicBoolean()
+    /**
+     * dfcm distance from camera margin
+     * used in deciding how compressed the data is
+     * based on the point's distance from the camera
+     */
+    val dfcm = AtomicInteger()
+
+    val settings = Settings(this)
+
+    init {
+        settings.updateSpace()
+    }
 
 
     var pause = AtomicBoolean(false)
@@ -56,13 +69,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     var camController = CameraInputController(cam)
 
-
-    /**
-     * dfcm distance from camera margin
-     * used in deciding how compressed the data is
-     * based on the point's distance from the camera
-     */
-    val dfcm = 15
 
     var modelBatch = ModelBatch()
 
@@ -80,7 +86,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
 
-    val settings = Settings(this)
 
     lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
 
@@ -167,7 +172,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         campButtonpress()
 
         //if the camera is fixed that means it's always looking at the center of the environment
-        if (fixedCamera == true) {
+        if (fixedCamera.get() == true) {
             cam.lookAt(0f, 0f, 0f)
         }
 
@@ -291,17 +296,29 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     fun changeLidarFPS(newLFPS: Int) {
-        this.lidarFPS = newLFPS
+        this.lidarFPS.set(newLFPS)
         this.newLidaarFPS.set(true)
     }
 
     fun changePlaybackFPS(newFPS: Int) {
-        this.playbackFPS = newFPS
+        this.playbackFPS.set(newFPS)
     }
 
 
     fun switchFixedCamera(fixed: Boolean) {
-        this.fixedCamera = fixed
+        this.fixedCamera.set(fixed)
+    }
+
+    fun changeDFCM(new: Int){
+        this.dfcm.set(new)
+    }
+
+    fun switchGradualCompression(new:Boolean){
+        this.gradualCompression.set(new)
+    }
+
+    fun changeCompression(new: Int){
+        this.compresion.set(new)
     }
 //    fun setFullscreen(boolean: Boolean) {
 //        Gdx.graphics.setFullscreenMode(
@@ -404,23 +421,24 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
                     + (coord.y - camp.y).pow(2)
                     + (coord.z - camp.z).pow(2))
 
-            val substraction = distance - dfcm
+            val dfcmCopy = dfcm.get()
+            val substraction = distance - dfcmCopy
 
-            when (compresion) { //compresion is the maximum level of compression
+            when (compresion.get()) { //compresion is the maximum level of compression
                 // 1 is least, then 4, 3 and finally 2
                 1 -> return 1
                 2 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcm) {
+                } else if (substraction < dfcmCopy) {
                     return 4
-                } else if (substraction < 2 * dfcm) {
+                } else if (substraction < 2 * dfcmCopy) {
                     return 3
                 } else {
                     return 2
                 }
                 3 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcm) {
+                } else if (substraction < dfcmCopy) {
                     return 4
                 } else {
                     return 3
@@ -478,8 +496,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         }
 
         crtFrame.coords.forEach { c ->
-            var divisions = compresion //level of compression
-            if (gradualCompression == true && compresion != 1) {
+            var divisions = compresion.get() //level of compression
+            if (gradualCompression.get() == true && compresion.get() != 1) {
                 divisions = decidDivisions(c) //has to be deiced based on distance from camera
             }
             //calculate the compression power(1/2/3/4) based on the distance from the camera

@@ -8,9 +8,10 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.absoluteValue
 
-class Settings(space: Space) {
+class Settings(val space: Space) {
     val font = BitmapFont()
     val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
 
@@ -41,8 +42,8 @@ class Settings(space: Space) {
     val gradualBox = CheckBox("", skin)
 
 
-    val distance = Label("DISTANCE", shared_style)
-    val distance_field = TextField("", skin) // Todo: where was this for dfcm
+    val distance = Label("DISTANCE (DFCM)", shared_style)
+    val distance_field = TextField("", skin) // Todo: dfcm
 
     val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
@@ -54,14 +55,19 @@ class Settings(space: Space) {
     val dialog = Dialog("", skin)
 
     init {
+        distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
+
         lidar_box.setItems(1, 2, 5, 10, 12, 20)
         lidar_box.selected = prefs.getInteger("LIDAR FPS", 12)
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
         resolution_box.setItems("1920x1080", "1080x720")
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
+        camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
+
         compression_box.setItems(1, 2, 3, 4)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
+        distance_field.text = prefs.getInteger("DFCM",15).toString()
 
 
         dialog.setSize(200f, 250f)
@@ -100,6 +106,7 @@ class Settings(space: Space) {
         back_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 println("quit settings menu")
+                updateSpace()
                 space.resume()
                 dialog.hide()
 
@@ -118,12 +125,30 @@ class Settings(space: Space) {
 
     }
 
+    fun updateSpace(){
+        space.changeLidarFPS(lidar_box.selected)
+        space.changePlaybackFPS(playback_slider.value.toInt())
+        val (wi, hei) = resolution_box.selected.split("x")
+        space.changeResolution(hei.toInt(), wi.toInt())
+        space.switchFixedCamera(camera_checkbox.isChecked)
+
+        space.changeCompression(compression_box.selected)
+        space.switchGradualCompression(gradualBox.isChecked)
+        space.changeDFCM(distance_field.text.toInt())
+
+
+    }
+
     private fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
         prefs.putFloat("PLAYBACK FPS", playback_slider.value)
         prefs.putString("RESOLUTION", resolution_box.selected)
+        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
+
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
+        prefs.putInteger("DFCM", distance_field.text.toInt())
+
         prefs.flush()
 
     }
@@ -273,12 +298,7 @@ fun GuiButtons(space: Space) {
     // TODO add more settings to be stored
     settings.back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            space.changeLidarFPS(settings.lidar_box.selected)
-            space.changePlaybackFPS(settings.playback_slider.value.toInt())
-            space.switchFixedCamera(settings.camera_checkbox.isChecked)
-
-            val (wi, hei) = settings.resolution_box.selected.split("x")
-            space.changeResolution(hei.toInt(), wi.toInt())
+            settings.updateSpace()
         }
 
     })
