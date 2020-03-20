@@ -127,21 +127,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
 
-        for (i in -50..50) {
-            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dx.setPosition(i * -1f, -1f, -1f)
-            dx.lookAt(cam!!.position, cam!!.up)
-            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dy.setPosition(-1f, -1f * i, -1f)
-            dy.lookAt(cam!!.position, cam!!.up)
-            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dz.setPosition(-1f, -1f, i * -1f)
-            dz.lookAt(cam!!.position, cam!!.up)
-            axisDecals.add(dx)
-            axisDecals.add(dy)
-            axisDecals.add(dz)
-        }
-
 
         // -----------Bottom Text--------
         stage.addActor(label)
@@ -203,8 +188,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         string.setLength(0)
         string.append(errMessage)
         string.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
-        string.append(" cma position : ").append(cam.position)
-        string.append(" cam pos origitn : ").append(cam.up)
+        string.append(" paused : ").append(pause)
+        string.append(" frame index : ").append(framesIndex)
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
