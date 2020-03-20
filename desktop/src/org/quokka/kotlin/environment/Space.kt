@@ -33,7 +33,7 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
+class Space(val recordingId: Int = 1, val compressed: Boolean = true, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
     var newLidaarFPS = AtomicBoolean(false)
 
@@ -282,11 +282,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     fun changeLidarFPS(newLFPS: Int) {
         this.lidarFPS = newLFPS + 2
-        when(lidarFPS){
-            7 -> lidarFPStimer = 20
-            12 -> lidarFPStimer = 10
-            22 -> lidarFPStimer = 5
-        }
+        initializeLidarspeed()
         this.newLidaarFPS.set(true)
     }
 
@@ -300,6 +296,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     fun changeCompression(newcomp:Int){
         this.compresion = newcomp
+//        println("compreison changed to $newcomp")
     }
 
     fun switchGradualCompression(newset: Boolean){
@@ -324,6 +321,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     fun changeDFCM(dd:Int){
         this.dfcm = dd
+//        println("def changed to $dd")
     }
 
     //------------------------------------------------
@@ -421,24 +419,23 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
                     + (coord.y - camp.y).pow(2)
                     + (coord.z - camp.z).pow(2))
 
-            val dfcmCopy = dfcm
-            val substraction = distance - dfcmCopy
+            val substraction = distance - dfcm
 
             when (compresion) { //compresion is the maximum level of compression
                 // 1 is least, then 4, 3 and finally 2
                 1 -> return 1
                 2 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcmCopy) {
+                } else if (substraction < dfcm) {
                     return 4
-                } else if (substraction < 2 * dfcmCopy) {
+                } else if (substraction < 2 * dfcm) {
                     return 3
                 } else {
                     return 2
                 }
                 3 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcmCopy) {
+                } else if (substraction < dfcm) {
                     return 4
                 } else {
                     return 3
