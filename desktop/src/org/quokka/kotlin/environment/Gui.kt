@@ -173,8 +173,6 @@ fun GuiButtons(space: Space) {
     val scaleMinusPlus = 0.2f
 
 
-    minus.setScale(scaleMinusPlus)
-    minus.setPosition(Gdx.graphics.width - minus.width * scaleMinusPlus, Gdx.graphics.height * 0.3f)
     space.stage!!.addActor(minus)
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -182,8 +180,6 @@ fun GuiButtons(space: Space) {
         }
 
     })
-    plus.setScale(scaleMinusPlus)
-    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
     space.stage!!.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -191,7 +187,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    bf_button.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 0f)
     space.stage!!.addActor(bf_button)
     bf_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -199,7 +194,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    ff_button.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 0f)
     space.stage!!.addActor(ff_button)
     ff_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -207,7 +201,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    arrows_button.setPosition(Gdx.graphics.width - 1050.toFloat(), 0f)
     space.stage!!.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -238,7 +231,6 @@ fun GuiButtons(space: Space) {
     })
 
 
-    earth_button.setPosition(Gdx.graphics.width - 185.toFloat(), 60f)
     space.stage!!.addActor(earth_button)
     earth_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -268,7 +260,6 @@ fun GuiButtons(space: Space) {
     })
 
 
-    pause_button.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 0f)
     space.stage!!.addActor(pause_button)
     pause_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -277,7 +268,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    reset_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 251.toFloat())
     space.stage!!.addActor(reset_button)
     reset_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -286,7 +276,6 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    settings_button.setPosition(Gdx.graphics.width - 110.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(settings_button)
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -295,7 +284,6 @@ fun GuiButtons(space: Space) {
             settings_dialog.show(space.stage)
         }
     })
-    // TODO add more settings to be stored
     settings.back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             settings.updateSpace()
@@ -303,11 +291,26 @@ fun GuiButtons(space: Space) {
 
     })
 
-    home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
     space.stage!!.addActor(home_button)
     home_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked HOME")
         }
     })
+
+    minus.setScale(scaleMinusPlus)
+    minus.setPosition(Gdx.graphics.width - minus.width * scaleMinusPlus, Gdx.graphics.height * 0.3f)
+    plus.setScale(scaleMinusPlus)
+    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
+
+    pause_button.setPosition(Gdx.graphics.width /2 - (pause_button.width /2), 0f)
+    bf_button.setPosition(pause_button.x - bf_button.width, 0f)
+    ff_button.setPosition(pause_button.x + pause_button.width, 0f)
+
+    arrows_button.setPosition(0f, 0f)
+    earth_button.setPosition(Gdx.graphics.width*0.95f - earth_button.width, Gdx.graphics.height*(1/12f))
+    home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
+    settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height -settings_button.height)
+    reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
+
 }
