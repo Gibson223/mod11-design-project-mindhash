@@ -1,8 +1,8 @@
 package org.quokka.game.desktop
 
 import com.badlogic.gdx.Game
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.mygdx.game.desktop.Space
 import org.quokka.kotlin.environment.Settings
