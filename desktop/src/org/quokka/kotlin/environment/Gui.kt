@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
+import org.quokka.Screens.IndexScreen
+import org.quokka.game.desktop.GameInitializer
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.absoluteValue
 
@@ -295,6 +297,8 @@ fun GuiButtons(space: Space) {
     home_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked HOME")
+            GameInitializer.screen = IndexScreen(GameInitializer)
+
         }
     })
 

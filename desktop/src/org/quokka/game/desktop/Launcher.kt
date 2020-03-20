@@ -11,5 +11,5 @@ fun main() {
     config.height = GlobalConfig.resolution.height
     config.width = GlobalConfig.resolution.width
     config.fullscreen = GlobalConfig.fullscreen
-    LwjglApplication(GameInitializer(), config)
+    LwjglApplication(GameInitializer, config)
 }
