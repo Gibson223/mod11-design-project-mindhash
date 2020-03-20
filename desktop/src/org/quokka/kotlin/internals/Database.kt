@@ -142,6 +142,30 @@ object Database {
         }
         rs.close()
         st.close()
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Database.kt
+        return ret
+    }
+
+    /**
+     * Connect to the database and authorize.
+     *
+     * @param user
+     * @param password
+     */
+    fun connect(user: String, password: String) {
+        val props = Properties()
+        props.setProperty("user", user)
+        props.setProperty("password", password)
+        props.setProperty("ssl", "false")
+//        conn = DriverManager.getConnection(DATABASE_URL, props)
+    }
+
+    /**
+     * Close the connection to the database.
+     */
+    fun close() {
+=======
+>>>>>>> master:desktop/src/org/quokka/kotlin/internals/Database.kt
         conn.close()
         return ret
     }

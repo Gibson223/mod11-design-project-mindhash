@@ -43,11 +43,13 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
     var lidarFPStimer = 10
     var playbackFPS = 0 // manually fix fps
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
     var memory = 0 // we're not sure yet how this will work
     var compresion = prefs.getInteger("COMPRESSION") //compression level
     var gradualCompression = prefs.getBoolean("GRADUAL COMPRESSION")
     //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = prefs.getBoolean("FIXED CAMERA")
+    var framesIndex = 2400 //this is basically the timestamp
     var resolution  = Pair(Gdx.graphics.width,Gdx.graphics.height)
 
     /**
@@ -56,6 +58,14 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      * based on the point's distance from the camera
      */
     var dfcm = 15//prefs.getInteger("DISTANCE")
+=======
+    var compresion = 4 //compression level
+    var gradualCompression = true
+
+    //camera setting, if the camera is closer the compression will decrease
+    var fixedCamera = false
+
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
 
     var running = AtomicBoolean(true)
     var pause = AtomicBoolean(true)
@@ -102,6 +112,16 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     var decalTextureRegion = TextureRegion(Texture(pix))
 
 
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
+
+    init {
+        database = Database()
+        database.connect("lidar", "mindhash")
+        initializeLidarspeed()
+    }
+
+=======
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
     fun create() {
         GuiButtons(this)
         //-----------Camera Creation------------------
@@ -116,10 +136,22 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         environment.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
 
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
+        spaceObjects = ArrayList<ModelInstance>(1)
+        frames = ConcurrentLinkedQueue<LidarFrame>()
+
+=======
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
         //---------Model Population----------
 
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
+
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
+        filepop()
+        newFrame()
+
+=======
 
         for (i in -50..50) {
             val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
@@ -147,12 +179,18 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         }
 
         initFrameUpdateThread()
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
         // -----------Bottom Text--------
         stage.addActor(label)
 
         plexer = InputMultiplexer(stage, camController)
         Gdx.input.inputProcessor = plexer
     }
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
+    
+=======
+
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
 
     override fun hide() {
         TODO("Not yet implemented")
@@ -210,6 +248,15 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      * which is both a List<Decal>
      * @author Robert, Till
      */
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
+    fun newFrame() {
+
+        timer("Environment population", period = lidarFPStimer.toLong()*10 , initialDelay = 100) {
+            if(newLidaarFPS.get() == false) { // the lidarFPS has not been changed
+                if (pause.get() != false && frames.isNotEmpty()) {
+                    if (compresion == 0) {
+                        val f = frames.poll()
+=======
     fun initFrameUpdateThread() {
         timer("Array Creator", period = 100, initialDelay = 100) {
             if (!pause.get()) {
@@ -219,6 +266,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
                 } else {
                     val nextFrame = fetchNextFrame()
                     nextFrame?.let { f ->
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
                         decals = f.coords.map {
                             val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
                             d.setPosition(it.x, it.y, it.z)
@@ -313,6 +361,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         this.gradualCompression = newset
     }
 
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
     fun skipForward10frames(){
         this.framesIndex += 10
     }
@@ -333,6 +382,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         this.dfcm = dd
     }
 
+=======
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
     //------------------------------------------------
 
     /**
@@ -677,6 +728,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         cam.update()
     }
 
+<<<<<<< HEAD:desktop/src/org/quokka/kotlin/Enviroment/Space.kt
+=======
     fun rotateZ() {
         cam.rotate(Vector3(0f, 0f, 1f), rotationAngle)
         cam.update()
@@ -686,6 +739,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         cam.rotate(Vector3(0f, 0f, 1f), -rotationAngle)
         cam.update()
     }
+>>>>>>> master:desktop/src/org/quokka/kotlin/environment/Space.kt
+
 }
 
 
