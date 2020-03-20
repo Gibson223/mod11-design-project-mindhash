@@ -42,14 +42,18 @@ class Space: Screen {
     var axis = false
     var newLidaarFPS = AtomicBoolean(false)
 
+
+
+    val prefs = Gdx.app.getPreferences("My Preferences")
     //-------__Preferancess__---------
-    var lidarFPS = 12 //lidar fps 5/10/20
+    var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
+    var lidarFPStimer = 10
     var playbackFPS = 0 // manually fix fps
     var memory = 0 // we're not sure yet how this will work
-    var compresion = 4 //compression level
-    var gradualCompression = true
+    var compresion = prefs.getInteger("COMPRESSION") //compression level
+    var gradualCompression = prefs.getBoolean("GRADUAL COMPRESSION")
     //camera setting, if the camera is closer the compression will decrease
-    var fixedCamera = false
+    var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     var framesIndex = 2400 //this is basically the timestamp
 
 
@@ -147,13 +151,14 @@ class Space: Screen {
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
 
+        filepop()
+        newFrame()
 
 
 
         // -----------Bottom Text--------
         stage.addActor(label)
-        filepop()
-        newFrame()
+
 
 
 
@@ -162,8 +167,7 @@ class Space: Screen {
         Gdx.input.inputProcessor = plexer
 
     }
-
-
+    
 
     override fun hide() {
         TODO("Not yet implemented")
@@ -175,7 +179,6 @@ class Space: Screen {
 
 
     override fun render(delta: Float) {
-        //        camController.update()
 
 
         campButtonpress()
@@ -227,7 +230,7 @@ class Space: Screen {
      */
     fun newFrame() {
 
-        timer("Environment population", period = lidarFPS.toLong()*10 , initialDelay = 100) {
+        timer("Environment population", period = lidarFPStimer.toLong()*10 , initialDelay = 100) {
             if(newLidaarFPS.get() == false) { // the lidarFPS has not been changed
                 if (pause.get() != false && frames.isNotEmpty()) {
                     if (compresion == 0) {
@@ -311,7 +314,12 @@ class Space: Screen {
     }
 
     fun changeLidarFPS(newLFPS: Int) {
-        this.lidarFPS = newLFPS
+        this.lidarFPS = newLFPS + 2
+        when(lidarFPS){
+            7 -> lidarFPStimer = 20
+            12 -> lidarFPStimer = 10
+            22 -> lidarFPStimer = 5
+        }
         this.newLidaarFPS.set(true)
     }
 
@@ -319,15 +327,25 @@ class Space: Screen {
         this.playbackFPS = newFPS
     }
 
-
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera = fixed
     }
-//    fun setFullscreen(boolean: Boolean) {
-//        Gdx.graphics.setFullscreenMode(
-//                DisplayMode(2, 2, 10, 3)0
-//    }
 
+    fun changeCompressionlvl(newcomp:Int){
+        this.compresion = newcomp
+    }
+
+    fun changeGradualCompression(newset: Boolean){
+        this.gradualCompression = newset
+    }
+
+    fun skipForward10frames(){
+        this.framesIndex += 10
+    }
+
+    fun skipBackwards10Frames(){
+        this.framesIndex -= 10
+    }
 
 
 
@@ -572,10 +590,10 @@ class Space: Screen {
     val rotationAngle = 75f
 
 
+    // this methods can be deleted later
     fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
-
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             moveLeft(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
@@ -662,17 +680,6 @@ class Space: Screen {
         cam.update()
     }
 
-    fun rotateZ(){
-        cam.rotate(Vector3(0f,0f,1f),rotationAngle)
-        cam.update()
-
-    }
-
-    fun rotateZrev(){
-        cam.rotate(Vector3(0f,0f,1f),-rotationAngle)
-        cam.update()
-
-    }
 
 }
 

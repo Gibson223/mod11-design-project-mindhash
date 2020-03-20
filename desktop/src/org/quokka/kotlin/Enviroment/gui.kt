@@ -54,15 +54,16 @@ class Settings(space: Space) {
     val dialog = Dialog("", skin)
 
     init {
-        lidar_box.setItems(1, 2, 5, 10, 12, 20)
-        lidar_box.selected = prefs.getInteger("LIDAR FPS", 12)
+        lidar_box.setItems(5, 10, 20)
+        lidar_box.selected = prefs.getInteger("LIDAR FPS", 10)
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
         resolution_box.setItems("1920x1080", "1080x720")
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
-        compression_box.setItems(1, 2, 3, 4)
+        compression_box.setItems(1, 4, 3, 2)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
 
+        camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", false)
 
         dialog.setSize(200f, 250f)
         dialog.setPosition(Gdx.graphics.width / 2 - 100f, Gdx.graphics.height / 2 - 101f)
@@ -124,6 +125,7 @@ class Settings(space: Space) {
         prefs.putString("RESOLUTION", resolution_box.selected)
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
+        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.flush()
 
     }
@@ -154,6 +156,7 @@ fun GuiButtons(space: Space) {
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
+            space.moveBackward(Gdx.graphics.deltaTime)
         }
 
     })
@@ -163,6 +166,7 @@ fun GuiButtons(space: Space) {
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
+            space.moveForward(Gdx.graphics.deltaTime)
         }
     })
 
@@ -171,6 +175,8 @@ fun GuiButtons(space: Space) {
     bf_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked BF")
+            space.skipBackwards10Frames()
+
         }
     })
 
@@ -179,6 +185,7 @@ fun GuiButtons(space: Space) {
     ff_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked FF")
+            space.skipForward10frames()
         }
     })
 
@@ -276,6 +283,8 @@ fun GuiButtons(space: Space) {
             space.changeLidarFPS(settings.lidar_box.selected)
             space.changePlaybackFPS(settings.playback_slider.value.toInt())
             space.switchFixedCamera(settings.camera_checkbox.isChecked)
+            space.changeCompressionlvl(settings.compression_box.selected)
+            space.changeGradualCompression(settings.gradualBox.isChecked)
 
             val (wi, hei) = settings.resolution_box.selected.split("x")
             space.changeResolution(hei.toInt(), wi.toInt())
