@@ -44,7 +44,7 @@ class Space: Screen {
     //-------__Preferancess__---------
     var lidarFPS = 12 //lidar fps 5/10/20
     var playbackFPS = 0 // manually fix fps
-    var memory =0 // we're not sure yet how this will work
+    var memory = 0 // we're not sure yet how this will work
     var compresion = 4 //compression level
     var gradualCompression = true
     //camera setting, if the camera is closer the compression will decrease
@@ -121,9 +121,8 @@ class Space: Screen {
 
 
         spaceObjects = ArrayList<ModelInstance>(1)
-
-
         frames = ConcurrentLinkedQueue<LidarFrame>()
+
         //---------Model Population----------
         decalBatch = DecalBatch(CameraGroupStrategy(cam))
 

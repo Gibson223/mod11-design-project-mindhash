@@ -178,15 +178,6 @@ fun GuiButtons(space: Space){
             } else if(o > 0 && l.absoluteValue < o){
                 space.rotateRight(delta)
             }
-//
-//
-//
-//            var dist = space.disntaceAB2(o,l,x,y)
-//            space.cam!!.rotate(
-//                    Vector3(space.cam!!.direction).rotate(Vector3(o,space.cam!!.up.y,l),90f),
-//                    Gdx.graphics.deltaTime*dist)
-//            space.cam!!.update()
-//            println("distance: $dist")
 
         }
     })
