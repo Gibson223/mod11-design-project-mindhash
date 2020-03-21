@@ -319,10 +319,18 @@ object Database {
             recordingId: Int,
             startFrame: Int,
             numberOfFrames: Int,
-            framerate: LidarFps = LidarFps.TEN
+            framerate: LidarFps = LidarFps.TEN,
+            framerateInt: Int? = null
     ): List<LidarFrame> {
         val conn = DbConnectionPool.connection
-        val spf = framerate.stepsPerFrame
+        val spf: Int
+        // TODO this has to be adjusted to 20fps if that is a possibility, probably  make it generic
+        if (framerateInt != null) {
+            spf = if (10 / framerateInt != 0) {10 / framerateInt } else { 1 }
+        } else {
+            spf = framerate.stepsPerFrame
+        }
+        println("spf: $spf")
         val frames = mutableListOf<LidarFrame>()
 
         val recording = getRecording(recordingId)

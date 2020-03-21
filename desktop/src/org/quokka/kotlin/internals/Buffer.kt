@@ -1,6 +1,6 @@
 package org.quokka.kotlin.internals
 
-import org.quokka.kotlin.config.GlobalConfig
+import com.badlogic.gdx.Gdx
 import java.lang.Exception
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.locks.ReentrantLock
@@ -8,7 +8,12 @@ import kotlin.concurrent.thread
 
 class Buffer(val recordingId: Int) {
     companion object {
+        // Number of frames to be queried per update
         const val FRAMES_PER_QUERY = 20
+
+        // The maximum size of the buffer in seconds
+        // TODO this should be part of the preferences
+        const val BUFFER_SIZE_S = 40
     }
 
     /**
@@ -33,9 +38,10 @@ class Buffer(val recordingId: Int) {
     @Volatile
     private var skipToFrameIndex: Int?
     private val framesPerBuffer: Int
-        get() = GlobalConfig.bufferSize * GlobalConfig.lidarFps.fps
+        get() = BUFFER_SIZE_S * prefs.getInteger("LIDAR FPS")
     private val playQueue = ConcurrentLinkedDeque<LidarFrame>()
     private val delQueue = ConcurrentLinkedDeque<LidarFrame>()
+    private val prefs = Gdx.app.getPreferences("My Preferences")
 
     /*
      * This lock prevents the updateBuffers() function from running simultaneously
@@ -50,6 +56,7 @@ class Buffer(val recordingId: Int) {
 
 
     init {
+        println("Initializing buffer with $framesPerBuffer max frames")
         val rec = Database.getRecording(recordingId)
         if (rec != null) {
             recordingMetaData = rec
@@ -120,7 +127,7 @@ class Buffer(val recordingId: Int) {
         try {
             skipLock.lock()
 
-            val framesToSkip = (seconds * GlobalConfig.lidarFps.fps).toInt()
+            val framesToSkip = (seconds * prefs.getInteger("LIDAR FPS")).toInt()
             val targetFrame = lastFrameIndex + framesToSkip
             val lastFrameAvailable = playQueue.peekLast()?.frameId
 
@@ -153,7 +160,7 @@ class Buffer(val recordingId: Int) {
     fun skipBackward(seconds: Float) {
         try {
             skipLock.lock()
-            val framesToSkip = (seconds * GlobalConfig.lidarFps.fps).toInt()
+            val framesToSkip = (seconds * prefs.getInteger("LIDAR FPS")).toInt()
             val targetFrame = lastFrameIndex - framesToSkip
             val firstFrameAvailable = delQueue.peekFirst()?.frameId
 
@@ -209,7 +216,8 @@ class Buffer(val recordingId: Int) {
 
     override fun toString(): String {
         val s = "Buffer { recordingId=${recordingId}, playQueueSize=${playQueue.size}, delQueueSize=${delQueue.size}" +
-                " ,framesPerBuffer=${GlobalConfig.lidarFps.fps * GlobalConfig.bufferSize}, lastFrameId=${playQueue.peekFirst()?.frameId}}"
+                ", framesPerBuffer=${prefs.getInteger("LIDAR FPS") * BUFFER_SIZE_S}" +
+                ", lastFrameId=${playQueue.peekFirst()?.frameId}}"
 
         return s
     }
@@ -299,7 +307,7 @@ class Buffer(val recordingId: Int) {
                             recordingId = recordingId,
                             startFrame = lastId + 1,
                             numberOfFrames = FRAMES_PER_QUERY,
-                            framerate = GlobalConfig.lidarFps)
+                            framerateInt = prefs.getInteger("LIDAR FPS"))
                     lastId += FRAMES_PER_QUERY
                 }
 
