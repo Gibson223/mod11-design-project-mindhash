@@ -133,7 +133,6 @@ class Buffer(val recordingId: Int) {
 
             if (lastFrameAvailable == null || targetFrame > lastFrameAvailable) {
                 // Target frame is not in buffer
-                println("Skipping to $targetFrame from $lastFrameIndex")
                 skipTo(targetFrame)
                 return
             }
@@ -166,7 +165,6 @@ class Buffer(val recordingId: Int) {
 
             if (firstFrameAvailable == null || firstFrameAvailable > targetFrame) {
                 // Target frame is not in buffer
-                println("Skipping to $targetFrame from $lastFrameIndex")
                 skipTo(targetFrame)
                 return
             }
@@ -192,9 +190,14 @@ class Buffer(val recordingId: Int) {
      * @param frameIndex Which frame to skip to.
      */
     fun skipTo(frameIndex: Int) {
-        skipToFrameIndex = frameIndex
-        updateBuffers()
-        updateMeta()
+        try {
+            skipLock.lock()
+            skipToFrameIndex = frameIndex
+            updateBuffers()
+            updateMeta()
+        } finally {
+            skipLock.unlock()
+        }
     }
 
     /**
@@ -292,7 +295,6 @@ class Buffer(val recordingId: Int) {
             var lastId = playQueue.peekLast()?.frameId ?: lastFrameIndex
             // If the skipToFrameIndex is not null, clean everything and go there
             skipToFrameIndex?.let {
-                println("Skipping")
                 lastId = it
                 fullCleanBuffers()
                 // Reset it back to null after skipping is done

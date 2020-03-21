@@ -18,7 +18,7 @@ object GameInitializer : Game() {
         batch = SpriteBatch()
         font = BitmapFont() //
         //Use LibGDX's default Arial font.
-        game = Space(recordingId = 1, local = false, axis = false)
+        game = Space(recordingId = 3, local = false, axis = false)
         settings = Settings(game)
         this.setScreen(game)
     }

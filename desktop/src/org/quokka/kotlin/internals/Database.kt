@@ -330,7 +330,6 @@ object Database {
         } else {
             spf = framerate.stepsPerFrame
         }
-        println("spf: $spf")
         val frames = mutableListOf<LidarFrame>()
 
         val recording = getRecording(recordingId)
