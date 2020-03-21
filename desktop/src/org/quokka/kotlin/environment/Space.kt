@@ -38,8 +38,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var newLidaarFPS = AtomicBoolean(false)
 
 
-
     val prefs = Gdx.app.getPreferences("My Preferences")
+
     //-------__Preferancess__---------
     var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
     var lidarFPStimer = 10
@@ -47,9 +47,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var memory = 0 // we're not sure yet how this will work
     var compresion = prefs.getInteger("COMPRESSION") //compression level
     var gradualCompression = prefs.getBoolean("GRADUAL COMPRESSION")
+
     //camera setting, if the camera is closer the compression will decrease
     var fixedCamera = prefs.getBoolean("FIXED CAMERA")
-    var resolution  = Pair(Gdx.graphics.width,Gdx.graphics.height)
+    var resolution = Pair(Gdx.graphics.width, Gdx.graphics.height)
 
     /**
      * dfcm distance from camera margin
@@ -67,6 +68,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     var pause = AtomicBoolean(false)
     val buffer = Buffer(recordingId)
+
     // this is basically the timestamp
     var framesIndex = Database.getRecording(recordingId)!!.minFrame
 
@@ -155,7 +157,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     override fun render(delta: Float) {
-        Gdx.gl.glClearColor(0f,0f,0f, 1f)
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
 
         campButtonpress()
         //if the camera is fixed that means it's always looking at the center of the environment
@@ -187,9 +189,16 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         string.setLength(0)
         string.append(errMessage)
-        string.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
-        string.append(" paused : ").append(pause)
-        string.append(" frame index : ").append(framesIndex)
+                .append("fps = ")
+                .append(Gdx.graphics.framesPerSecond)
+                .append(", paused = ")
+                .append(pause)
+                .append(", frame_index = ")
+                .append(buffer.lastFrameIndex)
+                .append(", past_buffer_size  = ")
+                .append(buffer.pastBufferSize)
+                .append(", future_buffer_size  = ")
+                .append(buffer.futureBufferSize)
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
@@ -294,32 +303,34 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         this.fixedCamera = fixed
     }
 
-    fun changeCompression(newcomp:Int){
+    fun changeCompression(newcomp: Int) {
         this.compresion = newcomp
 //        println("compreison changed to $newcomp")
     }
 
-    fun switchGradualCompression(newset: Boolean){
+    fun switchGradualCompression(newset: Boolean) {
         this.gradualCompression = newset
     }
 
-    fun skipForward10frames(){
+    fun skipForward10frames() {
         this.framesIndex += 10
+        buffer.skipForward(5f)
     }
 
-    fun skipBackwards10Frames(){
+    fun skipBackwards10Frames() {
         this.framesIndex -= 10
+        buffer.skipBackward(5f)
     }
 
-    fun initializeLidarspeed(){
-        when(lidarFPS){
+    fun initializeLidarspeed() {
+        when (lidarFPS) {
             7 -> lidarFPStimer = 20
             12 -> lidarFPStimer = 10
             22 -> lidarFPStimer = 5
         }
     }
 
-    fun changeDFCM(dd:Int){
+    fun changeDFCM(dd: Int) {
         this.dfcm = dd
 //        println("def changed to $dd")
     }
@@ -468,7 +479,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     override fun pause() {
         pause.set(true)
     }
-
 
 
     /**

@@ -10,7 +10,7 @@ object GlobalConfig {
     // How fast the
     var playbackSpeed = 1.0;
     // The size of the buffer for stored frames in seconds.
-    var bufferSize = 10;
+    var bufferSize = 40;
     // Resolution of the screen
     var resolution = Resolution(1920, 1080)
     // Fullscreen or not
