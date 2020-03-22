@@ -3,6 +3,7 @@ package org.quokka.kotlin.internals
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.quokka.kotlin.config.LidarFps
+import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
@@ -326,7 +327,8 @@ object Database {
         val spf: Int
         // TODO this has to be adjusted to 20fps if that is a possibility, probably  make it generic
         if (framerateInt != null) {
-            spf = if (10 / framerateInt != 0) {10 / framerateInt } else { 1 }
+            spf = if (MAX_LIDAR_FPS / framerateInt != 0) {
+                MAX_LIDAR_FPS / framerateInt } else { 1 }
         } else {
             spf = framerate.stepsPerFrame
         }
