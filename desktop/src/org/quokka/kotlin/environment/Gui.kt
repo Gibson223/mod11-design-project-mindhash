@@ -167,6 +167,7 @@ class Settings {
 }
 
 fun GuiButtons(space: Space) {
+//http://soundbible.com/1705-Click2.html
     val settings = space.settings
 
     val home_button: Image = Image(Texture("Screen3D/home_button.png"))
@@ -189,6 +190,7 @@ fun GuiButtons(space: Space) {
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
+            GameInitializer.click.play()
             space.moveBackward(Gdx.graphics.deltaTime)
         }
     })
@@ -199,6 +201,7 @@ fun GuiButtons(space: Space) {
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom in")
+            GameInitializer.click.play()
             space.moveForward(Gdx.graphics.deltaTime)
         }
     })
@@ -207,6 +210,7 @@ fun GuiButtons(space: Space) {
     bf_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked BF")
+            GameInitializer.click.play()
             space.skipBackwards10Frames()
         }
     })
@@ -215,39 +219,16 @@ fun GuiButtons(space: Space) {
     ff_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked FF")
+            GameInitializer.click.play()
             space.skipForward10frames()
         }
     })
 
     space.stage.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
-
-//        override fun clicked(event: InputEvent?, x: Float, y: Float) {
-//            val x1 = arrows_button.width / 3
-//            val x2 = 2 * arrows_button.width / 3
-//            val x3 = arrows_button.width
-//
-//            val y1 = arrows_button.height / 3
-//            val y2 = 2 * arrows_button.height / 3
-//            val y3 = arrows_button.height
-//
-//            val delta = Gdx.graphics.deltaTime
-//            when {
-//                x < x1 && y < y1 -> println("q1")
-//                x < x2 && y < y1 -> space.moveDown(delta)
-//                x < x3 && y < y1 -> println("q3")
-//
-//                x < x1 && y < y2 -> space.moveLeft(delta)
-//                x < x2 && y < y2 -> println("center")
-//                x < x3 && y < y2 -> space.moveRight(delta)
-//
-//                x < x1 && y < y3 -> println("q7")
-//                x < x2 && y < y3 -> space.moveUp(delta)
-//                x < x3 && y < y3 -> println("q9")
-//
-//            }
-//        }
-
+        override fun clicked(event: InputEvent?, x: Float, y: Float) {
+            GameInitializer.click.play()
+        }
         override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
             super.touchDragged(event, x, y, pointer)
             val o = x - 110
@@ -274,6 +255,8 @@ fun GuiButtons(space: Space) {
     earth_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
+            GameInitializer.click.play()
+
         }
 
         override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -318,6 +301,7 @@ fun GuiButtons(space: Space) {
     pause_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked PAUSE")
+            GameInitializer.click.play()
             space.pause.set(!space.pause.get())
         }
     })
@@ -326,6 +310,7 @@ fun GuiButtons(space: Space) {
     reset_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked RESET")
+            GameInitializer.click.play()
             space.resetCamera()
         }
     })
@@ -334,6 +319,7 @@ fun GuiButtons(space: Space) {
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
+            GameInitializer.click.play()
             space.pause()
             settings_dialog.show(space.stage)
         }
@@ -341,6 +327,7 @@ fun GuiButtons(space: Space) {
     settings.back_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             settings.updateSpace()
+            GameInitializer.click.play()
         }
 
     })
@@ -349,6 +336,7 @@ fun GuiButtons(space: Space) {
     home_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked HOME")
+            GameInitializer.click.play()
             GameInitializer.screen = IndexScreen()
         }
     })

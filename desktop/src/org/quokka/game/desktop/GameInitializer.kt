@@ -2,6 +2,7 @@ package org.quokka.game.desktop
 
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.mygdx.game.desktop.Space
@@ -14,8 +15,10 @@ object GameInitializer : Game() {
     lateinit var font: BitmapFont
     lateinit var space : Space
     lateinit var settings : Settings
+    lateinit var click : Sound
 
     override fun create() {
+        click = Gdx.audio.newSound(Gdx.files.internal("click.mp3"))
         batch = SpriteBatch()
         font = BitmapFont() //
         //Use LibGDX's default Arial font.
