@@ -7,12 +7,14 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.badlogic.gdx.utils.Align
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.game.desktop.GameInitializer.settings
 import org.quokka.game.desktop.GameInitializer.updateUsedSpace
@@ -22,12 +24,11 @@ import kotlin.system.exitProcess
 class IndexScreen : Screen {
     var img: Image
     var img2: Image
-    var font: BitmapFont
+    val font: BitmapFont = BitmapFont()
     var stage: Stage
     var skin: Skin
 
     init {
-        font = BitmapFont()
         font.color = Color.BLACK
         font.data.setScale(2f)
         skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
@@ -74,7 +75,8 @@ class IndexScreen : Screen {
     override fun render(delta: Float) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
         GameInitializer.batch.begin()
-        font.draw(GameInitializer.batch, "Press escape to exit the application", Gdx.graphics.width / 2 - 250.toFloat(), Gdx.graphics.height - 20.toFloat())
+        val glyph = GlyphLayout(font,"Press escape to exit the application" )
+        font.draw(GameInitializer.batch, glyph, Gdx.graphics.width/2 - glyph.width/2, img.y + img.height/2 )
         GameInitializer.batch.end()
         stage.act()
         stage.draw()
@@ -82,7 +84,9 @@ class IndexScreen : Screen {
             exitProcess(0)
     }
 
-    override fun resize(width: Int, height: Int) {}
+    override fun resize(width: Int, height: Int) {
+        stage.getViewport()?.update(width, height, true);
+    }
     override fun pause() {}
     override fun resume() {}
     override fun hide() {}
