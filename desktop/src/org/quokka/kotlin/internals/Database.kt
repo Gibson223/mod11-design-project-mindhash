@@ -2,8 +2,6 @@ package org.quokka.kotlin.internals
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import org.quokka.kotlin.config.LidarFps
-import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
@@ -13,11 +11,12 @@ import kotlin.system.measureTimeMillis
 const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
 const val DATABASE_USERNAME = "lidar"
 const val DATABASE_PASSWORD = "mindhash"
-
+// TODO the fps field needs a set of functions that can change it
 const val CREATE_DB_QUERY = """
 CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
  minframe integer DEFAULT 0,
  maxframe integer DEFAULT 0,
+ fps integer DEFAULT 10,
  maxpoints integer
 );
  CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id)
@@ -27,11 +26,12 @@ const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF E
 const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
 const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
 const val SELECT_RECORDINGS = """
-SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(frameid) as numberofframes FROM recording,
+SELECT minframe, maxframe, id, title, COUNT(frameid) as numberofframes, fps, maxpoints FROM recording,
  frame WHERE recid = id GROUP BY id;
 """
 const val SELECT_SINGLE_RECORDING = "SELECT * FROM recording WHERE id = ?;"
 const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? ORDER BY frameid ASC LIMIT ?;"
+const val SELECT_RECORDING_FPS = "SELECT fps FROM recording WHERE id = ?;"
 const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxpoints = ? WHERE id = ?;"
 const val FLOAT_BYTE_SIZE = 4
 const val FLOATS_PER_POINT = 3
@@ -119,6 +119,7 @@ object Database {
                                 rs.getInt("minframe"),
                                 rs.getInt("maxframe"),
                                 rs.getInt("numberofframes"),
+                                rs.getInt("fps"),
                                 rs.getInt("maxpoints")
                         )
                 )
@@ -139,6 +140,7 @@ object Database {
                     rs.getInt("minframe"),
                     rs.getInt("maxframe"),
                     rs.getInt("maxframe") - rs.getInt("minframe"),
+                    rs.getInt("fps"),
                     rs.getInt("maxpoints")
             )
         }
@@ -320,17 +322,21 @@ object Database {
             recordingId: Int,
             startFrame: Int,
             numberOfFrames: Int,
-            framerate: LidarFps = LidarFps.TEN,
-            framerateInt: Int? = null
+            framerate: Int
     ): List<LidarFrame> {
         val conn = DbConnectionPool.connection
-        val spf: Int
-        // TODO this has to be adjusted to 20fps if that is a possibility, probably  make it generic
-        if (framerateInt != null) {
-            spf = if (MAX_LIDAR_FPS / framerateInt != 0) {
-                MAX_LIDAR_FPS / framerateInt } else { 1 }
-        } else {
-            spf = framerate.stepsPerFrame
+
+        var spf = 1
+        val fpsStx = conn.prepareStatement(SELECT_RECORDING_FPS)
+        fpsStx.setInt(1, recordingId)
+        val fpsRsx = fpsStx.executeQuery()
+        while (fpsRsx.next()) {
+            val footageFps = fpsRsx.getInt("fps")
+            spf = if (footageFps / framerate != 0) {
+                footageFps / framerate
+            } else {
+                1
+            }
         }
         val frames = mutableListOf<LidarFrame>()
 
@@ -390,6 +396,7 @@ data class RecordingMeta(
         val minFrame: Int,
         val maxFrame: Int,
         val numberOfFrames: Int,
+        val fps: Int,
         val maxNumberOfPoints: Int
 )
 
@@ -404,7 +411,7 @@ fun main() {
     for (i in 0 until 40) {
         val nFrames = 50
         val time = measureTimeMillis {
-            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
+            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = 10)
         }
         println("Time to take $nFrames frames: $time")
     }

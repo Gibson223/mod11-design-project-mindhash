@@ -313,7 +313,7 @@ class Buffer(val recordingId: Int) {
                             recordingId = recordingId,
                             startFrame = lastId + 1,
                             numberOfFrames = FRAMES_PER_QUERY,
-                            framerateInt = LIDAR_FPS)
+                            framerate = LIDAR_FPS)
                     lastId += FRAMES_PER_QUERY
                 }
 

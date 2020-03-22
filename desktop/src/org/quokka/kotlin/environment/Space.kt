@@ -234,16 +234,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun initFrameUpdateThread(): Timer {
         return timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {
             // Skip frames according to fps
-            val fsc = frameFetchSkipCounter.incrementAndGet()
-            if (fsc > framesToSkip.get()) {
+            if (frameFetchSkipCounter.incrementAndGet() > framesToSkip.get()) {
                 frameFetchSkipCounter.set(0)
                 if (!pause.get()) {
                     if (compresion != 1) {
                         decals = compressPoints() ?: decals
                         decals.forEach { colorDecal(it, blueRedFade) }
                     } else {
-                        val nextFrame = fetchNextFrame()
-                        nextFrame?.let { f ->
+                        fetchNextFrame()?.let { f ->
                             decals = f.coords.map {
                                 val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
                                 d.setPosition(it.x, it.y, it.z)
