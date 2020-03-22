@@ -374,6 +374,8 @@ class Space : InputAdapter(), ApplicationListener, Observer {
         home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
         stage!!.addActor(home_button)
         Gdx.input.inputProcessor = stage
+
+        println(framesIndex)
     }
 
 
