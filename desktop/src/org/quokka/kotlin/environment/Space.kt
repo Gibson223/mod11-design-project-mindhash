@@ -19,6 +19,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
@@ -35,7 +36,15 @@ import kotlin.math.sqrt
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
-    var newLidaarFPS = AtomicBoolean(false)
+    var newLidarFps = AtomicBoolean(false)
+    /*
+     * The frame fetching loop runs at a constant 20fps. These two numbers just determine how many of these frames
+     * have to be skipped to achieve the desired framerate.
+     * For example 20fps means 0 frames are skipped. 10fps however mean 1 frame is skipped and 5 fps means 3 frames
+     * are skipped.
+     */
+    var framesToSkip = AtomicInteger(0)
+    var frameFetchSkipCounter = AtomicInteger(0)
 
 
     val prefs = Gdx.app.getPreferences("My Preferences")
@@ -44,7 +53,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
     var lidarFPStimer = 10
     var playbackFPS = 0 // manually fix fps
-    var memory = 0 // we're not sure yet how this will work
+    /*
+     * TODO this should be implemented in the buffer class, right now it is a static 40 seconds.
+     *  Just replace the 40 seconds constant in the companion object with a getter from the preferences.
+     */
+    var memory = 0
     var compresion = prefs.getInteger("COMPRESSION") //compression level
     var gradualCompression = prefs.getBoolean("GRADUAL COMPRESSION")
 
@@ -213,19 +226,24 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * @author Robert, Till
      */
     fun initFrameUpdateThread() {
-        timer("Array Creator", period = 100, initialDelay = 100) {
-            if (!pause.get()) {
-                if (compresion != 1) {
-                    decals = compressPoints() ?: decals
-                    decals.forEach { colorDecal(it, blueRedFade) }
-                } else {
-                    val nextFrame = fetchNextFrame()
-                    nextFrame?.let { f ->
-                        decals = f.coords.map {
-                            val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
-                            d.setPosition(it.x, it.y, it.z)
-                            colorDecal(d, blueRedFade)
-                            d
+        timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {
+            // Skip frames according to fps
+            val fsc = frameFetchSkipCounter.incrementAndGet()
+            if (fsc > framesToSkip.get()) {
+                frameFetchSkipCounter.set(0)
+                if (!pause.get()) {
+                    if (compresion != 1) {
+                        decals = compressPoints() ?: decals
+                        decals.forEach { colorDecal(it, blueRedFade) }
+                    } else {
+                        val nextFrame = fetchNextFrame()
+                        nextFrame?.let { f ->
+                            decals = f.coords.map {
+                                val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+                                d.setPosition(it.x, it.y, it.z)
+                                colorDecal(d, blueRedFade)
+                                d
+                            }
                         }
                     }
                 }
@@ -290,9 +308,16 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun changeLidarFPS(newLFPS: Int) {
-        this.lidarFPS = newLFPS + 2
+        lidarFPS = newLFPS // There was an +2 here, not sure why?
         initializeLidarspeed()
-        this.newLidaarFPS.set(true)
+        newLidarFps.set(true)
+        framesToSkip.set(MAX_LIDAR_FPS / lidarFPS - 1)
+        println("Frames to skip now: ${framesToSkip.get()}")
+        // Reset the buffer to load new footage based on fps
+        // Do not remove the ?. For some reason buffer can be null even though it is initialized as a val at creation.
+        buffer?.let {
+            it.skipTo(it.lastFrameIndex)
+        }
     }
 
     fun changePlaybackFPS(newFPS: Int) {

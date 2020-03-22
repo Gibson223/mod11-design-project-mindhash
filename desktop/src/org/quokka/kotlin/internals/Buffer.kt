@@ -7,15 +7,6 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 
 class Buffer(val recordingId: Int) {
-    companion object {
-        // Number of frames to be queried per update
-        const val FRAMES_PER_QUERY = 20
-
-        // The maximum size of the buffer in seconds
-        // TODO this should be part of the preferences
-        const val BUFFER_SIZE_S = 40
-    }
-
     /**
      * Use this object to get access to all the meta data of the current buffer.
      */
@@ -38,10 +29,9 @@ class Buffer(val recordingId: Int) {
     @Volatile
     private var skipToFrameIndex: Int?
     private val framesPerBuffer: Int
-        get() = BUFFER_SIZE_S * prefs.getInteger("LIDAR FPS")
+        get() = BUFFER_SIZE_S * LIDAR_FPS
     private val playQueue = ConcurrentLinkedDeque<LidarFrame>()
     private val delQueue = ConcurrentLinkedDeque<LidarFrame>()
-    private val prefs = Gdx.app.getPreferences("My Preferences")
 
     /*
      * This lock prevents the updateBuffers() function from running simultaneously
@@ -71,6 +61,20 @@ class Buffer(val recordingId: Int) {
         updateBuffers()
         futureBufferSize = playQueue.size
         pastBufferSize = playQueue.size
+    }
+
+    companion object {
+        private val prefs = Gdx.app.getPreferences("My Preferences")
+        // Number of frames to be queried per update. Defaults to 2 seconds of footage
+        val FRAMES_PER_QUERY
+            get() = LIDAR_FPS * 2
+
+        val LIDAR_FPS
+            get() = prefs.getInteger("LIDAR FPS")
+
+        // The maximum size of the buffer in seconds
+        // TODO this should be part of the preferences. Make getter like for LIDAR_FPS above.
+        const val BUFFER_SIZE_S = 40
     }
 
     /**
@@ -127,7 +131,7 @@ class Buffer(val recordingId: Int) {
         try {
             skipLock.lock()
 
-            val framesToSkip = (seconds * prefs.getInteger("LIDAR FPS")).toInt()
+            val framesToSkip = (seconds * LIDAR_FPS).toInt()
             val targetFrame = lastFrameIndex + framesToSkip
             val lastFrameAvailable = playQueue.peekLast()?.frameId
 
@@ -160,7 +164,7 @@ class Buffer(val recordingId: Int) {
     fun skipBackward(seconds: Float) {
         try {
             skipLock.lock()
-            val framesToSkip = (seconds * prefs.getInteger("LIDAR FPS")).toInt()
+            val framesToSkip = (seconds * LIDAR_FPS).toInt()
             val targetFrame = lastFrameIndex - framesToSkip
             val firstFrameAvailable = delQueue.peekFirst()?.frameId
 
@@ -216,7 +220,7 @@ class Buffer(val recordingId: Int) {
 
     override fun toString(): String {
         val s = "Buffer { recordingId=${recordingId}, playQueueSize=${playQueue.size}, delQueueSize=${delQueue.size}" +
-                ", framesPerBuffer=${prefs.getInteger("LIDAR FPS") * BUFFER_SIZE_S}" +
+                ", framesPerBuffer=${LIDAR_FPS * BUFFER_SIZE_S}" +
                 ", lastFrameId=${playQueue.peekFirst()?.frameId}}"
 
         return s
@@ -307,7 +311,7 @@ class Buffer(val recordingId: Int) {
                             recordingId = recordingId,
                             startFrame = lastId + 1,
                             numberOfFrames = FRAMES_PER_QUERY,
-                            framerateInt = prefs.getInteger("LIDAR FPS"))
+                            framerateInt = LIDAR_FPS)
                     lastId += FRAMES_PER_QUERY
                 }
 

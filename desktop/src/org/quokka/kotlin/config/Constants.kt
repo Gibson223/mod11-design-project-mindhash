@@ -13,3 +13,5 @@ enum class LidarFps(val fps: Int, val stepsPerFrame: Int) {
     TWO(2, 5),
     ONE(1, 10)
 }
+
+const val MAX_LIDAR_FPS = 20
