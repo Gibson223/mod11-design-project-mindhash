@@ -22,7 +22,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.environment.GuiButtons
-import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -118,6 +117,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         TextureRegion(Texture(pix))
     }
     var decalTextureRegion = TextureRegion(Texture(pix))
+    init {
+        println("end of initializing space")
+    }
 
 
     fun create() {
