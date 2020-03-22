@@ -9,6 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
+import org.quokka.Screens.IndexScreen
+import org.quokka.game.desktop.GameInitializer
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.absoluteValue
 
@@ -56,12 +58,12 @@ class Settings(val space: Space) {
     val dialog = Dialog("", skin)
 
     init {
+        lidar_box.setItems(5, 10, 20)
+        lidar_box.selected = prefs.getInteger("LIDAR FPS", 10)
         distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
 
-        lidar_box.setItems(1, 2, 5, 10, 12, 20)
-        lidar_box.selected = prefs.getInteger("LIDAR FPS", 12)
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
-        resolution_box.setItems("1920x1080", "1080x720")
+        resolution_box.setItems("1920x1080", "1080x720", "FULLSCREEN")
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
@@ -130,8 +132,12 @@ class Settings(val space: Space) {
     fun updateSpace(){
         space.changeLidarFPS(lidar_box.selected)
         space.changePlaybackFPS(playback_slider.value.toInt())
-        val (wi, hei) = resolution_box.selected.split("x")
-        space.changeResolution(hei.toInt(), wi.toInt())
+        if (resolution_box.selected == "FULLSCREEN") {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.displayMode)
+        } else {
+            val (wi, hei) = resolution_box.selected.split("x")
+            space.changeResolution(hei.toInt(), wi.toInt())
+        }
         space.switchFixedCamera(camera_checkbox.isChecked)
 
         space.changeCompression(compression_box.selected)
@@ -149,6 +155,7 @@ class Settings(val space: Space) {
 
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
+        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.putInteger("DFCM", distance_field.text.toInt())
 
         prefs.flush()
@@ -175,14 +182,17 @@ fun GuiButtons(space: Space) {
     val scaleMinusPlus = 0.2f
 
 
-    space.stage!!.addActor(minus)
+    space.stage.addActor(minus)
     minus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom out")
             space.moveBackward(Gdx.graphics.deltaTime)
         }
     })
-    space.stage!!.addActor(plus)
+
+    plus.setScale(scaleMinusPlus)
+    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
+    space.stage.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked zoom in")
@@ -190,7 +200,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(bf_button)
+    space.stage.addActor(bf_button)
     bf_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked BF")
@@ -198,7 +208,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(ff_button)
+    space.stage.addActor(ff_button)
     ff_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked FF")
@@ -206,7 +216,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(arrows_button)
+    space.stage.addActor(arrows_button)
     arrows_button.addListener(object : ClickListener() {
 
 //        override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -239,7 +249,6 @@ fun GuiButtons(space: Space) {
             super.touchDragged(event, x, y, pointer)
             val o = x - 110
             val l = y - 110
-            println("l $l and o $o")
             val delta = Gdx.graphics.deltaTime
             if(o.absoluteValue < l.absoluteValue){
                 if(l>0){
@@ -258,7 +267,7 @@ fun GuiButtons(space: Space) {
     })
 
 
-    space.stage!!.addActor(earth_button)
+    space.stage.addActor(earth_button)
     earth_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
@@ -273,24 +282,36 @@ fun GuiButtons(space: Space) {
             val o = x - 50
             val l = y - 50
             val delta = Gdx.graphics.deltaTime
-            if(o.absoluteValue < l.absoluteValue){
-                if(l>0){
-                    space.rotateUp(delta)
-                } else {
-                    space.rotateDown(delta)
-                }
-            } else {
-                if (o < 0){
-                    space.rotateLeft(delta)
-                } else {
-                    space.rotateRight(delta)
-                }
+            if (o > 0){
+                space.rotateRight(delta*o/10)
             }
+            if (o < 0){
+                space.rotateLeft(delta*(-1)*o/10)
+            }
+            if (l > 0){
+                space.rotateUp(delta*l/10)
+            }
+            if (l < 0){
+                space.rotateDown(delta*(-1)*l/10)
+            }
+//            if(o.absoluteValue < l.absoluteValue){
+//                if(l>0){
+//                    space.rotateUp(delta)
+//                } else {
+//                    space.rotateDown(delta)
+//                }
+//            } else {
+//                if (o < 0){
+//                    space.rotateLeft(delta)
+//                } else {
+//                    space.rotateRight(delta)
+//                }
+//            }
         }
     })
 
 
-    space.stage!!.addActor(pause_button)
+    space.stage.addActor(pause_button)
     pause_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked PAUSE")
@@ -298,7 +319,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(reset_button)
+    space.stage.addActor(reset_button)
     reset_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked RESET")
@@ -306,7 +327,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    space.stage!!.addActor(settings_button)
+    space.stage.addActor(settings_button)
     settings_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked SETTINGS and opened settings")
@@ -321,10 +342,12 @@ fun GuiButtons(space: Space) {
 
     })
 
-    space.stage!!.addActor(home_button)
+    space.stage.addActor(home_button)
     home_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked HOME")
+            GameInitializer.screen = IndexScreen(GameInitializer)
+
         }
     })
 

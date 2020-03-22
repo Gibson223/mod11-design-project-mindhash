@@ -1,14 +1,14 @@
 package org.quokka.game.desktop
 
 import com.badlogic.gdx.Game
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.mygdx.game.desktop.Space
 import org.quokka.kotlin.environment.Settings
 
 
-class GameInitializer : Game() {
+object GameInitializer : Game() {
     lateinit var batch: SpriteBatch
     lateinit var font: BitmapFont
     lateinit var game : Space
@@ -18,7 +18,7 @@ class GameInitializer : Game() {
         batch = SpriteBatch()
         font = BitmapFont() //
         //Use LibGDX's default Arial font.
-        game = Space(recordingId = 1, compressed = false, local = false, axis = false)
+        game = Space(recordingId = 3, local = false, axis = false)
         settings = Settings(game)
         this.setScreen(game)
     }
@@ -40,7 +40,7 @@ class GameInitializer : Game() {
 //    }
 
     override fun dispose() {
-        batch!!.dispose()
-        font!!.dispose()
+        batch.dispose()
+        font.dispose()
     }
 }

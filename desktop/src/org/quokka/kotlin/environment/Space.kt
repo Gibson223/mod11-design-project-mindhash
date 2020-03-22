@@ -19,10 +19,10 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
-import java.util.*
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
+import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -33,27 +33,31 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
+class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
     var newLidaarFPS = AtomicBoolean(false)
 
 
-
     val prefs = Gdx.app.getPreferences("My Preferences")
-    //-------__Preferancess__---------
-    var lidarFPS = AtomicInteger() //lidar fps 5/10/20
-    var playbackFPS = AtomicInteger() // manually fix fps
-    //camera setting, if the camera is closer the compression will decrease
-    var fixedCamera = AtomicBoolean()
-    var compresion = AtomicInteger() //compression level
 
-    var gradualCompression = AtomicBoolean()
+    //-------__Preferancess__---------
+    var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
+    var lidarFPStimer = 10
+    var playbackFPS = 0 // manually fix fps
+    var memory = 0 // we're not sure yet how this will work
+    var compresion = prefs.getInteger("COMPRESSION") //compression level
+    var gradualCompression = prefs.getBoolean("GRADUAL COMPRESSION")
+
+    //camera setting, if the camera is closer the compression will decrease
+    var fixedCamera = prefs.getBoolean("FIXED CAMERA")
+    var resolution = Pair(Gdx.graphics.width, Gdx.graphics.height)
+
     /**
      * dfcm distance from camera margin
      * used in deciding how compressed the data is
      * based on the point's distance from the camera
      */
-    val dfcm = AtomicInteger()
+    var dfcm = 15//prefs.getInteger("DISTANCE")
 
     val settings = Settings(this)
 
@@ -64,6 +68,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
     var pause = AtomicBoolean(false)
     val buffer = Buffer(recordingId)
+
     // this is basically the timestamp
     var framesIndex = Database.getRecording(recordingId)!!.minFrame
 
@@ -124,21 +129,6 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         pix.setColor(66f / 255, 135f / 255, 245f / 255, 1f)
         pix.drawPixel(0, 0)
 
-        for (i in -50..50) {
-            val dx = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dx.setPosition(i * -1f, -1f, -1f)
-            dx.lookAt(cam!!.position, cam!!.up)
-            val dy = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dy.setPosition(-1f, -1f * i, -1f)
-            dy.lookAt(cam!!.position, cam!!.up)
-            val dz = Decal.newDecal(.25f, .25f, decalTextureRegion)
-            dz.setPosition(-1f, -1f, i * -1f)
-            dz.lookAt(cam!!.position, cam!!.up)
-            axisDecals.add(dx)
-            axisDecals.add(dy)
-            axisDecals.add(dz)
-        }
-
 
         // -----------Bottom Text--------
         stage.addActor(label)
@@ -158,7 +148,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun hide() {
-        TODO("Not yet implemented")
+//        TODO("Not yet implemented")
     }
 
     override fun show() {
@@ -167,9 +157,11 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
 
     override fun render(delta: Float) {
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
+
         campButtonpress()
         //if the camera is fixed that means it's always looking at the center of the environment
-        if (fixedCamera.get() == true) {
+        if (fixedCamera == true) {
             cam.lookAt(0f, 0f, 0f)
         }
 
@@ -197,9 +189,16 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
 
         string.setLength(0)
         string.append(errMessage)
-        string.append(" Fps : ").append(Gdx.graphics.framesPerSecond)
-        string.append(" cma position : ").append(cam.position)
-        string.append(" cam pos origitn : ").append(cam.up)
+                .append("fps = ")
+                .append(Gdx.graphics.framesPerSecond)
+                .append(", paused = ")
+                .append(pause)
+                .append(", frame_index = ")
+                .append(buffer.lastFrameIndex)
+                .append(", past_buffer_size  = ")
+                .append(buffer.pastBufferSize)
+                .append(", future_buffer_size  = ")
+                .append(buffer.futureBufferSize)
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
@@ -216,7 +215,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     fun initFrameUpdateThread() {
         timer("Array Creator", period = 100, initialDelay = 100) {
             if (!pause.get()) {
-                if (compressed) {
+                if (compresion != 1) {
                     decals = compressPoints() ?: decals
                     decals.forEach { colorDecal(it, blueRedFade) }
                 } else {
@@ -291,61 +290,49 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     fun changeLidarFPS(newLFPS: Int) {
-        this.lidarFPS.set(newLFPS+2)
-        when(lidarFPS){
-            7 -> lidarFPStimer = 20
-            12 -> lidarFPStimer = 10
-            22 -> lidarFPStimer = 5
-        }
+        this.lidarFPS = newLFPS + 2
+        initializeLidarspeed()
         this.newLidaarFPS.set(true)
     }
 
     fun changePlaybackFPS(newFPS: Int) {
-        this.playbackFPS.set(newFPS)
+        this.playbackFPS = newFPS
     }
 
     fun switchFixedCamera(fixed: Boolean) {
-        this.fixedCamera.set(fixed)
+        this.fixedCamera = fixed
     }
 
-    fun changeDFCM(new: Int){
-        this.dfcm.set(new)
-    }
-
-    fun switchGradualCompression(new:Boolean){
-        this.gradualCompression.set(new)
-    }
-
-    fun changeCompression(new: Int){
-        this.compresion.set(new)
-    }
-
-    fun changeCompressionlvl(newcomp:Int){
+    fun changeCompression(newcomp: Int) {
         this.compresion = newcomp
+//        println("compreison changed to $newcomp")
     }
 
-    fun changeGradualCompression(newset: Boolean){
+    fun switchGradualCompression(newset: Boolean) {
         this.gradualCompression = newset
     }
 
-    fun skipForward10frames(){
+    fun skipForward10frames() {
         this.framesIndex += 10
+        buffer.skipForward(5f)
     }
 
-    fun skipBackwards10Frames(){
+    fun skipBackwards10Frames() {
         this.framesIndex -= 10
+        buffer.skipBackward(5f)
     }
 
-    fun initializeLidarspeed(){
-        when(lidarFPS){
+    fun initializeLidarspeed() {
+        when (lidarFPS) {
             7 -> lidarFPStimer = 20
             12 -> lidarFPStimer = 10
             22 -> lidarFPStimer = 5
         }
     }
 
-    fun changedDFCM(dd:Int){
+    fun changeDFCM(dd: Int) {
         this.dfcm = dd
+//        println("def changed to $dd")
     }
 
     //------------------------------------------------
@@ -363,7 +350,7 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      */
     fun returnCPP(a: Float, divisions: Int): Float {
         var result = 0f
-        var auxxx = 0f
+        var auxxx: Float
         if (a > -1 && a < 1) {
             auxxx = a
         } else {
@@ -436,31 +423,30 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
      * @author Robert
      */
     fun decidDivisions(coord: LidarCoord): Int {
-        val camp = cam?.position
+        val camp = cam.position
         if (camp != null) {
             val distance = distanceAB3(coord, camp)
             sqrt((coord.x - camp.x).pow(2)
                     + (coord.y - camp.y).pow(2)
                     + (coord.z - camp.z).pow(2))
 
-            val dfcmCopy = dfcm.get()
-            val substraction = distance - dfcmCopy
+            val substraction = distance - dfcm
 
-            when (compresion.get()) { //compresion is the maximum level of compression
+            when (compresion) { //compresion is the maximum level of compression
                 // 1 is least, then 4, 3 and finally 2
                 1 -> return 1
                 2 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcmCopy) {
+                } else if (substraction < dfcm) {
                     return 4
-                } else if (substraction < 2 * dfcmCopy) {
+                } else if (substraction < 2 * dfcm) {
                     return 3
                 } else {
                     return 2
                 }
                 3 -> if (substraction < 0) {
                     return 1
-                } else if (substraction < dfcmCopy) {
+                } else if (substraction < dfcm) {
                     return 4
                 } else {
                     return 3
@@ -487,13 +473,12 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
     }
 
     override fun resize(width: Int, height: Int) {
-        stage?.getViewport()?.update(width, height, true);
+        stage.getViewport()?.update(width, height, true);
     }
 
     override fun pause() {
         pause.set(true)
     }
-
 
 
     /**
@@ -518,8 +503,8 @@ class Space(val recordingId: Int = 1, val compressed: Boolean = false, val local
         }
 
         crtFrame.coords.forEach { c ->
-            var divisions = compresion.get() //level of compression
-            if (gradualCompression.get() == true && compresion.get() != 1) {
+            var divisions = compresion //level of compression
+            if (gradualCompression == true && compresion != 1) {
                 divisions = decidDivisions(c) //has to be deiced based on distance from camera
             }
             //calculate the compression power(1/2/3/4) based on the distance from the camera

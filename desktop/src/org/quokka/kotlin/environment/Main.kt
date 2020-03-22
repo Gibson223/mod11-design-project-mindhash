@@ -8,5 +8,5 @@ fun main(){
     val config = LwjglApplicationConfiguration()
     config.height = 720
     config.width = 1080
-    LwjglApplication(GameInitializer(), config)
+    LwjglApplication(GameInitializer, config)
 }

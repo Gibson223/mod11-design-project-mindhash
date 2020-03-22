@@ -6,6 +6,7 @@ import org.quokka.kotlin.config.LidarFps
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.*
+import kotlin.system.measureTimeMillis
 
 // Constants for setting up database connection
 const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
@@ -29,7 +30,7 @@ SELECT MIN(frameid) as minframe, MAX(frameid) as maxframe, id, title, COUNT(fram
  frame WHERE recid = id GROUP BY id;
 """
 const val SELECT_SINGLE_RECORDING = "SELECT * FROM recording WHERE id = ?;"
-const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? LIMIT ?;"
+const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? ORDER BY frameid ASC LIMIT ?;"
 const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxpoints = ? WHERE id = ?;"
 const val FLOAT_BYTE_SIZE = 4
 const val FLOATS_PER_POINT = 3
@@ -318,10 +319,17 @@ object Database {
             recordingId: Int,
             startFrame: Int,
             numberOfFrames: Int,
-            framerate: LidarFps = LidarFps.TEN
+            framerate: LidarFps = LidarFps.TEN,
+            framerateInt: Int? = null
     ): List<LidarFrame> {
         val conn = DbConnectionPool.connection
-        val spf = framerate.stepsPerFrame
+        val spf: Int
+        // TODO this has to be adjusted to 20fps if that is a possibility, probably  make it generic
+        if (framerateInt != null) {
+            spf = if (10 / framerateInt != 0) {10 / framerateInt } else { 1 }
+        } else {
+            spf = framerate.stepsPerFrame
+        }
         val frames = mutableListOf<LidarFrame>()
 
         val recording = getRecording(recordingId)
@@ -385,21 +393,19 @@ data class RecordingMeta(
 
 
 fun main() {
-    Database.destroyTables()
-    Database.initTables()
+    //Database.initTables()
 
     //db.getFrames(2, 2500, 1).forEach {
     //    it.generatePly("/home/nyx/downloads/test3.ply")
     //}
 
-    //for (i in 0 until 40) {
-    //    val nFrames = 50
-    //    val time = measureTimeMillis {
-    //        Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
-    //    }
-
-    //    println("Time to take $nFrames frames: $time")
-    //}
+    for (i in 0 until 40) {
+        val nFrames = 50
+        val time = measureTimeMillis {
+            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
+        }
+        println("Time to take $nFrames frames: $time")
+    }
 
     // Create reading with default LidarReader
     //db.recordingFromFile(

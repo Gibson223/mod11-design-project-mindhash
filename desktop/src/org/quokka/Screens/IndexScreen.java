@@ -71,11 +71,11 @@ public class IndexScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClearColor(1, 1, 1, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        game.batch.begin();
-        game.batch.draw(img, 0, Gdx.graphics.getHeight() - 100);
-        game.batch.draw(img2, Gdx.graphics.getWidth() - 201, Gdx.graphics.getHeight() - 100);
-        font.draw(game.batch, "Press escape to exit the application", Gdx.graphics.getWidth() / 2  - 250, Gdx.graphics.getHeight() - 20);
-        game.batch.end();
+        GameInitializer.batch.begin();
+        GameInitializer.batch.draw(img, 0, Gdx.graphics.getHeight() - 100);
+        GameInitializer.batch.draw(img2, Gdx.graphics.getWidth() - 201, Gdx.graphics.getHeight() - 100);
+        font.draw(GameInitializer.batch, "Press escape to exit the application", Gdx.graphics.getWidth() / 2  - 250, Gdx.graphics.getHeight() - 20);
+        GameInitializer.batch.end();
 
         stage.act();
         stage.draw();
