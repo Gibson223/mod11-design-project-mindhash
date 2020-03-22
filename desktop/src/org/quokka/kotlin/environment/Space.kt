@@ -19,6 +19,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
@@ -72,11 +73,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     var dfcm = 15//prefs.getInteger("DISTANCE")
 
-    val settings = Settings(this)
-
-    init {
-        settings.updateSpace()
-    }
+    val settings = GameInitializer.settings
 
 
     var pause = AtomicBoolean(false)
@@ -125,6 +122,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun create() {
         GuiButtons(this)
+        settings.updateSpace()
+
         //-----------Camera Creation------------------
         cam.position[0f, 0f] = 30f
         cam.lookAt(0f, 0f, 0f)

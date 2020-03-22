@@ -1,5 +1,6 @@
 package org.quokka.kotlin.environment
 
+import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
@@ -14,9 +15,11 @@ import org.quokka.game.desktop.GameInitializer
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.absoluteValue
 
-class Settings(val space: Space) {
+class Settings {
     val font = BitmapFont()
     val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
+
+    val files = mapOf<String, Int>("Train passby" to 1, "intersection" to 2, "road" to 3)
 
     val shared_style = Label.LabelStyle(font, Color.WHITE)
 
@@ -67,7 +70,7 @@ class Settings(val space: Space) {
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
-        compression_box.setItems(1, 4, 3, 2)
+        compression_box.setItems(1, 2, 3, 4)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
@@ -111,7 +114,7 @@ class Settings(val space: Space) {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 println("quit settings menu")
                 updateSpace()
-                space.resume()
+                GameInitializer.space.resume()
                 dialog.hide()
 
             }
@@ -130,19 +133,19 @@ class Settings(val space: Space) {
     }
 
     fun updateSpace(){
-        space.changeLidarFPS(lidar_box.selected)
-        space.changePlaybackFPS(playback_slider.value.toInt())
+        GameInitializer.space.changeLidarFPS(lidar_box.selected)
+        GameInitializer.space.changePlaybackFPS(playback_slider.value.toInt())
         if (resolution_box.selected == "FULLSCREEN") {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.displayMode)
         } else {
             val (wi, hei) = resolution_box.selected.split("x")
-            space.changeResolution(hei.toInt(), wi.toInt())
+            GameInitializer.space.changeResolution(hei.toInt(), wi.toInt())
         }
-        space.switchFixedCamera(camera_checkbox.isChecked)
+        GameInitializer.space.switchFixedCamera(camera_checkbox.isChecked)
 
-        space.changeCompression(compression_box.selected)
-        space.switchGradualCompression(gradualBox.isChecked)
-        space.changeDFCM(distance_field.text.toInt())
+        GameInitializer.space.changeCompression(compression_box.selected)
+        GameInitializer.space.switchGradualCompression(gradualBox.isChecked)
+        GameInitializer.space.changeDFCM(distance_field.text.toInt())
 
 
     }
@@ -346,8 +349,7 @@ fun GuiButtons(space: Space) {
     home_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
             println("clicked HOME")
-            GameInitializer.screen = IndexScreen(GameInitializer)
-
+            GameInitializer.screen = IndexScreen()
         }
     })
 

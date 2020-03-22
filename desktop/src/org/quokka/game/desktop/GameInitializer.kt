@@ -5,26 +5,31 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.mygdx.game.desktop.Space
+import org.quokka.Screens.IndexScreen
 import org.quokka.kotlin.environment.Settings
 
 
 object GameInitializer : Game() {
     lateinit var batch: SpriteBatch
     lateinit var font: BitmapFont
-    lateinit var game : Space
+    lateinit var space : Space
     lateinit var settings : Settings
 
     override fun create() {
         batch = SpriteBatch()
         font = BitmapFont() //
         //Use LibGDX's default Arial font.
-        game = Space(recordingId = 3, local = false, axis = false)
-        settings = Settings(game)
-        this.setScreen(game)
+        settings = Settings()
+        this.setScreen(IndexScreen())
     }
 
     override fun render() {
         super.render() //important!
+    }
+
+    fun updateUsedSpace(recordingId: Int, local: Boolean, axis: Boolean){
+        space = Space(recordingId = recordingId, local = local, axis = axis)
+        this.setScreen(space)
     }
 
 //    override fun pause() {
