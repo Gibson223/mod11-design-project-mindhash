@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.desktop.Space
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
+import org.quokka.kotlin.internals.Database
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.absoluteValue
 
@@ -19,7 +20,9 @@ class Settings {
     val font = BitmapFont()
     val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
 
-    val files = mapOf<String, Int>("Train passby" to 1, "intersection" to 2, "road" to 3)
+    // Swap these if no database connection, but why would you use these if you don't have one?
+    // val files = mapOf<String, Int>("Train passby" to 1, "intersection" to 2, "road" to 3)
+    val files = Database.recordings.associateBy({it.title}, {it.id})
 
     val shared_style = Label.LabelStyle(font, Color.WHITE)
 

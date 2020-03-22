@@ -117,6 +117,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         TextureRegion(Texture(pix))
     }
     var decalTextureRegion = TextureRegion(Texture(pix))
+
+    // List of timers which run in the background, these have to be discarded once the screen is over.
+    val timers = mutableListOf<Timer>()
+
     init {
         println("end of initializing space")
     }
@@ -150,10 +154,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         if (local) {
             localFrames = ConcurrentLinkedQueue()
-            initLocalFileThread()
+            timers.add(initLocalFileThread())
         }
 
-        initFrameUpdateThread()
+        timers.add(initFrameUpdateThread())
         // -----------Bottom Text--------
         stage.addActor(label)
 
@@ -162,6 +166,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     override fun hide() {
+        this.dispose()
 //        TODO("Not yet implemented")
     }
 
@@ -226,19 +231,17 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * which is both a List<Decal>
      * @author Robert, Till
      */
-    fun initFrameUpdateThread() {
-        timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {
+    fun initFrameUpdateThread(): Timer {
+        return timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {
             // Skip frames according to fps
-            val fsc = frameFetchSkipCounter.incrementAndGet()
-            if (fsc > framesToSkip.get()) {
+            if (frameFetchSkipCounter.incrementAndGet() > framesToSkip.get()) {
                 frameFetchSkipCounter.set(0)
                 if (!pause.get()) {
                     if (compresion != 1) {
                         decals = compressPoints() ?: decals
                         decals.forEach { colorDecal(it, blueRedFade) }
                     } else {
-                        val nextFrame = fetchNextFrame()
-                        nextFrame?.let { f ->
+                        fetchNextFrame()?.let { f ->
                             decals = f.coords.map {
                                 val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
                                 d.setPosition(it.x, it.y, it.z)
@@ -258,8 +261,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      *
      * @author Till
      */
-    fun initLocalFileThread() {
-        timer("File Parser", period = 2000) {
+    fun initLocalFileThread(): Timer {
+        return timer("File Parser", period = 2000) {
             if (localFrames.size < 60) {
                 val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 20)
                 framesIndex += 20
@@ -313,7 +316,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         initializeLidarspeed()
         newLidarFps.set(true)
         framesToSkip.set(MAX_LIDAR_FPS / lidarFPS - 1)
-        println("Frames to skip now: ${framesToSkip.get()}")
         // Reset the buffer to load new footage based on fps
         // Do not remove the ?. For some reason buffer can be null even though it is initialized as a val at creation.
         buffer?.let {
@@ -491,6 +493,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     override fun dispose() {
         modelBatch.dispose()
+        // Stop timer threads for frame fetching
+        for (t in timers) {
+            t.cancel()
+        }
 //        bottomBlock?.dispose()
     }
 
