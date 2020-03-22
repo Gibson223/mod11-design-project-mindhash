@@ -35,7 +35,7 @@ class IndexScreen : Screen {
         stage = Stage()
         img = Image(Texture("UTLogo.jpg"))
         img.setPosition(0f, Gdx.graphics.height - img.height)
-        img2 = Image(Texture("MindhashLogo2.jpg"))
+        img2 = Image(Texture("mindhashLogo2.jpg"))
         img2.setPosition(Gdx.graphics.width - img2.width, Gdx.graphics.height - img2.height)
 
         stage.addActor(img)
