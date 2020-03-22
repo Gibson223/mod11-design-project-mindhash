@@ -308,7 +308,7 @@ class Buffer(val recordingId: Int) {
             if (lastId < recordingMetaData.maxFrame) {
                 var frames = emptyList<LidarFrame>()
 
-                while (frames.isEmpty()) {
+                while (frames.isEmpty() && lastId < recordingMetaData.maxFrame) {
                     frames = Database.getFrames(
                             recordingId = recordingId,
                             startFrame = lastId + 1,
