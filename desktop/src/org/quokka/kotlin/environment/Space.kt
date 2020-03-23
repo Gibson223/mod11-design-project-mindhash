@@ -48,6 +48,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     val frameFetchSkipCounter = AtomicInteger(0)
     val lastFpsValue = AtomicInteger(0)
 
+    var fixedCamAngle = 0f
+    var fixedCamHeight = 30f
+    var fixedCamRadius = 70f
+    val FIXED_CAM_RADIUS_MAX = 100f
+    val FIXED_CAM_RADIUS_MIN = 5f
+    val FIXED_CAM_ZERO_POINT = Vector3(0f, 0f, 3f)
 
     val prefs = Gdx.app.getPreferences("My Preferences")
 
@@ -183,7 +189,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         campButtonpress()
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
-            cam.lookAt(0f, 0f, 0f)
+            updateFixedCamera()
         }
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
@@ -284,6 +290,49 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         } else {
             return buffer.nextFrame()
         }
+    }
+
+    private fun updateFixedCamera() {
+        cam.position
+                .set(fixedCamRadius, 0f, fixedCamHeight)
+                .rotate(Vector3.Z, fixedCamAngle)
+                .add(FIXED_CAM_ZERO_POINT)
+        cam.up.set(Vector3.Z)
+        cam.lookAt(Vector3(0f, 0f, 0f))
+        cam.update()
+    }
+    private fun zoomFixedCloser(delta: Float) {
+        fixedCamRadius -= delta * camSpeed
+        if (fixedCamRadius < FIXED_CAM_RADIUS_MIN)
+            fixedCamRadius = FIXED_CAM_RADIUS_MIN
+        if (fixedCamRadius > FIXED_CAM_RADIUS_MAX)
+            fixedCamRadius = FIXED_CAM_RADIUS_MAX
+    }
+
+    private fun zoomFixedAway(delta: Float) {
+        fixedCamRadius += delta * camSpeed
+        if (fixedCamRadius < FIXED_CAM_RADIUS_MIN)
+            fixedCamRadius = FIXED_CAM_RADIUS_MIN
+        if (fixedCamRadius > FIXED_CAM_RADIUS_MAX)
+            fixedCamRadius = FIXED_CAM_RADIUS_MAX
+    }
+
+    private fun rotateFixedLeft(delta: Float) {
+        fixedCamAngle -= delta * camSpeed
+        fixedCamAngle %= 360
+    }
+
+    private fun rotateFixedRight(delta: Float) {
+        fixedCamAngle += delta * camSpeed
+        fixedCamAngle %= 360
+    }
+
+    private fun moveFixedUp(delta: Float) {
+        fixedCamHeight += delta * camSpeed
+    }
+
+    private fun moveFixedDown(delta: Float) {
+        fixedCamHeight -= delta * camSpeed
     }
 
     /**
@@ -638,16 +687,22 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             moveBackward(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             moveUp(delta)
+            zoomFixedCloser(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             moveDown(delta)
+            zoomFixedAway(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             rotateUp(delta)
+            moveFixedUp(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
             rotateDown(delta)
+            moveFixedDown(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             rotateLeft(delta)
+            rotateFixedLeft(delta)
         } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             rotateRight(delta)
+            rotateFixedRight(delta)
 //        } else if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
 //            rotateZ()
 //        } else if (Gdx.input.isKeyPressed(Input.Keys.C)) {
@@ -697,6 +752,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun rotateUp(delta: Float) {
         cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), delta * rotationAngle)
         cam.update()
+
     }
 
     fun rotateDown(delta: Float) {
