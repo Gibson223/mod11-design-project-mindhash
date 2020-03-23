@@ -240,14 +240,18 @@ fun GuiButtons(space: Space) {
             if(o.absoluteValue < l.absoluteValue){
                 if(l>0){
                     space.moveUp(delta)
+                    space.zoomFixedCloser(delta)
                 } else {
                     space.moveDown(delta)
+                    space.zoomFixedAway(delta)
                 }
             } else {
                 if (o < 0){
                     space.moveLeft(delta)
+                    space.rotateFixedLeft(delta)
                 } else {
                     space.moveRight(delta)
+                    space.rotateFixedRight(delta)
                 }
             }
         }
@@ -273,15 +277,19 @@ fun GuiButtons(space: Space) {
             val delta = Gdx.graphics.deltaTime
             if (o > 0){
                 space.rotateRight(delta*o/10)
+                space.rotateFixedRight(delta*o/10)
             }
             if (o < 0){
                 space.rotateLeft(delta*(-1)*o/10)
+                space.rotateFixedLeft(delta*(-1)*o/10)
             }
             if (l > 0){
                 space.rotateUp(delta*l/10)
+                space.moveFixedUp(delta*l/10)
             }
             if (l < 0){
                 space.rotateDown(delta*(-1)*l/10)
+                space.moveFixedDown(delta*(-1)*l/10)
             }
 //            if(o.absoluteValue < l.absoluteValue){
 //                if(l>0){

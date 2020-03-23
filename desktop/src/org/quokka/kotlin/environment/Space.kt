@@ -292,7 +292,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         }
     }
 
-    private fun updateFixedCamera() {
+    fun updateFixedCamera() {
         cam.position
                 .set(fixedCamRadius, 0f, fixedCamHeight)
                 .rotate(Vector3.Z, fixedCamAngle)
@@ -301,7 +301,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.lookAt(Vector3(0f, 0f, 0f))
         cam.update()
     }
-    private fun zoomFixedCloser(delta: Float) {
+
+    fun zoomFixedCloser(delta: Float) {
         fixedCamRadius -= delta * camSpeed
         if (fixedCamRadius < FIXED_CAM_RADIUS_MIN)
             fixedCamRadius = FIXED_CAM_RADIUS_MIN
@@ -309,7 +310,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             fixedCamRadius = FIXED_CAM_RADIUS_MAX
     }
 
-    private fun zoomFixedAway(delta: Float) {
+    fun zoomFixedAway(delta: Float) {
         fixedCamRadius += delta * camSpeed
         if (fixedCamRadius < FIXED_CAM_RADIUS_MIN)
             fixedCamRadius = FIXED_CAM_RADIUS_MIN
@@ -317,21 +318,21 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             fixedCamRadius = FIXED_CAM_RADIUS_MAX
     }
 
-    private fun rotateFixedLeft(delta: Float) {
+    fun rotateFixedLeft(delta: Float) {
         fixedCamAngle -= delta * camSpeed
         fixedCamAngle %= 360
     }
 
-    private fun rotateFixedRight(delta: Float) {
+    fun rotateFixedRight(delta: Float) {
         fixedCamAngle += delta * camSpeed
         fixedCamAngle %= 360
     }
 
-    private fun moveFixedUp(delta: Float) {
+    fun moveFixedUp(delta: Float) {
         fixedCamHeight += delta * camSpeed
     }
 
-    private fun moveFixedDown(delta: Float) {
+    fun moveFixedDown(delta: Float) {
         fixedCamHeight -= delta * camSpeed
     }
 
