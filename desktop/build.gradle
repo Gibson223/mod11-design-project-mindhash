@@ -12,6 +12,7 @@ task run(dependsOn: classes, type: JavaExec) {
     main = project.mainClassName
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
+    jvmArgs = ["-XX:+UseG1GC"]
     workingDir = project.assetsDir
     ignoreExitValue = true
 }

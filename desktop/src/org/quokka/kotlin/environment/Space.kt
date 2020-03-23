@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 import kotlin.concurrent.timer
 import kotlin.math.pow
 import kotlin.math.sign
@@ -321,7 +322,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         // Do not remove the ?. For some reason buffer can be null even though it is initialized as a val at creation.
         if (lidarFPS != lastFpsValue.getAndSet(lidarFPS)) {
             buffer?.let {
-                it.skipTo(it.lastFrameIndex)
+                thread {
+                    it.skipTo(it.lastFrameIndex)
+                }
             }
         }
     }

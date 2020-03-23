@@ -21,9 +21,9 @@ class Buffer(val recordingId: Int) {
     /**
      * These variables are for meta data on the current buffer and are updated every time a frame is retrieved.
      */
-    var lastFrameIndex: Int
-    var futureBufferSize: Int
-    var pastBufferSize: Int
+    var lastFrameIndex: Int = 0
+    var futureBufferSize: Int = 0
+    var pastBufferSize: Int = 0
 
     // How many frames to fetch with the fetch function
     @Volatile
@@ -58,9 +58,11 @@ class Buffer(val recordingId: Int) {
         lastFrameIndex = recordingMetaData.minFrame
 
         // Update buffers to fill them up initially
-        updateBuffers()
-        futureBufferSize = playQueue.size
-        pastBufferSize = playQueue.size
+        thread {
+            updateBuffers()
+            futureBufferSize = playQueue.size
+            pastBufferSize = playQueue.size
+        }
     }
 
     companion object {
