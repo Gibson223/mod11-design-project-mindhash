@@ -16,7 +16,9 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.game.desktop.GameInitializer
@@ -107,6 +109,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var string: StringBuilder = StringBuilder()
     var errMessage = " "
 
+    var frameDivider : Int = 0
+
     var decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -135,7 +139,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     fun create() {
-        GuiButtons(this)
+        GuiButtons(this, 0)
         settings.updateSpace()
 
         //-----------Camera Creation------------------
@@ -166,6 +170,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         }
 
         timers.add(initFrameUpdateThread())
+
         // -----------Bottom Text--------
         stage.addActor(label)
 
@@ -259,6 +264,18 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
                         }
                     }
                 }
+            }
+
+            val maxframes = buffer.framesPerBuffer
+            // + 11 since actor 11 is left_bar
+            var frameDivider2: Int = 11;
+            if(maxframes != 0){
+                frameDivider2  = framesIndex / maxframes * 25 + 11
+            }
+
+            if (frameDivider != frameDivider2){
+                stage.clear()
+                GuiButtons(this@Space, frameDivider2)
             }
         }
     }

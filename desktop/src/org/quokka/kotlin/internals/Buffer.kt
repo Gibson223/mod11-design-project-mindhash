@@ -28,7 +28,7 @@ class Buffer(val recordingId: Int) {
     // How many frames to fetch with the fetch function
     @Volatile
     private var skipToFrameIndex: Int?
-    private val framesPerBuffer: Int
+    val framesPerBuffer: Int
         get() = BUFFER_SIZE_S * LIDAR_FPS
     private val playQueue = ConcurrentLinkedDeque<LidarFrame>()
     private val delQueue = ConcurrentLinkedDeque<LidarFrame>()
