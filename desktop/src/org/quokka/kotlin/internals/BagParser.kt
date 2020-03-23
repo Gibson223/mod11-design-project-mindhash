@@ -1,4 +1,4 @@
-package LidarData
+package org.quokka.kotlin.internals
 
 import com.github.swrirobotics.bags.reader.BagReader
 import com.github.swrirobotics.bags.reader.MessageHandler
