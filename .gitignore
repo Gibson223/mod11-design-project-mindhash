@@ -128,3 +128,5 @@ Thumbs.db
 /ios-moe/xcode/native/
 
 desktop/src/org/quokka/kotlin/Auxxxx.kt
+
+desktop/src/org/quokka/kotlin/JobMe.kt

@@ -19,6 +19,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import org.quokka.kotlin.config.LidarFps
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.Settings
 import org.quokka.kotlin.internals.*
@@ -31,7 +32,18 @@ import kotlin.concurrent.timer
 import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sqrt
+import kotlin.system.measureTimeMillis
 
+fun main() {
+    for (i in 0 until 40) {
+        val nFrames = 50
+        val time = measureTimeMillis {
+            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
+        }
+
+        println("Time to take $nFrames frames: $time")
+    }
+}
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
@@ -64,8 +76,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         settings.updateSpace()
     }
 
-
-    var pause = AtomicBoolean(false)
+            var pause = AtomicBoolean(false)
     val buffer = Buffer(recordingId)
     // this is basically the timestamp
     var framesIndex = Database.getRecording(recordingId)!!.minFrame
@@ -235,6 +246,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             if (localFrames.size < 60) {
                 val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 12)
                 framesIndex += 12
+                println("printtttt $framesIndex")
                 localFrames.addAll(frames)
             }
         }
