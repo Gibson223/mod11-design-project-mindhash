@@ -679,35 +679,47 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         val delta = Gdx.graphics.deltaTime
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             moveLeft(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             moveRight(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.I)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.I)) {
             moveForward(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.K)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.K)) {
             moveBackward(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             moveUp(delta)
             zoomFixedCloser(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             moveDown(delta)
             zoomFixedAway(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             rotateUp(delta)
             moveFixedUp(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
             rotateDown(delta)
             moveFixedDown(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             rotateLeft(delta)
             rotateFixedLeft(delta)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             rotateRight(delta)
             rotateFixedRight(delta)
-//        } else if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
+        }
+//        if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
 //            rotateZ()
-//        } else if (Gdx.input.isKeyPressed(Input.Keys.C)) {
+//        }
+//        if (Gdx.input.isKeyPressed(Input.Keys.C)) {
 //            rotateZrev()
-        } else if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+//        }
+        if (Gdx.input.isKeyPressed(Input.Keys.R)) {
             resetCamera()
         }
     }
