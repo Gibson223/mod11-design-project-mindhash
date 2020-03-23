@@ -36,15 +36,16 @@ import kotlin.math.sqrt
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
-    var newLidarFps = AtomicBoolean(false)
+    val newLidarFps = AtomicBoolean(false)
     /*
      * The frame fetching loop runs at a constant 20fps. These two numbers just determine how many of these frames
      * have to be skipped to achieve the desired framerate.
      * For example 20fps means 0 frames are skipped. 10fps however mean 1 frame is skipped and 5 fps means 3 frames
      * are skipped.
      */
-    var framesToSkip = AtomicInteger(0)
-    var frameFetchSkipCounter = AtomicInteger(0)
+    val framesToSkip = AtomicInteger(0)
+    val frameFetchSkipCounter = AtomicInteger(0)
+    val lastFpsValue = AtomicInteger(0)
 
 
     val prefs = Gdx.app.getPreferences("My Preferences")
@@ -318,8 +319,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         framesToSkip.set(MAX_LIDAR_FPS / lidarFPS - 1)
         // Reset the buffer to load new footage based on fps
         // Do not remove the ?. For some reason buffer can be null even though it is initialized as a val at creation.
-        buffer?.let {
-            it.skipTo(it.lastFrameIndex)
+        if (lidarFPS != lastFpsValue.getAndSet(lidarFPS)) {
+            buffer?.let {
+                it.skipTo(it.lastFrameIndex)
+            }
         }
     }
 
