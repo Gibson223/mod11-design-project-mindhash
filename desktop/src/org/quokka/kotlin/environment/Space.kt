@@ -233,8 +233,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun initLocalFileThread() {
         timer("File Parser", period = 2000) {
             if (localFrames.size < 60) {
-                val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 20)
-                framesIndex += 20
+                val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 12)
+                framesIndex += 12
                 localFrames.addAll(frames)
             }
         }
