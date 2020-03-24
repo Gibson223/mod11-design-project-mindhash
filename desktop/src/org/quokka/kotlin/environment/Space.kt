@@ -451,7 +451,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     fun returnCPP(a: Float, divisions: Int): Float {
         var result = 0f
-        var auxxx: Float
+        var auxxx: Float // this will be between 0 and 1, factorial part of number a
         if (a > -1 && a < 1) {
             auxxx = a
         } else {
