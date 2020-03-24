@@ -451,3 +451,45 @@ class drawBar(stage: Stage, val buffer: Buffer? = null){
 
 
 }
+
+class sliderBar(stage: Stage, val buffer: Buffer? = null){
+
+    var slider = Slider(0f,1f,0.01f,false,Skin(Gdx.files.internal("Skins/glassy-ui.json")))
+
+    init {
+        slider.width = Gdx.graphics.width*0.6f
+        slider.setPosition(Gdx.graphics.width*0.2f,15f)
+        stage.addActor(slider)
+        slider.addListener(object : DragListener() {
+            override fun drag(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+                if (x/slider.width + slider.percent < 0 || x/slider.width + slider.percent > 1) {
+                    println("out of bounds")
+                } else {
+                    slider.value += x / slider.width
+                }
+            }
+            override fun dragStop(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+                buffer!!
+                buffer.skipTo(slider.value)
+            }
+        })
+
+    }
+
+    fun update(){
+        buffer!!
+        var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
+        if (perc < 0f)
+            perc = 0f
+        if (perc > 1f)
+            perc = 1f
+        slider.value = perc
+    }
+
+    fun up(){
+        slider.value += 0.01f
+    }
+
+
+
+}
