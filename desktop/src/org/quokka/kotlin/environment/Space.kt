@@ -32,9 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 import kotlin.concurrent.timer
-import kotlin.math.pow
-import kotlin.math.sign
-import kotlin.math.sqrt
+import kotlin.math.*
 
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
@@ -50,12 +48,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     val frameFetchSkipCounter = AtomicInteger(0)
     val lastFpsValue = AtomicInteger(0)
 
-    var fixedCamAngle = 0f
-    var fixedCamHeight = 30f
-    var fixedCamRadius = 70f
+    var fixedCamAzimuth = 0f
+    var fixedCamAngle = Math.PI.toFloat() * 0.3f
+    var fixedCamDistance = 70f
     val FIXED_CAM_RADIUS_MAX = 100f
     val FIXED_CAM_RADIUS_MIN = 5f
-    val FIXED_CAM_ZERO_POINT = Vector3(0f, 0f, 3f)
+    val FIXED_CAM_ANGLE_MIN = 0f
+    val FIXED_CAM_ANGLE_MAX = Math.PI.toFloat() * 0.49f
 
     val prefs = Gdx.app.getPreferences("My Preferences")
 
@@ -310,53 +309,67 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun updateFixedCamera() {
-        cam.position
-                .set(fixedCamRadius, 0f, fixedCamHeight)
-                .rotate(Vector3.Z, fixedCamAngle)
-                .add(FIXED_CAM_ZERO_POINT)
+        val x = fixedCamDistance * cos(fixedCamAzimuth) * cos(fixedCamAngle)
+        val y = -fixedCamDistance * sin(fixedCamAzimuth) * cos(fixedCamAngle)
+        val z = fixedCamDistance * sin(fixedCamAngle)
+        cam.position.set(x, y, z)
         cam.up.set(Vector3.Z)
         cam.lookAt(Vector3(0f, 0f, 0f))
         cam.update()
     }
 
     fun zoomFixedCloser(delta: Float) {
-        fixedCamRadius -= delta * camSpeed
-        if (fixedCamRadius < FIXED_CAM_RADIUS_MIN)
-            fixedCamRadius = FIXED_CAM_RADIUS_MIN
-        if (fixedCamRadius > FIXED_CAM_RADIUS_MAX)
-            fixedCamRadius = FIXED_CAM_RADIUS_MAX
+        fixedCamDistance -= delta * camSpeed * 10
+        if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
+            fixedCamDistance = FIXED_CAM_RADIUS_MIN
+        if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
+            fixedCamDistance = FIXED_CAM_RADIUS_MAX
     }
 
     fun zoomFixedAway(delta: Float) {
-        fixedCamRadius += delta * camSpeed
-        if (fixedCamRadius < FIXED_CAM_RADIUS_MIN)
-            fixedCamRadius = FIXED_CAM_RADIUS_MIN
-        if (fixedCamRadius > FIXED_CAM_RADIUS_MAX)
-            fixedCamRadius = FIXED_CAM_RADIUS_MAX
+        fixedCamDistance += delta * camSpeed * 10
+        if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
+            fixedCamDistance = FIXED_CAM_RADIUS_MIN
+        if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
+            fixedCamDistance = FIXED_CAM_RADIUS_MAX
     }
 
     fun rotateFixedLeft(delta: Float) {
-        fixedCamAngle -= delta * camSpeed
-        fixedCamAngle %= 360
+        fixedCamAzimuth += delta * camSpeed / 10
+        fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun rotateFixedRight(delta: Float) {
-        fixedCamAngle += delta * camSpeed
-        fixedCamAngle %= 360
+        fixedCamAzimuth -= delta * camSpeed / 10
+        fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun moveFixedUp(delta: Float) {
-        fixedCamHeight += delta * camSpeed
+        fixedCamAngle += delta * camSpeed / 10
+
+        if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
+            fixedCamAngle = FIXED_CAM_ANGLE_MAX
+        if (fixedCamAngle < FIXED_CAM_ANGLE_MIN)
+            fixedCamAngle = FIXED_CAM_ANGLE_MIN
+
+        fixedCamAngle %= Math.PI.toFloat() * 2
     }
 
     fun moveFixedDown(delta: Float) {
-        fixedCamHeight -= delta * camSpeed
+        fixedCamAngle -= delta * camSpeed / 10
+
+        if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
+            fixedCamAngle = FIXED_CAM_ANGLE_MAX
+        if (fixedCamAngle < FIXED_CAM_ANGLE_MIN)
+            fixedCamAngle = FIXED_CAM_ANGLE_MIN
+
+        fixedCamAngle %= Math.PI.toFloat() * 2
     }
 
     fun resetFixed() {
         fixedCamAngle = 0f
-        fixedCamHeight = 30f
-        fixedCamRadius = 70f
+        fixedCamAzimuth = 0f
+        fixedCamDistance = 70f
     }
 
     /**
