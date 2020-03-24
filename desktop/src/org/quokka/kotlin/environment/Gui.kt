@@ -196,6 +196,7 @@ fun GuiButtons(space: Space) {
             println("clicked zoom out")
             GameInitializer.click.play()
             space.moveBackward(Gdx.graphics.deltaTime)
+            space.zoomFixedAway(Gdx.graphics.deltaTime)
         }
     })
 
@@ -207,6 +208,7 @@ fun GuiButtons(space: Space) {
             println("clicked zoom in")
             GameInitializer.click.play()
             space.moveForward(Gdx.graphics.deltaTime)
+            space.zoomFixedCloser(Gdx.graphics.deltaTime)
         }
     })
 
@@ -241,10 +243,10 @@ fun GuiButtons(space: Space) {
             if(o.absoluteValue < l.absoluteValue){
                 if(l>0){
                     space.moveUp(delta)
-                    space.zoomFixedCloser(delta)
+                    space.moveFixedUp(delta)
                 } else {
                     space.moveDown(delta)
-                    space.zoomFixedAway(delta)
+                    space.moveFixedDown(delta)
                 }
             } else {
                 if (o < 0){
