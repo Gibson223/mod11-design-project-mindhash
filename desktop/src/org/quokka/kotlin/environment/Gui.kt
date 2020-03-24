@@ -271,8 +271,8 @@ fun GuiButtons(space: Space, frameDivider: Int) {
 
         override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
             super.touchDragged(event, x, y, pointer)
-            val o = x - 50
-            val l = y - 50
+            val o = x - 70
+            val l = y - 70
             val delta = Gdx.graphics.deltaTime
             if (o > 0){
                 space.rotateRight(delta*o/10)

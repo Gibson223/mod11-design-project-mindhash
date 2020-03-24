@@ -273,10 +273,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
                 frameDivider2  = framesIndex / maxframes * 25 + 11
             }
 
-            //if (frameDivider != frameDivider2){
-            //    stage.clear()
-            //    GuiButtons(this@Space, frameDivider2)
-            //}
+//            if (frameDivider != frameDivider2){
+//                stage.clear()
+//                GuiButtons(this@Space, frameDivider2)
+//            }
         }
     }
 
