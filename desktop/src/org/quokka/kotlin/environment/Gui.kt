@@ -188,7 +188,6 @@ fun GuiButtons(space: Space) {
     val bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     val plus = Image(Texture("Screen3D/plus.png"))
     val minus = Image(Texture("Screen3D/minus.png"))
-    val scaleMinusPlus = 0.2f
 
     space.stage.addActor(minus)
     minus.addListener(object : ClickListener() {
@@ -200,8 +199,7 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    plus.setScale(scaleMinusPlus)
-    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
+    plus.setPosition(minus.x, minus.y + minus.height)
     space.stage.addActor(plus)
     plus.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -356,10 +354,8 @@ fun GuiButtons(space: Space) {
         }
     })
 
-    minus.setScale(scaleMinusPlus)
-    minus.setPosition(Gdx.graphics.width - minus.width * scaleMinusPlus, Gdx.graphics.height * 0.3f)
-    plus.setScale(scaleMinusPlus)
-    plus.setPosition(minus.x, minus.y + minus.height * scaleMinusPlus)
+    minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
+    plus.setPosition(minus.x, minus.y + minus.height)
 
     pause_button.setPosition(Gdx.graphics.width /2 - (pause_button.width /2), 50f)
     bf_button.setPosition(pause_button.x - bf_button.width, 50f)
