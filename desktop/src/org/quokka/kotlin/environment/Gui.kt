@@ -322,6 +322,7 @@ fun GuiButtons(space: Space, frameDivider: Int) {
             println("clicked RESET")
             GameInitializer.click.play()
             space.resetCamera()
+            space.resetFixed()
         }
     })
 

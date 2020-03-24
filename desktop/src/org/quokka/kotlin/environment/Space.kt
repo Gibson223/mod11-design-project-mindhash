@@ -273,10 +273,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
                 frameDivider2  = framesIndex / maxframes * 25 + 11
             }
 
-            if (frameDivider != frameDivider2){
-                stage.clear()
-                GuiButtons(this@Space, frameDivider2)
-            }
+            //if (frameDivider != frameDivider2){
+            //    stage.clear()
+            //    GuiButtons(this@Space, frameDivider2)
+            //}
         }
     }
 
@@ -351,6 +351,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun moveFixedDown(delta: Float) {
         fixedCamHeight -= delta * camSpeed
+    }
+
+    fun resetFixed() {
+        fixedCamAngle = 0f
+        fixedCamHeight = 30f
+        fixedCamRadius = 70f
     }
 
     /**
@@ -739,6 +745,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 //        }
         if (Gdx.input.isKeyPressed(Input.Keys.R)) {
             resetCamera()
+            resetFixed()
         }
     }
 
