@@ -20,6 +20,7 @@ import org.quokka.game.desktop.GameInitializer.settings
 import org.quokka.game.desktop.GameInitializer.updateUsedSpace
 import java.util.*
 import kotlin.system.exitProcess
+import org.quokka.kotlin.environment.drawBar
 
 class IndexScreen : Screen {
     var img: Image
@@ -66,13 +67,17 @@ class IndexScreen : Screen {
         Gdx.input.inputProcessor = stage
     }
 
+    lateinit var bar: drawBar
     override fun show() {
         Gdx.gl.glClearColor(1f, 1f, 1f, 1f)
         Gdx.input.inputProcessor = stage
         println("openend indexscreen")
+        bar = drawBar(this.stage)
+
     }
 
     override fun render(delta: Float) {
+//        bar.up()
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
         GameInitializer.batch.begin()
         val glyph = GlyphLayout(font,"Press escape to exit the application" )

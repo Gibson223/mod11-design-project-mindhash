@@ -1,20 +1,22 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.mygdx.game.desktop.Space
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
+import org.quokka.kotlin.internals.Buffer
 import org.quokka.kotlin.internals.Database
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.absoluteValue
+
 
 class Settings {
     val font = BitmapFont()
@@ -169,7 +171,7 @@ class Settings {
     }
 }
 
-fun GuiButtons(space: Space, frameDivider: Int) {
+fun GuiButtons(space: Space) {
 //http://soundbible.com/1705-Click2.html
     val settings = space.settings
 
@@ -366,204 +368,84 @@ fun GuiButtons(space: Space, frameDivider: Int) {
     home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
     settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height -settings_button.height)
     reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
+}
 
-    var left_bar = Image(Texture("Screen3D/left_bar.png"))
-    if (frameDivider == 11) {
-        left_bar = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    left_bar.setPosition(Gdx.graphics.width / 2 - 323.toFloat(), 10f)
-    left_bar.setName("leftBar")
-    space.stage.addActor(left_bar)
+class drawBar(stage: Stage, val buffer: Buffer? = null){
 
-    var middle_bar1 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 12) {
-        middle_bar1 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar1.setPosition(Gdx.graphics.width / 2 - 300.toFloat(), 10f)
-    middle_bar1.setName("middleBar1")
-    space.stage.addActor(middle_bar1)
+    val left_bar = Image(Texture("Screen3D/left_bar.png"))
+    val right_bar = Image(Texture("Screen3D/right_bar.png"))
+    val button = Image(Texture("Screen3D/slider_button.png"))
+    val parts = 20
 
-    var middle_bar2 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 13) {
-        middle_bar2 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar2.setPosition(Gdx.graphics.width / 2 - 275.toFloat(), 10f)
-    middle_bar2.setName("middleBar2")
-    space.stage.addActor(middle_bar2)
+    var bars = arrayListOf<Actor>()
 
-    var middle_bar3 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 14) {
-        middle_bar3 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar3.setPosition(Gdx.graphics.width / 2 - 250.toFloat(), 10f)
-    middle_bar3.setName("middleBar3")
-    space.stage.addActor(middle_bar3)
+    init {
+        println("drawbar called")
+        stage.addActor(button)
+        button.addListener(object : DragListener() {
+            override fun drag(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+                val new_center = this@drawBar.button.x - this@drawBar.button.width / 2 + x
+                if (new_center < left_bound || new_center > right_bound) {
+                    println("out of bars")
+                } else {
+                    this@drawBar.button.moveBy(x - this@drawBar.button.width / 2, 0f);
+                }
+            }
 
-    var middle_bar4 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 15) {
-        middle_bar4 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar4.setPosition(Gdx.graphics.width / 2 - 225.toFloat(), 10f)
-    middle_bar4.setName("middleBar4")
-    space.stage.addActor(middle_bar4)
+            override fun dragStop(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+                buffer!!
+                println("dropped, $x, $y, ${this@drawBar.button.x}, ${this@drawBar.button.y}")
+                var progress = this@drawBar.button.x + this@drawBar.button.width / 2 // current center button
+                progress = (progress - left_bound) / (right_bound - left_bound)
+                buffer.skipTo(progress)
+            }
+        })
 
-    var middle_bar5 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 16) {
-        middle_bar5 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar5.setPosition(Gdx.graphics.width / 2 - 200.toFloat(), 10f)
-    middle_bar5.setName("middleBar5")
-    space.stage.addActor(middle_bar5)
+        var x = Gdx.graphics.width / 2f - (parts/2 *25 /*pixels per middle bar*/)
+        var y = 10f
 
-    var middle_bar6 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 17) {
-        middle_bar6 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar6.setPosition(Gdx.graphics.width / 2 - 175.toFloat(), 10f)
-    middle_bar6.setName("middleBar6")
-    space.stage.addActor(middle_bar6)
+        for (useless in 0 until parts) {
+            val middle_bar = Image(Texture("Screen3D/middle_bar.png"))
+            val loaded = Image(Texture("Screen3D/middle_barLoaded.png"))
 
-    var middle_bar7 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 18) {
-        middle_bar7 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar7.setPosition(Gdx.graphics.width / 2 - 150.toFloat(), 10f)
-    middle_bar7.setName("middleBar7")
-    space.stage.addActor(middle_bar7)
+            middle_bar.setPosition(x, y)
+            stage.addActor(middle_bar)
+            loaded.setPosition(x, y)
+            stage.addActor(loaded)
+            bars.add(middle_bar)
+            x += 25
+        }
 
-    var middle_bar8 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 19) {
-        middle_bar8 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar8.setPosition(Gdx.graphics.width / 2 - 125.toFloat(), 10f)
-    middle_bar8.setName("middleBar8")
-    space.stage.addActor(middle_bar8)
+        button.setPosition(bars.first().x - button.width / 2, bars.first().y + bars.first().height / 2 - button.height / 2)
+        button.toFront()
 
-    var middle_bar9 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 20) {
-        middle_bar9 = Image(Texture("Screen3D/onVideo_bar.png"))
     }
-    middle_bar9.setPosition(Gdx.graphics.width / 2 - 100.toFloat(), 10f)
-    middle_bar9.setName("middleBar9")
-    space.stage.addActor(middle_bar9)
 
-    var middle_bar10 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 21) {
-        middle_bar10 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar10.setPosition(Gdx.graphics.width / 2 - 75.toFloat(), 10f)
-    middle_bar10.setName("middleBar10")
-    space.stage.addActor(middle_bar10)
+    val left_bound = bars[0].x - button.width / 2
+    val right_bound = bars.last().x + button.width / 2
 
-    var middle_bar11 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 22) {
-        middle_bar11 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar11.setPosition(Gdx.graphics.width / 2 - 50.toFloat(), 10f)
-    middle_bar11.setName("middleBar11")
-    space.stage.addActor(middle_bar11)
+    fun update(){
+        buffer!!
+        if  (button.listeners.first() is DragListener && !(button.listeners.first() as DragListener).isDragging) {
+            var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
+            if (perc < 0f)
+                perc = 0f
+            if (perc > 1f)
+                perc = 1f
+            val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.first().x
+            button.setPosition(newX, button.y)
+        } else {
+            if (!(button.listeners.first() as DragListener).isDragging) {
+                println("problem")
+            }
+        }
 
-    var middle_bar12 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 23) {
-        middle_bar12 = Image(Texture("Screen3D/onVideo_bar.png"))
     }
-    middle_bar12.setPosition(Gdx.graphics.width / 2 - 25.toFloat(), 10f)
-    middle_bar12.setName("middleBar12")
-    space.stage.addActor(middle_bar12)
 
-    var middle_bar13 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 24) {
-        middle_bar13 = Image(Texture("Screen3D/onVideo_bar.png"))
+    fun up(){
+        button.setPosition(button.x+1, button.y)
     }
-    middle_bar13.setPosition(Gdx.graphics.width / 2.toFloat(), 10f)
-    middle_bar13.setName("middleBar13")
-    space.stage.addActor(middle_bar13)
 
-    var middle_bar14 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 25) {
-        middle_bar14 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar14.setPosition(Gdx.graphics.width / 2 + 25.toFloat(), 10f)
-    middle_bar14.setName("middleBar14")
-    space.stage.addActor(middle_bar14)
 
-    var middle_bar15 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 26) {
-        middle_bar15 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar15.setPosition(Gdx.graphics.width / 2 + 50.toFloat(), 10f)
-    middle_bar15.setName("middleBar15")
-    space.stage.addActor(middle_bar15)
 
-    var middle_bar16 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 27) {
-        middle_bar16 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar16.setPosition(Gdx.graphics.width / 2 + 75.toFloat(), 10f)
-    middle_bar16.setName("middleBar16")
-    space.stage.addActor(middle_bar16)
-
-    var middle_bar17 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 28) {
-        middle_bar17 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar17.setPosition(Gdx.graphics.width / 2 + 100.toFloat(), 10f)
-    middle_bar17.setName("middleBar17")
-    space.stage.addActor(middle_bar17)
-
-    var middle_bar18 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 29) {
-        middle_bar18 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar18.setPosition(Gdx.graphics.width / 2 + 125.toFloat(), 10f)
-    middle_bar18.setName("middleBar18")
-    space.stage.addActor(middle_bar18)
-
-    var middle_bar19 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 30) {
-        middle_bar19 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar19.setPosition(Gdx.graphics.width / 2 + 150.toFloat(), 10f)
-    middle_bar19.setName("middleBar19")
-    space.stage.addActor(middle_bar19)
-
-    var middle_bar20 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 31) {
-        middle_bar20 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar20.setPosition(Gdx.graphics.width / 2 + 175.toFloat(), 10f)
-    middle_bar20.setName("middleBar20")
-    space.stage.addActor(middle_bar20)
-
-    var middle_bar21 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 32) {
-        middle_bar21 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar21.setPosition(Gdx.graphics.width / 2 + 200.toFloat(), 10f)
-    middle_bar21.setName("middleBar21")
-    space.stage.addActor(middle_bar21)
-
-    var middle_bar22 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 33) {
-        middle_bar22 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar22.setPosition(Gdx.graphics.width / 2 + 225.toFloat(), 10f)
-    middle_bar22.setName("middleBar22")
-    space.stage.addActor(middle_bar22)
-
-    var middle_bar23 = Image(Texture("Screen3D/middle_bar.png"))
-    if (frameDivider == 34) {
-        middle_bar23 = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    middle_bar23.setPosition(Gdx.graphics.width / 2 + 250.toFloat(), 10f)
-    middle_bar23.setName("middleBar23")
-    space.stage.addActor(middle_bar23)
-
-    var right_bar = Image(Texture("Screen3D/right_bar.png"))
-    if (frameDivider == 35) {
-        right_bar = Image(Texture("Screen3D/onVideo_bar.png"))
-    }
-    right_bar.setPosition(Gdx.graphics.width / 2 + 275.toFloat(), 11f)
-    right_bar.setName("rightBar")
-    space.stage.addActor(right_bar)
 }

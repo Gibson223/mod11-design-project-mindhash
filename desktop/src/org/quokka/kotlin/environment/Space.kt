@@ -16,7 +16,6 @@ import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.math.Vector3
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
@@ -24,6 +23,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.environment.GuiButtons
+import org.quokka.kotlin.environment.drawBar
 import org.quokka.kotlin.internals.*
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -109,8 +109,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var string: StringBuilder = StringBuilder()
     var errMessage = " "
 
-    var frameDivider : Int = 0
-
     var decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -137,10 +135,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         println("end of initializing space")
     }
 
+    lateinit var bar : drawBar
 
     fun create() {
-        GuiButtons(this, 0)
+        GuiButtons(this)
         settings.updateSpace()
+        bar = drawBar(this.stage, buffer)
+
 
         //-----------Camera Creation------------------
         cam.position[0f, 0f] = 30f
@@ -192,6 +193,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
 
         campButtonpress()
+        bar.update()
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             updateFixedCamera()
