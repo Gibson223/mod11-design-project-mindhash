@@ -34,16 +34,6 @@ import kotlin.concurrent.thread
 import kotlin.concurrent.timer
 import kotlin.math.*
 
-fun main() {
-    for (i in 0 until 40) {
-        val nFrames = 50
-        val time = measureTimeMillis {
-            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = LidarFps.TEN)
-        }
-
-        println("Time to take $nFrames frames: $time")
-    }
-}
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
     lateinit var plexer: InputMultiplexer
