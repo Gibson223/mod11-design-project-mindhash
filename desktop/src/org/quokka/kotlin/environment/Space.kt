@@ -17,11 +17,11 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
+import org.quokka.kotlin.environment.Compression
 import org.quokka.kotlin.environment.GuiButtons
 import org.quokka.kotlin.environment.drawBar
 import org.quokka.kotlin.internals.*
@@ -79,7 +79,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * used in deciding how compressed the data is
      * based on the point's distance from the camera
      */
-    var dfcm = 15//prefs.getInteger("DISTANCE")
+    var dfcm = prefs.getInteger("DISTANCE")
+
 
     val settings = GameInitializer.settings
 
@@ -106,7 +107,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var font: BitmapFont = BitmapFont()
     var label = Label(" ", LabelStyle(font, Color.WHITE))
     var string: StringBuilder = StringBuilder()
-    var errMessage = " "
 
     var decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
@@ -125,7 +125,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         pix.drawPixel(0, 0)
         TextureRegion(Texture(pix))
     }
-    var decalTextureRegion = TextureRegion(Texture(pix))
+
+    //compression class initialization
+    var cmpss = Compression(
+            prefs.getInteger("COMPRESSION"),
+            prefs.getBoolean("GRADUAL COMPRESSION"),
+            prefs.getInteger("DISTANCE"),
+            this.cam
+    )
 
     // List of timers which run in the background, these have to be discarded once the screen is over.
     val timers = mutableListOf<Timer>()
@@ -148,6 +155,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.near = .01f
         cam.far = 1000f
         cam.update()
+
+
 
         //---------Camera controls--------
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
@@ -221,8 +230,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
         string.setLength(0)
-        string.append(errMessage)
-                .append("fps = ")
+        string.append("fps = ")
                 .append(Gdx.graphics.framesPerSecond)
                 .append(", paused = ")
                 .append(pause)
@@ -235,7 +243,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
-        errMessage = ""
     }
 
     /**
@@ -251,13 +258,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             if (frameFetchSkipCounter.incrementAndGet() > framesToSkip.get()) {
                 frameFetchSkipCounter.set(0)
                 if (!pause.get()) {
-                    if (compresion != 1) {
-                        decals = compressPoints() ?: decals
+                    if (cmpss.compressionLevel != 1) {
+                        decals = fetchNextFrame()?.let { cmpss.compressPoints(it) } ?: decals
                         decals.forEach { colorDecal(it, blueRedFade) }
                     } else {
                         fetchNextFrame()?.let { f ->
                             decals = f.coords.map {
-                                val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
+                                val d = Decal.newDecal(0.15f, 0.15f, cmpss.decalTextureRegion)
                                 d.setPosition(it.x, it.y, it.z)
                                 colorDecal(d, blueRedFade)
                                 d
@@ -419,19 +426,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun changePlaybackFPS(newFPS: Int) {
         this.playbackFPS = newFPS
+        //TODO !!!!
     }
 
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera = fixed
-    }
-
-    fun changeCompression(newcomp: Int) {
-        this.compresion = newcomp
-//        println("compreison changed to $newcomp")
-    }
-
-    fun switchGradualCompression(newset: Boolean) {
-        this.gradualCompression = newset
     }
 
     fun skipForward10frames() {
@@ -452,138 +451,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         }
     }
 
-    fun changeDFCM(dd: Int) {
-        this.dfcm = dd
-//        println("def changed to $dd")
-    }
 
     //------------------------------------------------
-
-    /**
-     * this methods returns the parent of a point
-     * the parent of a point is a point to which the initial point is aproximated
-     * @param a is the number being tested
-     * @param divisions is the number of divisions meaning
-     * if it is 1 then then the number is aproximated to itself
-     * if it is 2 then then number is approximated to closes .5 or .0
-     * @author Robert
-     *
-     * @return The parent of a point.
-     */
-    fun returnCPP(a: Float, divisions: Int): Float {
-        var result = 0f
-        var auxxx: Float // this will be between 0 and 1, factorial part of number a
-        if (a > -1 && a < 1) {
-            auxxx = a
-        } else {
-            auxxx = a - a.toInt()
-        }
-        val margin: Float
-        if (divisions == 1) {
-            return a
-        } else if (divisions == 2) {
-            margin = .5f
-            when (auxxx) {
-                in 0f..margin -> result = a.toInt() * 1f
-                in margin..1f -> result = a.toInt() + margin * sign(a)
-
-                in -1f..margin * -1 -> result = a.toInt() + margin * sign(a)
-                in margin * -1..0f -> result = a.toInt() * 1f
-            }
-        } else if (divisions == 3) {
-            margin = .33f
-            when (auxxx) {
-                in 0f..margin -> result = a.toInt() * 1f
-                in margin..margin * 2 -> result = a.toInt() + margin * sign(a)
-                in margin * 2..1f -> result = a.toInt() + margin * 2 * sign(a)
-
-                in margin * -1..0f -> result = a.toInt() * 1f
-                in margin * -2..margin * -1 -> result = a.toInt() + margin * sign(a)
-                in -1f..margin * -2 -> result = a.toInt() + margin * 2 * sign(a)
-            }
-
-        } else if (divisions == 4) {
-            margin = .25f
-            when (auxxx) {
-                in 0f..margin -> result = a.toInt() * 1f
-                in margin..margin * 2 -> result = a.toInt() + margin * sign(a)
-                in margin * 2..margin * 3 -> result = a.toInt() + margin * 2 * sign(a)
-                in margin * 3..1f -> result = a.toInt() + margin * 3 * sign(a)
-
-                in margin * -1..0f -> result = a.toInt() * 1f
-                in -1f..margin * -3 -> result = a.toInt() + margin * 3 * sign(a)
-                in margin * -2..margin * -1 -> result = a.toInt() + margin * 1 * sign(a)
-                in margin * -3..margin * -2 -> result = a.toInt() + margin * 2 * sign(a)
-            }
-        } else throw Error("Divisions not prepared for divisions to be $divisions  ")
-        return result
-    }
-
-
-    fun distanceAB3(a: LidarCoord, b: Vector3): Float {
-        return sqrt((a.x - b.x).pow(2)
-                + (a.y - b.y).pow(2)
-                + (a.z - b.z).pow(2))
-    }
-
-    fun distanceAB3(a: Vector3, b: Vector3): Float {
-        return sqrt((a.x - b.x).pow(2)
-                + (a.y - b.y).pow(2)
-                + (a.z - b.z).pow(2))
-    }
-
-    fun disntaceAB2(x: Float, y: Float, a: Float, b: Float): Float {
-        return sqrt((x - a).pow(2) + (y - b).pow(2))
-    }
-
-    /**
-     * This methods decied the val of compression of a point
-     * depending on the distance from the camera
-     * @param coord is the coordinate being checked
-     * @return 1,2,3,4 number of divisions,
-     * will be fed into returnCPP
-     * @author Robert
-     */
-    fun decidDivisions(coord: LidarCoord): Int {
-        val camp = cam.position
-        if (camp != null) {
-            val distance = distanceAB3(coord, camp)
-            sqrt((coord.x - camp.x).pow(2)
-                    + (coord.y - camp.y).pow(2)
-                    + (coord.z - camp.z).pow(2))
-
-            val substraction = distance - dfcm
-
-            when (compresion) { //compresion is the maximum level of compression
-                // 1 is least, then 4, 3 and finally 2
-                1 -> return 1
-                2 -> if (substraction < 0) {
-                    return 1
-                } else if (substraction < dfcm) {
-                    return 4
-                } else if (substraction < 2 * dfcm) {
-                    return 3
-                } else {
-                    return 2
-                }
-                3 -> if (substraction < 0) {
-                    return 1
-                } else if (substraction < dfcm) {
-                    return 4
-                } else {
-                    return 3
-                }
-                4 -> if (substraction < 0) {
-                    return 1
-                } else {
-                    return 4
-                }
-            }
-
-        } else throw Error("Could not find camera position in decidDivisions")
-        return -1
-    }
-
 
     override fun dispose() {
         modelBatch.dispose()
@@ -608,111 +477,22 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     /**
-     * point means a point in the point cloud, an object with x y z float values
-     * this methods looks at the next frame in line
-     * and puts points which are close enough to each other in one point
-     * then gives the remaining points a suitably sized decal
-     * based on the amount of points which are compressed into that point
      * @author Robert
+     *  here methods for the camera controls can be found
+     *  they make use of the camera's up and direction vector
+     *  to rotate and move it
      */
-    fun compressPoints(): ArrayList<Decal>? {
-        var objects = ArrayList<Decal>(15) //end result of the method
-
-        var map = HashMap<LidarCoord, Int>()
-        //map containing the coordinates as key and the number of points approximated to that point as value
-
-        var crtFrame = fetchNextFrame()
-
-        // Return null if no new frame is available
-        if (crtFrame == null) {
-            return null
-        }
-
-        crtFrame.coords.forEach { c ->
-            var divisions = compresion //level of compression
-            if (gradualCompression == true && compresion != 1) {
-                divisions = decidDivisions(c) //has to be deiced based on distance from camera
-            }
-            //calculate the compression power(1/2/3/4) based on the distance from the camera
-
-            //dummy value which contains the point to which the currently analyzed point is approximated to
-            // it is the point itself if the camera is close enough
-            val tripp = LidarCoord(
-                    returnCPP(c.x, divisions),
-                    returnCPP(c.y, divisions),
-                    returnCPP(c.z, divisions))
-
-            //if the point has not been added before initialize it with one
-            //otherwise update its value in the map
-            if (map.keys.contains(tripp)) {
-                map.set(tripp, map.getValue(tripp) + 1)
-            } else {
-                map.set(tripp, 1)
-            }
-        }
-
-        //each point after the compression will represent one or more points
-        // based on how many points it represent, the size of the Decal for that point
-        // the margin is a number. it represents the step from one size to another
-        val margin = 5
-        map.keys.forEach { k ->
-
-            var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
-            val baseSizeofDecal = .2f
-
-            for (i in 0..8) {
-                if (map.get(k) in i * margin..(i + 1) * margin) {
-                    d.setDimensions(baseSizeofDecal + i * 0.02f, baseSizeofDecal + i * 0.02f)
-                }
-            }
-            d.setPosition(k.x, k.y, k.z)
-            objects.add(d)
-        }
-        return objects
-    }
-
-
-    /**
-     * calculates the distance betwwen two points
-     * the points can be represented as
-     * either Vector3 or LidarCoord
-     * @author Robet
-     */
-    fun distanceBetween2points(a: LidarCoord, b: LidarCoord): Float {
-        return sqrt((a.x - b.x).pow(2)
-                + (a.y - b.y).pow(2)
-                + (a.z - b.z).pow(2))
-    }
-
-    fun distanceBetween2points(a: Vector3, b: LidarCoord): Float {
-        return sqrt((a.x - b.x).pow(2)
-                + (a.y - b.y).pow(2)
-                + (a.z - b.z).pow(2))
-    }
-
-    fun distanceBetween2points(a: LidarCoord, b: Vector3): Float {
-        return sqrt((a.x - b.x).pow(2)
-                + (a.y - b.y).pow(2)
-                + (a.z - b.z).pow(2))
-    }
-
-    fun distanceBetween2points(a: Vector3, b: Vector3): Float {
-        return sqrt((a.x - b.x).pow(2)
-                + (a.y - b.y).pow(2)
-                + (a.z - b.z).pow(2))
-    }
-
-    /**
-     * @author Robert
-     */
-    //-------Camera Control Methods-----------------------
-
+    //-------Revised Camera Control Methods-----------------------
 
     val camSpeed = 20f
     val rotationAngle = 75f
 
 
-    // this methods can be deleted later
+   /*
+   This method is used for testing,
+     it will be left in in case MindHash wants to use it
+   It binds camera movements to keyboard keys for easy testing
+    */
     fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
@@ -752,12 +532,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             rotateRight(delta)
             rotateFixedRight(delta)
         }
-//        if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
-//            rotateZ()
-//        }
-//        if (Gdx.input.isKeyPressed(Input.Keys.C)) {
-//            rotateZrev()
-//        }
         if (Gdx.input.isKeyPressed(Input.Keys.R)) {
             resetCamera()
             resetFixed()
@@ -822,15 +596,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.update()
     }
 
-    fun rotateZ() {
-        cam.rotate(Vector3(0f, 0f, 1f), rotationAngle)
-        cam.update()
-    }
-
-    fun rotateZrev() {
-        cam.rotate(Vector3(0f, 0f, 1f), -rotationAngle)
-        cam.update()
-    }
 }
 
 

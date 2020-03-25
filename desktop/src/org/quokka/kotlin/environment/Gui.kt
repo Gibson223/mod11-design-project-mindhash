@@ -75,7 +75,7 @@ class Settings {
         resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
-        compression_box.setItems(1, 2, 3, 4)
+        compression_box.setItems(1, 4, 3, 2)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
@@ -148,9 +148,9 @@ class Settings {
         }
         GameInitializer.space.switchFixedCamera(camera_checkbox.isChecked)
 
-        GameInitializer.space.changeCompression(compression_box.selected)
-        GameInitializer.space.switchGradualCompression(gradualBox.isChecked)
-        GameInitializer.space.changeDFCM(distance_field.text.toInt())
+        GameInitializer.space.cmpss.changeCompression(compression_box.selected)
+        GameInitializer.space.cmpss.switchGradualCompression(gradualBox.isChecked)
+        GameInitializer.space.cmpss.changeDFCM(distance_field.text.toInt())
 
 
     }
@@ -264,7 +264,6 @@ fun GuiButtons(space: Space) {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
             GameInitializer.click.play()
-
         }
 
         override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -273,8 +272,8 @@ fun GuiButtons(space: Space) {
 
         override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
             super.touchDragged(event, x, y, pointer)
-            val o = x - 70
-            val l = y - 70
+            val o = x - 75
+            val l = y - 75
             val delta = Gdx.graphics.deltaTime
             if (o > 0){
                 space.rotateRight(delta*o/10)
@@ -292,19 +291,6 @@ fun GuiButtons(space: Space) {
                 space.rotateDown(delta*(-1)*l/10)
                 space.moveFixedDown(delta*(-1)*l/10)
             }
-//            if(o.absoluteValue < l.absoluteValue){
-//                if(l>0){
-//                    space.rotateUp(delta)
-//                } else {
-//                    space.rotateDown(delta)
-//                }
-//            } else {
-//                if (o < 0){
-//                    space.rotateLeft(delta)
-//                } else {
-//                    space.rotateRight(delta)
-//                }
-//            }
         }
     })
 
