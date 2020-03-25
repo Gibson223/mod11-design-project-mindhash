@@ -5,13 +5,14 @@ sourceCompatibility = 1.7
 sourceSets.main.java.srcDirs = [ "src/" ]
 sourceSets.main.resources.srcDirs = ["../core/assets"]
 
-project.ext.mainClassName = "org.quokka.lidar.desktop.DesktopLauncher"
+project.ext.mainClassName = "org.quokka.kotlin.environment.MainKt"
 project.ext.assetsDir = new File("../core/assets")
 
 task run(dependsOn: classes, type: JavaExec) {
     main = project.mainClassName
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
+    jvmArgs = ["-XX:+UseG1GC"]
     workingDir = project.assetsDir
     ignoreExitValue = true
 }
