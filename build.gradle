@@ -49,6 +49,8 @@ project(":desktop") {
         compile "com.github.swri-robotics:bag-reader-java:1.10.2"
         compile "org.postgresql:postgresql:42.1.4"
         compile "com.zaxxer:HikariCP:3.4.2"
+
+        testImplementation("org.junit.jupiter:junit-jupiter:5.6.1")
     }
 }
 
@@ -59,6 +61,5 @@ project(":core") {
     dependencies {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
-        
     }
 }

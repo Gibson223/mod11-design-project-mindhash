@@ -377,8 +377,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun resetFixed() {
-        fixedCamAngle = 0f
-        fixedCamAzimuth = 0f
+        fixedCamAngle = Math.PI.toFloat() * 0.3f
+        fixedCamAzimuth = 30f
         fixedCamDistance = 70f
     }
 
