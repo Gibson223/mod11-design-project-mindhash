@@ -157,7 +157,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
 
-        //---------Camera controls--------
+        //---------Environment Creation --------
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
         environment.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
@@ -225,6 +225,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             }
         }
 
+        //render the decals
         decalBatch.flush()
 
 

@@ -29,10 +29,17 @@ fun main(){
  */
 class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?) {
 
-
+    // current compression level of the system
     var compressionLevel = comprLVL
+
+    // boolean keeping track of if gradual compression is on or off
     var gradualCompression = gradual
+
+
+    // margin for distnace from a camera for a point to have different compressionLVL
     var dfcm = disnta
+
+    // the camera of the environment, its position is needed in the calculation of gradual compression
     var cam = camera
 
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -42,15 +49,16 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?)
 
     /**
      * point means a point in the point cloud, an object with x y z float values
-     * this methods looks at the next frame in line
+     * this method is given the next LidarFrame
      * and puts points which are close enough to each other in one point
      * then gives the remaining points a suitably sized decal
      * based on the amount of points which are compressed into that point
+     * all the decals are place in the objects variable which is returned
      */
     fun compressPoints(crtFrame: LidarFrame ): ArrayList<Decal>? {
-        var objects = ArrayList<Decal>(15) //end result of the method
+        val objects = ArrayList<Decal>(15) //end result of the method
 
-        var map = HashMap<LidarCoord, Int>()
+        val map = HashMap<LidarCoord, Int>()
         //map containing the coordinates as key and the number of points approximated to that point as value
 
 
@@ -88,7 +96,7 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?)
         val margin = 5
         map.keys.forEach { k ->
 
-            var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
+            val d = Decal.newDecal(.3f, .3f, decalTextureRegion)
             val baseSizeofDecal = .2f
 
             for (i in 0..8) {
@@ -118,6 +126,7 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?)
                     + (coord.y - camp.y).pow(2)
                     + (coord.z - camp.z).pow(2))
 
+            // distance from the camera with dfcm subtracted
             val substraction = distance - dfcm
 
             when (compressionLevel) { //compressionLevel is the maximum level of compression
