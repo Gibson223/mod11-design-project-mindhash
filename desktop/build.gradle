@@ -4,6 +4,7 @@ apply plugin: 'kotlin'
 sourceCompatibility = 1.7
 sourceSets.main.java.srcDirs = [ "src/" ]
 sourceSets.main.resources.srcDirs = ["../core/assets"]
+sourceSets.test.java.srcDirs = [ "test/" ]
 
 project.ext.mainClassName = "org.quokka.kotlin.environment.MainKt"
 project.ext.assetsDir = new File("../core/assets")
@@ -63,5 +64,6 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs = ["-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"]
     }
 }
