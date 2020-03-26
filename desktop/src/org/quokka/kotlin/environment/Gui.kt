@@ -230,12 +230,38 @@ fun GuiButtons(space: Space) {
     })
 
     space.stage.addActor(arrows_button)
+    val arrowsLastPos = Vector2(0f, 0f)
     arrows_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
+            arrowsLastPos.set(x, y)
             GameInitializer.click.play()
         }
+
+        override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+            arrowsLastPos.set(x, y)
+            return super.touchDown(event, x, y, pointer, button)
+        }
+
         override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
             super.touchDragged(event, x, y, pointer)
+            val deltaX = x - arrowsLastPos.x
+            val deltaY = y - arrowsLastPos.y
+            arrowsLastPos.set(x, y)
+
+            // TODO magic number 10
+            if (deltaX > 0) {
+                space.moveRight(deltaX * 10)
+            } else {
+                space.moveLeft(-deltaX * 10)
+            }
+
+            if (deltaY > 0) {
+                space.moveUp(deltaY * 10)
+            } else {
+                space.moveDown(-deltaY * 10)
+            }
+
+            /*
             val o = x - 110
             val l = y - 110
             val delta = Gdx.graphics.deltaTime
@@ -252,6 +278,7 @@ fun GuiButtons(space: Space) {
                     space.moveRight(delta)
                 }
             }
+             */
         }
     })
 

@@ -345,17 +345,17 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun rotateFixedLeft(delta: Float) {
-        fixedCamAzimuth += delta * camSpeed / 10
+        fixedCamAzimuth += delta * camSpeed
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun rotateFixedRight(delta: Float) {
-        fixedCamAzimuth -= delta * camSpeed / 10
+        fixedCamAzimuth -= delta * camSpeed
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun moveFixedUp(delta: Float) {
-        fixedCamAngle += delta * camSpeed / 10
+        fixedCamAngle += delta * camSpeed
 
         if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
             fixedCamAngle = FIXED_CAM_ANGLE_MAX
@@ -366,7 +366,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveFixedDown(delta: Float) {
-        fixedCamAngle -= delta * camSpeed / 10
+        fixedCamAngle -= delta * camSpeed
 
         if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
             fixedCamAngle = FIXED_CAM_ANGLE_MAX
@@ -485,7 +485,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-    val camSpeed = 0.1f
+    val camSpeed = 0.03f
     val rotationAngle = 1f
 
 
@@ -559,22 +559,22 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveUp(delta: Float) {
-        cam.translate(Vector3(cam.up).scl(delta * camSpeed * 100))
+        cam.translate(Vector3(cam.up).scl(delta * camSpeed))
         cam.update()
     }
 
     fun moveDown(delta: Float) {
-        cam.translate(Vector3(cam.up).scl(-delta * camSpeed * 100))
+        cam.translate(Vector3(cam.up).scl(-delta * camSpeed))
         cam.update()
     }
 
     fun moveLeft(delta: Float) {
-        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * camSpeed * 100))
+        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * camSpeed))
         cam.update()
     }
 
     fun moveRight(delta: Float) {
-        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * camSpeed * 100))
+        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * camSpeed))
         cam.update()
     }
 
