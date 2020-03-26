@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -241,18 +242,14 @@ fun GuiButtons(space: Space) {
             if(o.absoluteValue < l.absoluteValue){
                 if(l>0){
                     space.moveUp(delta)
-                    space.moveFixedUp(delta)
                 } else {
                     space.moveDown(delta)
-                    space.moveFixedDown(delta)
                 }
             } else {
                 if (o < 0){
                     space.moveLeft(delta)
-                    space.rotateFixedLeft(delta)
                 } else {
                     space.moveRight(delta)
-                    space.rotateFixedRight(delta)
                 }
             }
         }
@@ -260,6 +257,7 @@ fun GuiButtons(space: Space) {
 
 
     space.stage.addActor(earth_button)
+    val earthLastPos = Vector2(0f, 0f)
     earth_button.addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             println("earth clicked")
@@ -267,11 +265,33 @@ fun GuiButtons(space: Space) {
         }
 
         override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+            // Initialize last position
+            earthLastPos.set(x, y)
             return super.touchDown(event, x, y, pointer, button)
         }
 
         override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
-            super.touchDragged(event, x, y, pointer)
+            // Calculate deltas
+            val deltaX = x - earthLastPos.x
+            val deltaY = y - earthLastPos.y
+            // Reset last position
+            earthLastPos.set(x, y)
+
+            if (deltaX > 0) {
+                space.rotateRight(deltaX)
+                space.rotateFixedRight(deltaX)
+            } else {
+                space.rotateLeft(-deltaX)
+                space.rotateFixedLeft(-deltaX)
+            }
+            if (deltaY > 0) {
+                space.rotateUp(deltaY)
+                space.moveFixedUp(deltaY)
+            } else {
+                space.rotateDown(-deltaY)
+                space.moveFixedDown(-deltaY)
+            }
+            /*
             val o = x - 75
             val l = y - 75
             val delta = Gdx.graphics.deltaTime
@@ -291,6 +311,9 @@ fun GuiButtons(space: Space) {
                 space.rotateDown(delta*(-1)*l/10)
                 space.moveFixedDown(delta*(-1)*l/10)
             }
+             */
+
+            super.touchDragged(event, x, y, pointer)
         }
     })
 

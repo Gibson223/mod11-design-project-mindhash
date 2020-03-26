@@ -51,6 +51,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var fixedCamAzimuth = 0f
     var fixedCamAngle = Math.PI.toFloat() * 0.3f
     var fixedCamDistance = 70f
+    val zoomStepSize = 10f
     val FIXED_CAM_RADIUS_MAX = 100f
     val FIXED_CAM_RADIUS_MIN = 5f
     val FIXED_CAM_ANGLE_MIN = 0f
@@ -328,7 +329,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun zoomFixedCloser(delta: Float) {
-        fixedCamDistance -= delta * camSpeed * 10
+        fixedCamDistance -= zoomStepSize
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
         if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
@@ -336,7 +337,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun zoomFixedAway(delta: Float) {
-        fixedCamDistance += delta * camSpeed * 10
+        fixedCamDistance += zoomStepSize
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
         if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
@@ -484,8 +485,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-    val camSpeed = 20f
-    val rotationAngle = 75f
+    val camSpeed = 0.1f
+    val rotationAngle = 1f
 
 
    /*
@@ -546,32 +547,34 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveForward(delta: Float) {
-        cam.translate(Vector3(cam.direction).scl(delta * camSpeed))
+        //cam.translate(Vector3(cam.direction).scl(delta * camSpeed * 100))
+        cam.translate(Vector3(cam.direction).scl(zoomStepSize))
         cam.update()
     }
 
     fun moveBackward(delta: Float) {
-        cam.translate(Vector3(cam.direction).scl(-delta * camSpeed))
+        //cam.translate(Vector3(cam.direction).scl(-delta * camSpeed * 100))
+        cam.translate(Vector3(cam.direction).scl(-zoomStepSize))
         cam.update()
     }
 
     fun moveUp(delta: Float) {
-        cam.translate(Vector3(cam.up).scl(delta * camSpeed))
+        cam.translate(Vector3(cam.up).scl(delta * camSpeed * 100))
         cam.update()
     }
 
     fun moveDown(delta: Float) {
-        cam.translate(Vector3(cam.up).scl(-delta * camSpeed))
+        cam.translate(Vector3(cam.up).scl(-delta * camSpeed * 100))
         cam.update()
     }
 
     fun moveLeft(delta: Float) {
-        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * camSpeed))
+        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * camSpeed * 100))
         cam.update()
     }
 
     fun moveRight(delta: Float) {
-        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * camSpeed))
+        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * camSpeed * 100))
         cam.update()
     }
 
