@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.math.Vector3
+import com.mygdx.game.desktop.Space
 import org.quokka.kotlin.internals.LidarCoord
 import org.quokka.kotlin.internals.LidarFrame
 import java.util.HashMap
@@ -14,43 +15,40 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 
-fun main(){
-//    var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-//    cam.position[0f, 0f] = 30f
-    val compTest = Compression(1,false,15,null)
-    println(compTest.returnCPP(1.4f,4))
-}
-
-
 /*
  * class containing all the methods used in the compression of the points
  * the GUI changes to the relevant values call directly the setters in this class
  * @author Robert
  */
-class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?) {
+class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, owner: Space?) {
 
-
+    // current compression level of the system
     var compressionLevel = comprLVL
-    var gradualCompression = gradual
-    var dfcm = disnta
-    var cam = camera
 
-    val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
-    var decalTextureRegion = TextureRegion(Texture(pix))
+    // boolean keeping track of if gradual compression is on or off
+    var gradualCompression = gradual
+
+
+    // margin for distnace from a camera for a point to have different compressionLVL
+    var dfcm = disnta
+
+    // the camera of the environment, its position is needed in the calculation of gradual compression
+    var space = owner
 
 
 
     /**
      * point means a point in the point cloud, an object with x y z float values
-     * this methods looks at the next frame in line
+     * this method is given the next LidarFrame
      * and puts points which are close enough to each other in one point
      * then gives the remaining points a suitably sized decal
      * based on the amount of points which are compressed into that point
+     * all the decals are place in the objects variable which is returned
      */
     fun compressPoints(crtFrame: LidarFrame ): ArrayList<Decal>? {
-        var objects = ArrayList<Decal>(15) //end result of the method
+        val objects = ArrayList<Decal>(15) //end result of the method
 
-        var map = HashMap<LidarCoord, Int>()
+        val map = HashMap<LidarCoord, Int>()
         //map containing the coordinates as key and the number of points approximated to that point as value
 
 
@@ -88,7 +86,7 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?)
         val margin = 5
         map.keys.forEach { k ->
 
-            var d = Decal.newDecal(.3f, .3f, decalTextureRegion)
+            val d = Decal.newDecal(.3f, .3f, space?.decalTextureRegion)
             val baseSizeofDecal = .2f
 
             for (i in 0..8) {
@@ -111,42 +109,45 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, camera: Camera?)
      * will be fed into returnCPP
      */
     fun decidDivisions(coord: LidarCoord): Int {
-        val camp = cam!!.position
-        if (camp != null) {
-            val distance = distanceAB3(coord, camp)
-            sqrt((coord.x - camp.x).pow(2)
-                    + (coord.y - camp.y).pow(2)
-                    + (coord.z - camp.z).pow(2))
+        var camp = Vector3(0f,0f,0f)
 
-            val substraction = distance - dfcm
+        camp = space?.cam?.position!!
 
-            when (compressionLevel) { //compressionLevel is the maximum level of compression
-                // 1 is least, then 4, 3 and finally 2
-                1 -> return 1
-                2 -> if (substraction < 0) {
-                        return 1
-                    } else if (substraction < dfcm) {
-                        return 4
-                    } else if (substraction < 2 * dfcm) {
-                        return 3
-                    } else {
-                        return 2
-                    }
-                3 -> if (substraction < 0) {
-                        return 1
-                    } else if (substraction < dfcm) {
-                        return 4
-                    } else {
-                        return 3
-                    }
-                4 -> if (substraction < 0) {
-                        return 1
-                    } else {
-                        return 4
-                    }
-            }
+        //calculate distance between camera and point
+        val distance = distanceAB3(coord, camp)
+        sqrt((coord.x - camp.x).pow(2)
+                + (coord.y - camp.y).pow(2)
+                + (coord.z - camp.z).pow(2))
 
-        } else throw Error("Could not find camera position in decidDivisions")
+        // distance from the camera with dfcm subtracted
+        val substraction = distance - dfcm
+
+        when (compressionLevel) { //compressionLevel is the maximum level of compression
+            // 1 is least, then 4, 3 and finally 2
+            1 -> return 1
+            2 -> if (substraction < 0) {
+                    return 1
+                } else if (substraction < dfcm) {
+                    return 4
+                } else if (substraction < 2 * dfcm) {
+                    return 3
+                } else {
+                    return 2
+                }
+            3 -> if (substraction < 0) {
+                    return 1
+                } else if (substraction < dfcm) {
+                    return 4
+                } else {
+                    return 3
+                }
+            4 -> if (substraction < 0) {
+                    return 1
+                } else {
+                    return 4
+                }
+        }
+
         return -1
     }
 
