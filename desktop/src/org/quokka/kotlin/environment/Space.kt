@@ -85,8 +85,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     val settings = GameInitializer.settings
 
-
-    var pause = AtomicBoolean(false)
+            var pause = AtomicBoolean(false)
     val buffer = Buffer(recordingId)
 
     // this is basically the timestamp
@@ -111,7 +110,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     var decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
+
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+    var decalTextureRegion = TextureRegion(Texture(pix))
 
 
     lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
@@ -132,7 +133,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             prefs.getInteger("COMPRESSION"),
             prefs.getBoolean("GRADUAL COMPRESSION"),
             prefs.getInteger("DISTANCE"),
-            this.cam
+            this
     )
 
     // List of timers which run in the background, these have to be discarded once the screen is over.
@@ -159,7 +160,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
 
-        //---------Camera controls--------
+        //---------Environment Creation --------
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f))
         environment.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
 
@@ -227,6 +228,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             }
         }
 
+        //render the decals
         decalBatch.flush()
 
 
@@ -265,7 +267,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
                     } else {
                         fetchNextFrame()?.let { f ->
                             decals = f.coords.map {
-                                val d = Decal.newDecal(0.15f, 0.15f, cmpss.decalTextureRegion)
+                                val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
                                 d.setPosition(it.x, it.y, it.z)
                                 colorDecal(d, blueRedFade)
                                 d
@@ -298,8 +300,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun initLocalFileThread(): Timer {
         return timer("File Parser", period = 2000) {
             if (localFrames.size < 60) {
-                val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 20)
-                framesIndex += 20
+                val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 12)
+                framesIndex += 12
+                println("printtttt $framesIndex")
                 localFrames.addAll(frames)
             }
         }
