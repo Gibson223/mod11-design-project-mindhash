@@ -109,7 +109,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     var decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
+
     val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+    var decalTextureRegion = TextureRegion(Texture(pix))
 
 
     lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
@@ -130,7 +132,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             prefs.getInteger("COMPRESSION"),
             prefs.getBoolean("GRADUAL COMPRESSION"),
             prefs.getInteger("DISTANCE"),
-            this.cam
+            this
     )
 
     // List of timers which run in the background, these have to be discarded once the screen is over.
@@ -264,7 +266,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
                     } else {
                         fetchNextFrame()?.let { f ->
                             decals = f.coords.map {
-                                val d = Decal.newDecal(0.15f, 0.15f, cmpss.decalTextureRegion)
+                                val d = Decal.newDecal(0.15f, 0.15f, decalTextureRegion)
                                 d.setPosition(it.x, it.y, it.z)
                                 colorDecal(d, blueRedFade)
                                 d
