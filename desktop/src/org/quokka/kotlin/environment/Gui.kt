@@ -1,5 +1,6 @@
 package org.quokka.kotlin.environment
 
+import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
@@ -60,6 +61,9 @@ class Settings {
     val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
 
+    val rotate_label = Label("ROTATE", shared_style)
+    val rotate_box = CheckBox("", skin)
+
     val back_button = TextButton("BACK", skin)
     val save_button = TextButton("SAVE", skin)
 
@@ -82,6 +86,7 @@ class Settings {
         distance_field.text = prefs.getInteger("DFCM",15).toString()
 
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", false)
+        rotate_box.isChecked = prefs.getBoolean("ROTATE", false)
 
         dialog.setSize(200f, 250f)
         dialog.setPosition(Gdx.graphics.width / 2 - 100f, Gdx.graphics.height / 2 - 101f)
@@ -115,6 +120,9 @@ class Settings {
         dialog.contentTable.add(gradualCompression)
         dialog.contentTable.add(gradualBox)
         dialog.contentTable.row()
+        dialog.contentTable.add(rotate_label)
+        dialog.contentTable.add(rotate_box)
+        dialog.contentTable.row()
 
         back_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
@@ -128,7 +136,7 @@ class Settings {
 
         save_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("saved settings (MOCK)")
+                println("saved settings")
                 flushall()
             }
         })
@@ -153,6 +161,8 @@ class Settings {
         GameInitializer.space.cmpss.switchGradualCompression(gradualBox.isChecked)
         GameInitializer.space.cmpss.changeDFCM(distance_field.text.toInt())
 
+        GameInitializer.space.gui.update()
+
 
     }
 
@@ -167,12 +177,14 @@ class Settings {
         prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.putInteger("DFCM", distance_field.text.toInt())
 
+        prefs.putBoolean("ROTATE", rotate_box.isChecked)
+
         prefs.flush()
 
     }
 }
 
-fun GuiButtons(space: Space) {
+class GuiButtons(space: Space) {
 //http://soundbible.com/1705-Click2.html
     val settings = space.settings
 
@@ -190,78 +202,80 @@ fun GuiButtons(space: Space) {
     val plus = Image(Texture("Screen3D/plus.png"))
     val minus = Image(Texture("Screen3D/minus.png"))
 
-    space.stage.addActor(minus)
-    minus.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked zoom out")
-            GameInitializer.click.play()
-            space.moveBackward(Gdx.graphics.deltaTime)
-            space.zoomFixedAway(Gdx.graphics.deltaTime)
-        }
-    })
+    init {
 
-    plus.setPosition(minus.x, minus.y + minus.height)
-    space.stage.addActor(plus)
-    plus.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked zoom in")
-            GameInitializer.click.play()
-            space.moveForward(Gdx.graphics.deltaTime)
-            space.zoomFixedCloser(Gdx.graphics.deltaTime)
-        }
-    })
+        space.stage.addActor(minus)
+        minus.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked zoom out")
+                GameInitializer.click.play()
+                space.moveBackward(Gdx.graphics.deltaTime)
+                space.zoomFixedAway(Gdx.graphics.deltaTime)
+            }
+        })
 
-    space.stage.addActor(bf_button)
-    bf_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked BF")
-            GameInitializer.click.play()
-            space.skipBackwards10Frames()
-        }
-    })
+        plus.setPosition(minus.x, minus.y + minus.height)
+        space.stage.addActor(plus)
+        plus.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked zoom in")
+                GameInitializer.click.play()
+                space.moveForward(Gdx.graphics.deltaTime)
+                space.zoomFixedCloser(Gdx.graphics.deltaTime)
+            }
+        })
 
-    space.stage.addActor(ff_button)
-    ff_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked FF")
-            GameInitializer.click.play()
-            space.skipForward10frames()
-        }
-    })
+        space.stage.addActor(bf_button)
+        bf_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked BF")
+                GameInitializer.click.play()
+                space.skipBackwards10Frames()
+            }
+        })
 
-    space.stage.addActor(arrows_button)
-    val arrowsLastPos = Vector2(0f, 0f)
-    arrows_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            arrowsLastPos.set(x, y)
-            GameInitializer.click.play()
-        }
+        space.stage.addActor(ff_button)
+        ff_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked FF")
+                GameInitializer.click.play()
+                space.skipForward10frames()
+            }
+        })
 
-        override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
-            arrowsLastPos.set(x, y)
-            return super.touchDown(event, x, y, pointer, button)
-        }
-
-        override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
-            super.touchDragged(event, x, y, pointer)
-            val deltaX = x - arrowsLastPos.x
-            val deltaY = y - arrowsLastPos.y
-            arrowsLastPos.set(x, y)
-
-            // TODO magic number 10
-            if (deltaX > 0) {
-                space.moveRight(deltaX * 10)
-            } else {
-                space.moveLeft(-deltaX * 10)
+        space.stage.addActor(arrows_button)
+        val arrowsLastPos = Vector2(0f, 0f)
+        arrows_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                arrowsLastPos.set(x, y)
+                GameInitializer.click.play()
             }
 
-            if (deltaY > 0) {
-                space.moveUp(deltaY * 10)
-            } else {
-                space.moveDown(-deltaY * 10)
+            override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                arrowsLastPos.set(x, y)
+                return super.touchDown(event, x, y, pointer, button)
             }
 
-            /*
+            override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+                super.touchDragged(event, x, y, pointer)
+                val deltaX = x - arrowsLastPos.x
+                val deltaY = y - arrowsLastPos.y
+                arrowsLastPos.set(x, y)
+
+                // TODO magic number 10
+                if (deltaX > 0) {
+                    space.moveRight(deltaX * 10)
+                } else {
+                    space.moveLeft(-deltaX * 10)
+                }
+
+                if (deltaY > 0) {
+                    space.moveUp(deltaY * 10)
+                } else {
+                    space.moveDown(-deltaY * 10)
+                }
+
+                /*
             val o = x - 110
             val l = y - 110
             val delta = Gdx.graphics.deltaTime
@@ -279,46 +293,46 @@ fun GuiButtons(space: Space) {
                 }
             }
              */
-        }
-    })
-
-
-    space.stage.addActor(earth_button)
-    val earthLastPos = Vector2(0f, 0f)
-    earth_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            println("earth clicked")
-            GameInitializer.click.play()
-        }
-
-        override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
-            // Initialize last position
-            earthLastPos.set(x, y)
-            return super.touchDown(event, x, y, pointer, button)
-        }
-
-        override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
-            // Calculate deltas
-            val deltaX = x - earthLastPos.x
-            val deltaY = y - earthLastPos.y
-            // Reset last position
-            earthLastPos.set(x, y)
-
-            if (deltaX > 0) {
-                space.rotateRight(deltaX)
-                space.rotateFixedRight(deltaX)
-            } else {
-                space.rotateLeft(-deltaX)
-                space.rotateFixedLeft(-deltaX)
             }
-            if (deltaY > 0) {
-                space.rotateUp(deltaY)
-                space.moveFixedUp(deltaY)
-            } else {
-                space.rotateDown(-deltaY)
-                space.moveFixedDown(-deltaY)
+        })
+
+
+        space.stage.addActor(earth_button)
+        val earthLastPos = Vector2(0f, 0f)
+        earth_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                println("earth clicked")
+                GameInitializer.click.play()
             }
-            /*
+
+            override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                // Initialize last position
+                earthLastPos.set(x, y)
+                return super.touchDown(event, x, y, pointer, button)
+            }
+
+            override fun touchDragged(event: InputEvent?, x: Float, y: Float, pointer: Int) {
+                // Calculate deltas
+                val deltaX = x - earthLastPos.x
+                val deltaY = y - earthLastPos.y
+                // Reset last position
+                earthLastPos.set(x, y)
+
+                if (deltaX > 0) {
+                    space.rotateRight(deltaX)
+                    space.rotateFixedRight(deltaX)
+                } else {
+                    space.rotateLeft(-deltaX)
+                    space.rotateFixedLeft(-deltaX)
+                }
+                if (deltaY > 0) {
+                    space.rotateUp(deltaY)
+                    space.moveFixedUp(deltaY)
+                } else {
+                    space.rotateDown(-deltaY)
+                    space.moveFixedDown(-deltaY)
+                }
+                /*
             val o = x - 75
             val l = y - 75
             val delta = Gdx.graphics.deltaTime
@@ -340,68 +354,74 @@ fun GuiButtons(space: Space) {
             }
              */
 
-            super.touchDragged(event, x, y, pointer)
+                super.touchDragged(event, x, y, pointer)
+            }
+        })
+
+
+        space.stage.addActor(pause_button)
+        pause_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked PAUSE")
+                GameInitializer.click.play()
+                space.pause.set(!space.pause.get())
+            }
+        })
+
+        space.stage.addActor(reset_button)
+        reset_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked RESET")
+                GameInitializer.click.play()
+                space.resetCamera()
+                space.resetFixed()
+            }
+        })
+
+        space.stage.addActor(settings_button)
+        settings_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked SETTINGS and opened settings")
+                GameInitializer.click.play()
+                space.pause()
+                settings_dialog.show(space.stage)
+            }
+        })
+        settings.back_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                settings.updateSpace()
+                GameInitializer.click.play()
+            }
+
+        })
+
+        space.stage.addActor(home_button)
+
+    }
+    fun update(){
+        if (settings.rotate_box.isChecked) {
+            home_button.addListener(object : ClickListener() {
+                override fun clicked(event: InputEvent, x: Float, y: Float) {
+                    println("clicked HOME")
+                    GameInitializer.click.play()
+                    GameInitializer.screen = IndexScreen()
+                }
+            })
+
+            minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
+            plus.setPosition(minus.x, minus.y + minus.height)
+
+            pause_button.setPosition(Gdx.graphics.width / 2 - (pause_button.width / 2), 50f)
+            bf_button.setPosition(pause_button.x - bf_button.width, 50f)
+            ff_button.setPosition(pause_button.x + pause_button.width, 50f)
+
+            arrows_button.setPosition(0f, 0f)
+            earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
+            home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
+            settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
+            reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
         }
-    })
-
-
-    space.stage.addActor(pause_button)
-    pause_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked PAUSE")
-            GameInitializer.click.play()
-            space.pause.set(!space.pause.get())
-        }
-    })
-
-    space.stage.addActor(reset_button)
-    reset_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked RESET")
-            GameInitializer.click.play()
-            space.resetCamera()
-            space.resetFixed()
-        }
-    })
-
-    space.stage.addActor(settings_button)
-    settings_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked SETTINGS and opened settings")
-            GameInitializer.click.play()
-            space.pause()
-            settings_dialog.show(space.stage)
-        }
-    })
-    settings.back_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent?, x: Float, y: Float) {
-            settings.updateSpace()
-            GameInitializer.click.play()
-        }
-
-    })
-
-    space.stage.addActor(home_button)
-    home_button.addListener(object : ClickListener() {
-        override fun clicked(event: InputEvent, x: Float, y: Float) {
-            println("clicked HOME")
-            GameInitializer.click.play()
-            GameInitializer.screen = IndexScreen()
-        }
-    })
-
-    minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
-    plus.setPosition(minus.x, minus.y + minus.height)
-
-    pause_button.setPosition(Gdx.graphics.width /2 - (pause_button.width /2), 50f)
-    bf_button.setPosition(pause_button.x - bf_button.width, 50f)
-    ff_button.setPosition(pause_button.x + pause_button.width, 50f)
-
-    arrows_button.setPosition(0f, 0f)
-    earth_button.setPosition(Gdx.graphics.width*0.95f - earth_button.width, Gdx.graphics.height*(1/12f))
-    home_button.setPosition(0.toFloat(), Gdx.graphics.height - 101.toFloat())
-    settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height -settings_button.height)
-    reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
+    }
 }
 
 class drawBar(stage: Stage, val buffer: Buffer? = null){

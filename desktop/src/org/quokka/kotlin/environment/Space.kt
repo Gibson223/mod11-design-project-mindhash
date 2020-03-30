@@ -144,9 +144,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     lateinit var bar : drawBar
+    lateinit var gui: GuiButtons
 
     fun create() {
-        GuiButtons(this)
+        gui = GuiButtons(this)
         settings.updateSpace()
         bar = drawBar(this.stage, buffer)
 
