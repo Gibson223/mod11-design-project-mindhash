@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
@@ -206,6 +207,8 @@ class GuiButtons(space: Space) {
 
     var rotated = false
 
+    val bar = drawBar(space.stage, space.buffer)
+
     init {
 
         space.stage.addActor(minus)
@@ -402,7 +405,6 @@ class GuiButtons(space: Space) {
             }
         })
 
-        println("${home_button.originX}, ${home_button.originY}")
         minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
         plus.setPosition(minus.x, minus.y + minus.height)
 
@@ -431,29 +433,34 @@ class GuiButtons(space: Space) {
                     ,pause_button, bf_button,ff_button
                     ,home_button
                     ,earth_button,arrows_button
-                    ,earth_button,settings_button,reset_button
+                    ,settings_button,reset_button, bar.bars
             )
             for (im in arr){
-                im.setOrigin(im.width/2f, im.height/2)
-                im.rotateBy(180f)
-                println("${im.x}, ${im.y}, ${im.isVisible}")
-
-                if ( im.x < Gdx.graphics.width/2) {
-                    im.x = Gdx.graphics.width/2 + (Gdx.graphics.width/2 - im.x) - im.width
-                } else {
-                    im.x = Gdx.graphics.width/2 - (im.x - Gdx.graphics.width/2) - im.width
-                }
-
-                if ( im.y < Gdx.graphics.height/2) {
-                    im.y = Gdx.graphics.height/2 + (Gdx.graphics.height/2 - im.y) - im.height
-                } else {
-                    im.y = Gdx.graphics.height/2 - (im.y - Gdx.graphics.height/2) - im.height
-                }
+                mirror(im)
             }
 
         }
     }
 }
+
+fun mirror(im: Image) {
+    im.setOrigin(im.width/2f, im.height/2)
+    im.rotateBy(180f)
+    println("${im.x}, ${im.y}, ${im.isVisible}")
+
+    if ( im.x < Gdx.graphics.width/2) {
+        im.x = Gdx.graphics.width/2 + (Gdx.graphics.width/2 - im.x) - im.width
+    } else {
+        im.x = Gdx.graphics.width/2 - (im.x - Gdx.graphics.width/2) - im.width
+    }
+
+    if ( im.y < Gdx.graphics.height/2) {
+        im.y = Gdx.graphics.height/2 + (Gdx.graphics.height/2 - im.y) - im.height
+    } else {
+        im.y = Gdx.graphics.height/2 - (im.y - Gdx.graphics.height/2) - im.height
+    }
+}
+
 
 interface bar {
     fun rotate()
@@ -462,16 +469,21 @@ interface bar {
 }
 
 class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
-
-    val left_bar = Image(Texture("Screen3D/left_bar.png"))
-    val right_bar = Image(Texture("Screen3D/right_bar.png"))
     val button = Image(Texture("Screen3D/slider_button.png"))
-    val parts = 20
+    val bars = Image(Texture("Screen3D/middle_bar.png"))
 
-    var bars = arrayListOf<Actor>()
+    var left_bound: Float
+    var right_bound: Float
+
+
 
     init {
         println("drawbar called")
+        bars.width = Gdx.graphics.width*0.5f
+        bars.setPosition(Gdx.graphics.width*0.25f, 10f)
+        left_bound = bars.x - button.width / 2
+        right_bound = bars.x + bars.width - button.width / 2
+        stage.addActor(bars)
         stage.addActor(button)
         button.addListener(object : DragListener() {
             override fun drag(event: InputEvent?, x: Float, y: Float, pointer: Int) {
@@ -492,28 +504,12 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
             }
         })
 
-        var x = Gdx.graphics.width / 2f - (parts/2 *25 /*pixels per middle bar*/)
-        var y = 10f
-
-        for (useless in 0 until parts) {
-            val middle_bar = Image(Texture("Screen3D/middle_bar.png"))
-            val loaded = Image(Texture("Screen3D/middle_barLoaded.png"))
-
-            middle_bar.setPosition(x, y)
-            stage.addActor(middle_bar)
-            loaded.setPosition(x, y)
-            stage.addActor(loaded)
-            bars.add(middle_bar)
-            x += 25
-        }
-
-        button.setPosition(bars.first().x - button.width / 2, bars.first().y + bars.first().height / 2 - button.height / 2)
+        button.setPosition(left_bound, bars.y + bars.height / 2 - button.height/2)
         button.toFront()
-
     }
 
-    val left_bound = bars[0].x - button.width / 2
-    val right_bound = bars.last().x + button.width / 2
+
+
 
     override fun update(){
         buffer!!
@@ -523,7 +519,7 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
                 perc = 0f
             if (perc > 1f)
                 perc = 1f
-            val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.first().x
+            val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.x
             button.setPosition(newX, button.y)
         } else {
             if (!(button.listeners.first() as DragListener).isDragging) {
@@ -538,7 +534,7 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
     }
 
     override fun rotate() {
-        TODO("Not yet implemented")
+        mirror(bars)
     }
 
 

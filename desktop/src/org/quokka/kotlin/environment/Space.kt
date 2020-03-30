@@ -143,13 +143,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         println("end of initializing space")
     }
 
-    lateinit var bar : drawBar
     lateinit var gui: GuiButtons
 
     fun create() {
         gui = GuiButtons(this)
         settings.updateSpace()
-        bar = drawBar(this.stage, buffer)
 
 
         //-----------Camera Creation------------------
@@ -204,7 +202,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
 
         campButtonpress()
-        bar.update()
+        gui.bar.update()
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             updateFixedCamera()
