@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
+import com.badlogic.gdx.utils.Scaling
 import com.mygdx.game.desktop.Space
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
@@ -162,7 +163,7 @@ class Settings {
         GameInitializer.space.cmpss.changeDFCM(distance_field.text.toInt())
 
         GameInitializer.space.gui.update()
-
+        println("updating settings")
 
     }
 
@@ -387,27 +388,27 @@ class GuiButtons(space: Space) {
                 settings_dialog.show(space.stage)
             }
         })
-        settings.back_button.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                settings.updateSpace()
-                GameInitializer.click.play()
-            }
 
-        })
 
         space.stage.addActor(home_button)
+        home_button.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent, x: Float, y: Float) {
+                println("clicked HOME")
+                GameInitializer.click.play()
+                GameInitializer.screen = IndexScreen()
+            }
+        })
+
+        println("${home_button.originX}, ${home_button.originY}")
 
     }
     fun update(){
-        if (settings.rotate_box.isChecked) {
-            home_button.addListener(object : ClickListener() {
-                override fun clicked(event: InputEvent, x: Float, y: Float) {
-                    println("clicked HOME")
-                    GameInitializer.click.play()
-                    GameInitializer.screen = IndexScreen()
-                }
-            })
-
+        fun mirror(image: Actor){
+//            image.setPosition()
+//            image.rotat
+        }
+        if (!settings.rotate_box.isChecked) {
+            println("not to rotate")
             minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
             plus.setPosition(minus.x, minus.y + minus.height)
 
@@ -418,6 +419,24 @@ class GuiButtons(space: Space) {
             arrows_button.setPosition(0f, 0f)
             earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
             home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
+            settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
+            reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
+        } else {
+            // cant use map because then it wont udpate the positions properly
+            println("should update rotations and positions")
+            minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.7f - minus.height)
+            plus.setPosition(minus.x, minus.y - minus.height)
+
+            pause_button.setPosition(Gdx.graphics.width / 2 - (pause_button.width / 2), 50f)
+            bf_button.setPosition(pause_button.x - bf_button.width, 50f)
+            ff_button.setPosition(pause_button.x + pause_button.width, 50f)
+
+            arrows_button.setPosition(0f, 0f)
+            earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
+
+            home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
+            home_button.rotateBy(90f)
+
             settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
             reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
         }
