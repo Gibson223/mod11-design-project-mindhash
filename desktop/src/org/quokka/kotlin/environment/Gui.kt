@@ -19,6 +19,7 @@ import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.internals.Buffer
 import org.quokka.kotlin.internals.Database
 import kotlin.math.absoluteValue
+import kotlin.math.min
 
 
 class Settings {
@@ -202,6 +203,8 @@ class GuiButtons(space: Space) {
     val bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     val plus = Image(Texture("Screen3D/plus.png"))
     val minus = Image(Texture("Screen3D/minus.png"))
+
+    var rotated = false
 
     init {
 
@@ -400,50 +403,65 @@ class GuiButtons(space: Space) {
         })
 
         println("${home_button.originX}, ${home_button.originY}")
+        minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
+        plus.setPosition(minus.x, minus.y + minus.height)
+
+        pause_button.setPosition(Gdx.graphics.width / 2 - (pause_button.width / 2), 50f)
+        bf_button.setPosition(pause_button.x - bf_button.width, 50f)
+        ff_button.setPosition(pause_button.x + pause_button.width, 50f)
+
+        arrows_button.setPosition(0f, 0f)
+        earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
+        home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
+        settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
+        reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
+
+
 
     }
     fun update(){
-        fun mirror(image: Actor){
-//            image.setPosition()
-//            image.rotat
-        }
-        if (!settings.rotate_box.isChecked) {
-            println("not to rotate")
-            minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
-            plus.setPosition(minus.x, minus.y + minus.height)
-
-            pause_button.setPosition(Gdx.graphics.width / 2 - (pause_button.width / 2), 50f)
-            bf_button.setPosition(pause_button.x - bf_button.width, 50f)
-            ff_button.setPosition(pause_button.x + pause_button.width, 50f)
-
-            arrows_button.setPosition(0f, 0f)
-            earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
-            home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
-            settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
-            reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
+        if (settings.rotate_box.isChecked == rotated) {
+            println("rotation matches current setting, so not updating")
         } else {
-            // cant use map because then it wont udpate the positions properly
-            println("should update rotations and positions")
-            minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.7f - minus.height)
-            plus.setPosition(minus.x, minus.y - minus.height)
+            println("rotation/setting mismatch")
+            rotated = !rotated
+            //mirroring gui
+            val arr = listOf(
+                    minus, plus
+                    ,pause_button, bf_button,ff_button
+                    ,home_button
+                    ,earth_button,arrows_button
+                    ,earth_button,settings_button,reset_button
+            )
+            for (im in arr){
+                im.setOrigin(im.width/2f, im.height/2)
+                im.rotateBy(180f)
+                println("${im.x}, ${im.y}, ${im.isVisible}")
 
-            pause_button.setPosition(Gdx.graphics.width / 2 - (pause_button.width / 2), 50f)
-            bf_button.setPosition(pause_button.x - bf_button.width, 50f)
-            ff_button.setPosition(pause_button.x + pause_button.width, 50f)
+                if ( im.x < Gdx.graphics.width/2) {
+                    im.x = Gdx.graphics.width/2 + (Gdx.graphics.width/2 - im.x) - im.width
+                } else {
+                    im.x = Gdx.graphics.width/2 - (im.x - Gdx.graphics.width/2) - im.width
+                }
 
-            arrows_button.setPosition(0f, 0f)
-            earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
+                if ( im.y < Gdx.graphics.height/2) {
+                    im.y = Gdx.graphics.height/2 + (Gdx.graphics.height/2 - im.y) - im.height
+                } else {
+                    im.y = Gdx.graphics.height/2 - (im.y - Gdx.graphics.height/2) - im.height
+                }
+            }
 
-            home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
-            home_button.rotateBy(90f)
-
-            settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
-            reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
         }
     }
 }
 
-class drawBar(stage: Stage, val buffer: Buffer? = null){
+interface bar {
+    fun rotate()
+    fun update()
+    fun up()
+}
+
+class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
 
     val left_bar = Image(Texture("Screen3D/left_bar.png"))
     val right_bar = Image(Texture("Screen3D/right_bar.png"))
@@ -497,7 +515,7 @@ class drawBar(stage: Stage, val buffer: Buffer? = null){
     val left_bound = bars[0].x - button.width / 2
     val right_bound = bars.last().x + button.width / 2
 
-    fun update(){
+    override fun update(){
         buffer!!
         if  (button.listeners.first() is DragListener && !(button.listeners.first() as DragListener).isDragging) {
             var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
@@ -515,15 +533,19 @@ class drawBar(stage: Stage, val buffer: Buffer? = null){
 
     }
 
-    fun up(){
+    override fun up(){
         button.setPosition(button.x+1, button.y)
+    }
+
+    override fun rotate() {
+        TODO("Not yet implemented")
     }
 
 
 
 }
 
-class sliderBar(stage: Stage, val buffer: Buffer? = null){
+class sliderBar(stage: Stage, val buffer: Buffer? = null): bar{
 
     var slider = Slider(0f,1f,0.01f,false,Skin(Gdx.files.internal("Skins/glassy-ui.json")))
 
@@ -547,7 +569,7 @@ class sliderBar(stage: Stage, val buffer: Buffer? = null){
 
     }
 
-    fun update(){
+    override fun update(){
         buffer!!
         var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
         if (perc < 0f)
@@ -557,8 +579,12 @@ class sliderBar(stage: Stage, val buffer: Buffer? = null){
         slider.value = perc
     }
 
-    fun up(){
+    override fun up(){
         slider.value += 0.01f
+    }
+
+    override fun rotate() {
+        TODO("Not yet implemented, because it likely wont")
     }
 
 
