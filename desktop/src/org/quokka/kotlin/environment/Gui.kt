@@ -45,6 +45,7 @@ class Settings {
 
 
     val memory = Label("MEMORY", shared_style)
+    val memory_box = SelectBox<Int>(skin)
 
     val resolution = Label("RESOLUTION", shared_style)
     val resolution_box = SelectBox<String>(skin)
@@ -78,9 +79,12 @@ class Settings {
         lidar_box.selected = prefs.getInteger("LIDAR FPS", 10)
         distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
 
+        memory_box.setItems(5, 10, 15, 20, 30, 60)
+        memory_box.selected = prefs.getInteger("MEMORY", 30)
+
         playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
-        resolution_box.setItems("1920x1080", "1080x720", "FULLSCREEN")
-        resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
+        resolution_box.setItems("1920x1080", "1280x720", "FULLSCREEN")
+        resolution_box.selected = prefs.getString("RESOLUTION", "1280x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
 
         compression_box.setItems(1, 4, 3, 2)
@@ -107,6 +111,7 @@ class Settings {
         dialog.contentTable.add(playback_slider)
         dialog.contentTable.row()
         dialog.contentTable.add(memory)
+        dialog.contentTable.add(memory_box)
         dialog.contentTable.row()
         dialog.contentTable.add(resolution)
         dialog.contentTable.add(resolution_box)
@@ -172,6 +177,7 @@ class Settings {
     private fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
         prefs.putFloat("PLAYBACK FPS", playback_slider.value)
+        prefs.putInteger("MEMORY", memory_box.selected)
         prefs.putString("RESOLUTION", resolution_box.selected)
         prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
 
