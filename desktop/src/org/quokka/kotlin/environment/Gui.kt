@@ -288,25 +288,6 @@ class GuiButtons(space: Space) {
                 } else {
                     space.moveDown(-deltaY * 10)
                 }
-
-                /*
-            val o = x - 110
-            val l = y - 110
-            val delta = Gdx.graphics.deltaTime
-            if(o.absoluteValue < l.absoluteValue){
-                if(l>0){
-                    space.moveUp(delta)
-                } else {
-                    space.moveDown(delta)
-                }
-            } else {
-                if (o < 0){
-                    space.moveLeft(delta)
-                } else {
-                    space.moveRight(delta)
-                }
-            }
-             */
             }
         })
 
@@ -346,28 +327,6 @@ class GuiButtons(space: Space) {
                     space.rotateDown(-deltaY)
                     space.moveFixedDown(-deltaY)
                 }
-                /*
-            val o = x - 75
-            val l = y - 75
-            val delta = Gdx.graphics.deltaTime
-            if (o > 0){
-                space.rotateRight(delta*o/10)
-                space.rotateFixedRight(delta*o/10)
-            }
-            if (o < 0){
-                space.rotateLeft(delta*(-1)*o/10)
-                space.rotateFixedLeft(delta*(-1)*o/10)
-            }
-            if (l > 0){
-                space.rotateUp(delta*l/10)
-                space.moveFixedUp(delta*l/10)
-            }
-            if (l < 0){
-                space.rotateDown(delta*(-1)*l/10)
-                space.moveFixedDown(delta*(-1)*l/10)
-            }
-             */
-
                 super.touchDragged(event, x, y, pointer)
             }
         })
@@ -446,7 +405,6 @@ class GuiButtons(space: Space) {
                 mirror(im)
             }
             bar.reverse = !bar.reverse
-
         }
     }
 }
