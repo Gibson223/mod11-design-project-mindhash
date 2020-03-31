@@ -192,6 +192,7 @@ class GuiButtons(space: Space) {
     val settings = space.settings
 
     val home_button: Image = Image(Texture("Screen3D/home_button.png"))
+
     val settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
 
     val settings_dialog = settings.dialog
@@ -433,7 +434,7 @@ class GuiButtons(space: Space) {
                     ,pause_button, bf_button,ff_button
                     ,home_button
                     ,earth_button,arrows_button
-                    ,settings_button,reset_button, bar.bars
+                    ,settings_button,reset_button, bar.bars, bar.button
             )
             for (im in arr){
                 mirror(im)
@@ -519,6 +520,9 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
                 perc = 0f
             if (perc > 1f)
                 perc = 1f
+            if (GameInitializer.space.settings.rotate_box.isChecked) {
+                perc = 1 - perc
+            }
             val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.x
             button.setPosition(newX, button.y)
         } else {
