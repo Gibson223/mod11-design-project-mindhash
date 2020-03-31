@@ -75,7 +75,6 @@ class Buffer(val recordingId: Int) {
             get() = prefs.getInteger("LIDAR FPS")
 
         // The maximum size of the buffer in seconds
-        // TODO this should be part of the preferences. Make getter like for LIDAR_FPS above.
         val BUFFER_SIZE_S
             get() = prefs.getInteger("MEMORY")
     }
