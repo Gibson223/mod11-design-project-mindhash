@@ -1,14 +1,14 @@
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import org.junit.Assert.*
+import org.junit.Test
 
 class TestExample {
     @Test
     internal fun correct() {
-        Assertions.assertEquals(1, 1)
+        assertEquals(1, 1)
     }
 
     @Test
     internal fun wrong() {
-        Assertions.assertEquals(0, 1)
+        assertNotEquals(0, 1)
     }
 }

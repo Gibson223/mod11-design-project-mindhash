@@ -50,7 +50,7 @@ project(":desktop") {
         compile "org.postgresql:postgresql:42.1.4"
         compile "com.zaxxer:HikariCP:3.4.2"
 
-        testImplementation("org.junit.jupiter:junit-jupiter:5.6.1")
+        testImplementation("junit:junit:4.13")
     }
 }
 

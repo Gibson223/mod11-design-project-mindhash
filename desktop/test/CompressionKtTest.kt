@@ -1,6 +1,6 @@
 import com.badlogic.gdx.math.Vector3
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import org.junit.Assert.*
+import org.junit.Test
 import org.quokka.kotlin.environment.Compression
 import java.util.*
 
@@ -23,12 +23,12 @@ class CompressionKtTest {
     @Test
     internal fun returnCPPTest() {
         var defendant = owner.returnCPP(1.27f,4)
-        Assertions.assertEquals(1.25f, defendant)
+        assertEquals(1.25f, defendant)
         defendant = owner.returnCPP(1.27f,4)
     }
 
     @Test
     internal fun wrong() {
-//        Assertions.assertEquals(0, 1)
+//        assertEquals(0, 1)
     }
 }
