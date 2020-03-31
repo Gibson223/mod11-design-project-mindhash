@@ -123,5 +123,44 @@ class CompressionKtTest {
                             4))
         }
     }
-    
+
+    /**
+     * this tests the some negative numbers which are
+     * supposed to be approximated upwards
+     * e.g. -1.30 becomes -1.25 not -1.5
+     *          (example has division 4)
+     */
+    @Test
+    internal fun downCaseNeg() {
+
+        // tests .26 and .76
+        for ( i in -1..0){
+            Assertions.assertEquals((i-1) * second ,
+                    owner.returnCPP(
+                            (i * second - 0.01f -  second/2),
+                            2))
+        }
+
+        //tests -0.835, -0.505, -0.175 
+        println(owner.returnCPP(-1.1f,3))
+        Assertions.assertEquals(-1.33f ,
+                owner.returnCPP(
+                        -1.25f,
+                        3))
+        for ( i in -2..0){
+            println(i * third - 0.01f - third/2)
+            Assertions.assertEquals((i-1) * third ,
+                    owner.returnCPP(
+                            (i * third - 0.01f - third/2 ),
+                            3))
+        }
+
+        //tests .135, .385, .635 and .885
+        for ( i in -3..0){
+            Assertions.assertEquals((i-1) * forth ,
+                    owner.returnCPP(
+                            (i * forth - 0.01f - forth/2),
+                            4))
+        }
+    }
 }
