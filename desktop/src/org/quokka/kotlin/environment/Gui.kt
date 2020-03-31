@@ -439,6 +439,7 @@ class GuiButtons(space: Space) {
             for (im in arr){
                 mirror(im)
             }
+            bar.reverse = !bar.reverse
 
         }
     }
@@ -511,6 +512,7 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
 
 
 
+    var reverse = false
 
     override fun update(){
         buffer!!
@@ -520,7 +522,7 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
                 perc = 0f
             if (perc > 1f)
                 perc = 1f
-            if (GameInitializer.space.settings.rotate_box.isChecked) {
+            if (reverse) {
                 perc = 1 - perc
             }
             val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.x
