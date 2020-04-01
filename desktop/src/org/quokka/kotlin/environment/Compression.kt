@@ -187,10 +187,10 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, owner: Space?) {
         } else if (divisions == 3) {
             margin = .33f
             when (auxxx) {
-                in 0f..margin/2 -> result = a.toInt() * 1f
+                in 0f..margin/2 -> result = (a.toInt() - 1*sign(a) + margin * 3 * sign(a) )* 1f
                 in margin/2..margin*3/2 -> result = a.toInt() + margin * sign(a)
                 in margin*3/2..margin*5/2 -> result = a.toInt() + margin* 2 * sign(a)
-                in margin*5/2 ..1f -> result = (a.toInt() + 1* sign(a)) *1f
+                in margin*5/2 ..1f -> result = a.toInt() + margin * 3 * sign(a)
             }
 
         } else if (divisions == 4) {
