@@ -1,10 +1,13 @@
 package org.quokka.kotlin.internals
 
+import com.badlogic.gdx.Gdx
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.io.ByteArrayInputStream
+import java.lang.Exception
 import java.nio.ByteBuffer
 import java.sql.*
+import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 // Constants for setting up database connection
@@ -41,7 +44,7 @@ const val FLOATS_PER_POINT = 3
  */
 object DbConnectionPool {
     private val config: HikariConfig = HikariConfig()
-    private val ds: HikariDataSource
+    private var ds: HikariDataSource? = null
 
     init {
         config.jdbcUrl = DATABASE_URL
@@ -50,11 +53,19 @@ object DbConnectionPool {
         config.addDataSourceProperty("cachePrepStmts", "true")
         config.addDataSourceProperty("prepStmtCacheSize", "250")
         config.addDataSourceProperty("prepStmtSqlLimit", "2048")
-        ds = HikariDataSource(config)
+        try {
+            ds = HikariDataSource(config)
+        } catch (e: Exception) {
+            Gdx.app?.let {
+                it.error("Database", "No connection to database, shutting down.")
+                it.exit()
+            }
+            exitProcess(-1)
+        }
     }
 
     val connection: Connection
-        get() = ds.getConnection()
+        get() = ds!!.connection
 }
 
 /**
