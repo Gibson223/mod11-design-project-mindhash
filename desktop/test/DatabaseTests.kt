@@ -13,7 +13,6 @@ class DatabaseTests {
     private val maxTimeMust = 30
     private val maxTimeShould = 20
 
-/*
     companion object {
         @BeforeClass
         @JvmStatic
@@ -25,7 +24,6 @@ class DatabaseTests {
             }
         }
     }
-*/
 
     @Test
     fun performanceMust() {
@@ -37,6 +35,7 @@ class DatabaseTests {
                 currFrame += maxFramesPerQuery * 2
             }
         }
+        println("performanceMust: ${millis}ms")
         assertTrue(millis < maxTimeMust * 1000)
     }
 
@@ -50,6 +49,7 @@ class DatabaseTests {
                 currFrame += maxFramesPerQuery
             }
         }
+        println("performanceShould: ${millis}ms")
         assertTrue(millis < maxTimeShould * 1000)
     }
 }
