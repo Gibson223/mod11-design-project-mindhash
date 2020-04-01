@@ -9,9 +9,11 @@ class DatabaseTests {
     private val testMeta: RecordingMeta = Database.recordings.first()
     private val testStartFrame = testMeta.minFrame + (testMeta.maxFrame - testMeta.minFrame) / 3
     private val frameTimeSpan = 60
+    private val maxFramesPerQuery = frameTimeSpan
     private val maxTimeMust = 30
     private val maxTimeShould = 20
 
+/*
     companion object {
         @BeforeClass
         @JvmStatic
@@ -23,12 +25,17 @@ class DatabaseTests {
             }
         }
     }
+*/
 
     @Test
     fun performanceMust() {
         val nFrames = frameTimeSpan * 5
+        var currFrame = testStartFrame
         val millis = measureTimeMillis {
-            Database.getFrames(testMeta.id, testStartFrame, nFrames, framerate = 5)
+            for (i in 0 until (nFrames / maxFramesPerQuery)) {
+                Database.getFrames(testMeta.id, currFrame, maxFramesPerQuery, framerate = 5)
+                currFrame += maxFramesPerQuery * 2
+            }
         }
         assertTrue(millis < maxTimeMust * 1000)
     }
@@ -36,8 +43,12 @@ class DatabaseTests {
     @Test
     fun performanceShould() {
         val nFrames = frameTimeSpan * 10
+        var currFrame = testStartFrame
         val millis = measureTimeMillis {
-            Database.getFrames(testMeta.id, testStartFrame, nFrames, framerate = 10)
+            for (i in 0 until (nFrames / maxFramesPerQuery)) {
+                Database.getFrames(testMeta.id, currFrame, maxFramesPerQuery, framerate = 10)
+                currFrame += maxFramesPerQuery
+            }
         }
         assertTrue(millis < maxTimeShould * 1000)
     }
