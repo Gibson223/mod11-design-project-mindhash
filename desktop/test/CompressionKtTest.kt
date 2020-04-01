@@ -1,6 +1,6 @@
 import com.badlogic.gdx.math.Vector3
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import org.junit.Assert.*
+import org.junit.Test
 import org.quokka.kotlin.environment.Compression
 import java.util.*
 

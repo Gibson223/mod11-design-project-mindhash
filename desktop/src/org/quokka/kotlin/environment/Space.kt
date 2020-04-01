@@ -51,6 +51,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var fixedCamAzimuth = 0f
     var fixedCamAngle = Math.PI.toFloat() * 0.3f
     var fixedCamDistance = 70f
+    val zoomStepSize = 10f
     val FIXED_CAM_RADIUS_MAX = 100f
     val FIXED_CAM_RADIUS_MIN = 5f
     val FIXED_CAM_ANGLE_MIN = 0f
@@ -142,12 +143,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         println("end of initializing space")
     }
 
-    lateinit var bar : drawBar
+    lateinit var gui: GuiButtons
 
     fun create() {
-        GuiButtons(this)
+        gui = GuiButtons(this)
         settings.updateSpace()
-        bar = drawBar(this.stage, buffer)
 
 
         //-----------Camera Creation------------------
@@ -202,7 +202,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
 
         campButtonpress()
-        bar.update()
+        gui.bar.update()
         //if the camera is fixed that means it's always looking at the center of the environment
         if (fixedCamera == true) {
             updateFixedCamera()
@@ -331,7 +331,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun zoomFixedCloser(delta: Float) {
-        fixedCamDistance -= delta * camSpeed * 10
+        fixedCamDistance -= zoomStepSize
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
         if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
@@ -339,7 +339,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun zoomFixedAway(delta: Float) {
-        fixedCamDistance += delta * camSpeed * 10
+        fixedCamDistance += zoomStepSize
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
         if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
@@ -347,17 +347,17 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun rotateFixedLeft(delta: Float) {
-        fixedCamAzimuth += delta * camSpeed / 10
+        fixedCamAzimuth += delta * camSpeed
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun rotateFixedRight(delta: Float) {
-        fixedCamAzimuth -= delta * camSpeed / 10
+        fixedCamAzimuth -= delta * camSpeed
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun moveFixedUp(delta: Float) {
-        fixedCamAngle += delta * camSpeed / 10
+        fixedCamAngle += delta * camSpeed
 
         if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
             fixedCamAngle = FIXED_CAM_ANGLE_MAX
@@ -368,7 +368,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveFixedDown(delta: Float) {
-        fixedCamAngle -= delta * camSpeed / 10
+        fixedCamAngle -= delta * camSpeed
 
         if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
             fixedCamAngle = FIXED_CAM_ANGLE_MAX
@@ -487,8 +487,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-    val camSpeed = 20f
-    val rotationAngle = 75f
+    val camSpeed = 0.03f
+    val rotationAngle = 1f
 
 
    /*
@@ -549,12 +549,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveForward(delta: Float) {
-        cam.translate(Vector3(cam.direction).scl(delta * camSpeed))
+        //cam.translate(Vector3(cam.direction).scl(delta * camSpeed * 100))
+        cam.translate(Vector3(cam.direction).scl(zoomStepSize))
         cam.update()
     }
 
     fun moveBackward(delta: Float) {
-        cam.translate(Vector3(cam.direction).scl(-delta * camSpeed))
+        //cam.translate(Vector3(cam.direction).scl(-delta * camSpeed * 100))
+        cam.translate(Vector3(cam.direction).scl(-zoomStepSize))
         cam.update()
     }
 
