@@ -1,5 +1,5 @@
 import com.badlogic.gdx.math.Vector3
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Test
 import org.quokka.kotlin.environment.Compression
 import java.util.*
@@ -32,7 +32,7 @@ class CompressionKtTest {
 
         // tests .01 and 0.51
         for ( i in 0..1){
-            Assertions.assertEquals(i * second ,
+            Assert.assertEquals(i * second ,
                     owner.returnCPP(
                             (i * second + 0.01f),
                             2))
@@ -40,7 +40,7 @@ class CompressionKtTest {
 
         // tests 0.32, 0.65 and 0.98
         for ( i in 1..3){
-            Assertions.assertEquals(i * third ,
+            Assert.assertEquals(i * third ,
                     owner.returnCPP(
                             (i * third - 0.01f),
                             3))
@@ -48,7 +48,7 @@ class CompressionKtTest {
 
         // tests 0.01,0.26, 0.51 and 0.76
         for ( i in 0..3){
-            Assertions.assertEquals(i * forth ,
+            Assert.assertEquals(i * forth ,
                     owner.returnCPP(
                             (i * forth + 0.01f),
                             4))
@@ -67,7 +67,7 @@ class CompressionKtTest {
 
         // tests .26 and .76
         for ( i in 0..1){
-            Assertions.assertEquals((i+1) * second ,
+            Assert.assertEquals((i+1) * second ,
                     owner.returnCPP(
                             (i * second + 0.01f +  second/2),
                             2))
@@ -75,7 +75,7 @@ class CompressionKtTest {
 
         //tests .175, .505 and .835
         for ( i in 0..2){
-            Assertions.assertEquals((i+1) * third ,
+            Assert.assertEquals((i+1) * third ,
                     owner.returnCPP(
                             (i * third + 0.01f + third/2 ),
                             3))
@@ -83,7 +83,7 @@ class CompressionKtTest {
 
         //tests .135, .385, .635 and .885
         for ( i in 0..3){
-            Assertions.assertEquals((i+1) * forth ,
+            Assert.assertEquals((i+1) * forth ,
                     owner.returnCPP(
                             (i * forth + 0.01f + forth/2),
                             4))
@@ -101,7 +101,7 @@ class CompressionKtTest {
 
         //tests -0.49 and .01
         for ( i in -1..0){
-            Assertions.assertEquals(i * second ,
+            Assert.assertEquals(i * second ,
                     owner.returnCPP(
                             (i * second + 0.01f),
                             2))
@@ -109,7 +109,7 @@ class CompressionKtTest {
 
         //tests -0.98, -0.65 and -0.32
         for ( i in -3..-1){
-            Assertions.assertEquals(i * third ,
+            Assert.assertEquals(i * third ,
                     owner.returnCPP(
                             (i * third + 0.01f),
                             3))
@@ -117,7 +117,7 @@ class CompressionKtTest {
 
         //tests -0.74, -0.49, -0.24 and 0.01
         for ( i in -3..0){
-            Assertions.assertEquals(i * forth ,
+            Assert.assertEquals(i * forth ,
                     owner.returnCPP(
                             (i * forth + 0.01f),
                             4))
@@ -135,29 +135,29 @@ class CompressionKtTest {
 
         // tests .26 and .76
         for ( i in -1..0){
-            Assertions.assertEquals((i-1) * second ,
+            Assert.assertEquals((i-1) * second ,
                     owner.returnCPP(
                             (i * second - 0.01f -  second/2),
                             2))
         }
 
-        //tests -0.835, -0.505, -0.175 
-        println(owner.returnCPP(-1.1f,3))
-        Assertions.assertEquals(-1.33f ,
-                owner.returnCPP(
-                        -1.25f,
-                        3))
+        //tests -0.835, -0.505, -0.175
         for ( i in -2..0){
-            println(i * third - 0.01f - third/2)
-            Assertions.assertEquals((i-1) * third ,
-                    owner.returnCPP(
+            Assert.assertEquals((i-1) * third,                    owner.returnCPP(
                             (i * third - 0.01f - third/2 ),
                             3))
         }
+        //this tests -1.25
+        println(owner.returnCPP(-1.25f,3))
+        Assert.assertEquals(-1.33f ,
+                owner.returnCPP(
+                        -1.25f,
+                        3))
+
 
         //tests .135, .385, .635 and .885
         for ( i in -3..0){
-            Assertions.assertEquals((i-1) * forth ,
+            Assert.assertEquals((i-1) * forth ,
                     owner.returnCPP(
                             (i * forth - 0.01f - forth/2),
                             4))
