@@ -72,7 +72,7 @@ class IndexScreen : Screen {
         Gdx.gl.glClearColor(1f, 1f, 1f, 1f)
         Gdx.input.inputProcessor = stage
         println("openend indexscreen")
-        bar = drawBar(this.stage)
+//        bar = drawBar(this.stage)
 
     }
 
