@@ -8,11 +8,15 @@ import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.Model
+import com.badlogic.gdx.graphics.g3d.ModelBatch
+import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
+import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -28,7 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 import kotlin.concurrent.timer
-import kotlin.math.*
+import kotlin.math.cos
+import kotlin.math.sin
 
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
@@ -120,6 +125,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     // List of timers which run in the background, these have to be discarded once the screen is over.
     private val timers = mutableListOf<Timer>()
 
+    var modelBatch: ModelBatch? = null
+    var instance : ModelInstance?  = null
+
     init {
         println("end of initializing space")
     }
@@ -132,7 +140,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
         //-----------Camera Creation------------------
-        cam.position[0f, 0f] = 30f
+        cam.position[0f, 0f ] = 30f
         cam.lookAt(0f, 0f, 0f)
         cam.near = .01f
         cam.far = 1000f
@@ -167,6 +175,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         plexer = InputMultiplexer(stage, camController)
         Gdx.input.inputProcessor = plexer
+
+        val loader = ObjLoader()
+        var model = loader.loadModel(Gdx.files.internal("ma_place.obj"));
+        instance = ModelInstance(model)
+        instance!!.transform.rotate(Vector3.X,90f)
+        modelBatch = ModelBatch()
     }
 
     override fun hide() {
@@ -213,6 +227,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         //render the decals
         decalBatch.flush()
+
+        modelBatch!!.begin(cam);
+        modelBatch!!.render(instance, environment);
+        modelBatch!!.end();
 
 
         string.setLength(0)
