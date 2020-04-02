@@ -1,26 +1,19 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
-import com.badlogic.gdx.utils.Scaling
-import com.mygdx.game.desktop.Space
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.internals.Buffer
 import org.quokka.kotlin.internals.Database
-import kotlin.math.absoluteValue
-import kotlin.math.min
 
 
 class Settings {
@@ -39,19 +32,14 @@ class Settings {
     val lidarFPS = Label("LIDAR FPS", shared_style)
     val lidar_box = SelectBox<Int>(skin)
 
-
-    val playbackFPS = Label("PLAYBACK FPS", shared_style)
-    val playback_slider = Slider(1f, 60f, 5f, false, skin)
-
-
-    val memory = Label("MEMORY", shared_style)
+    val memory = Label("BUFFER SIZE", shared_style)
     val memory_box = SelectBox<Int>(skin)
 
     val resolution = Label("RESOLUTION", shared_style)
     val resolution_box = SelectBox<String>(skin)
 
 
-    val compression = Label("COMPRESSION", shared_style)
+    val compression = Label("COMPRESSION LEVEL", shared_style)
     val compression_box = SelectBox<Int>(skin)
 
 
@@ -64,6 +52,9 @@ class Settings {
 
     val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
+
+    val automaticCamera = Label("AUTOMATIC CAMERA", shared_style)
+    val automatic_camera_checkbox = CheckBox("", skin)
 
     val rotate_label = Label("ROTATE", shared_style)
     val rotate_box = CheckBox("", skin)
@@ -82,17 +73,16 @@ class Settings {
         memory_box.setItems(5, 10, 15, 20, 30, 60)
         memory_box.selected = prefs.getInteger("MEMORY", 30)
 
-        playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
         resolution_box.setItems("1920x1080", "1280x720", "FULLSCREEN")
         resolution_box.selected = prefs.getString("RESOLUTION", "1280x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
+        automatic_camera_checkbox.isChecked = prefs.getBoolean("AUTOMATIC CAMERA", false)
 
         compression_box.setItems(1, 4, 3, 2)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
 
-        camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", false)
         rotate_box.isChecked = prefs.getBoolean("ROTATE", false)
 
         dialog.setSize(200f, 250f)
@@ -107,9 +97,6 @@ class Settings {
         dialog.contentTable.add(lidarFPS)
         dialog.contentTable.add(lidar_box)
         dialog.contentTable.row()
-        dialog.contentTable.add(playbackFPS)
-        dialog.contentTable.add(playback_slider)
-        dialog.contentTable.row()
         dialog.contentTable.add(memory)
         dialog.contentTable.add(memory_box)
         dialog.contentTable.row()
@@ -121,6 +108,9 @@ class Settings {
         dialog.contentTable.row()
         dialog.contentTable.add(fixedCamera)
         dialog.contentTable.add(camera_checkbox)
+        dialog.contentTable.row()
+        dialog.contentTable.add(automaticCamera)
+        dialog.contentTable.add(automatic_camera_checkbox)
         dialog.contentTable.row()
         dialog.contentTable.add(distance)
         dialog.contentTable.add(distance_field).width(50f)
@@ -156,7 +146,6 @@ class Settings {
 
     fun updateSpace(){
         GameInitializer.space.changeLidarFPS(lidar_box.selected)
-        GameInitializer.space.changePlaybackFPS(playback_slider.value.toInt())
         if (resolution_box.selected == "FULLSCREEN") {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.displayMode)
         } else {
@@ -164,6 +153,7 @@ class Settings {
             GameInitializer.space.changeResolution(hei.toInt(), wi.toInt())
         }
         GameInitializer.space.switchFixedCamera(camera_checkbox.isChecked)
+        GameInitializer.space.switchAutomaticCamera(automatic_camera_checkbox.isChecked)
 
         GameInitializer.space.cmpss.changeCompression(compression_box.selected)
         GameInitializer.space.cmpss.switchGradualCompression(gradualBox.isChecked)
@@ -176,14 +166,13 @@ class Settings {
 
     private fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
-        prefs.putFloat("PLAYBACK FPS", playback_slider.value)
         prefs.putInteger("MEMORY", memory_box.selected)
         prefs.putString("RESOLUTION", resolution_box.selected)
         prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
+        prefs.putBoolean("AUTOMATIC CAMERA", automatic_camera_checkbox.isChecked)
 
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
-        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.putInteger("DFCM", distance_field.text.toInt())
 
         prefs.putBoolean("ROTATE", rotate_box.isChecked)
@@ -288,25 +277,6 @@ class GuiButtons(space: Space) {
                 } else {
                     space.moveDown(-deltaY * 10)
                 }
-
-                /*
-            val o = x - 110
-            val l = y - 110
-            val delta = Gdx.graphics.deltaTime
-            if(o.absoluteValue < l.absoluteValue){
-                if(l>0){
-                    space.moveUp(delta)
-                } else {
-                    space.moveDown(delta)
-                }
-            } else {
-                if (o < 0){
-                    space.moveLeft(delta)
-                } else {
-                    space.moveRight(delta)
-                }
-            }
-             */
             }
         })
 
@@ -346,28 +316,6 @@ class GuiButtons(space: Space) {
                     space.rotateDown(-deltaY)
                     space.moveFixedDown(-deltaY)
                 }
-                /*
-            val o = x - 75
-            val l = y - 75
-            val delta = Gdx.graphics.deltaTime
-            if (o > 0){
-                space.rotateRight(delta*o/10)
-                space.rotateFixedRight(delta*o/10)
-            }
-            if (o < 0){
-                space.rotateLeft(delta*(-1)*o/10)
-                space.rotateFixedLeft(delta*(-1)*o/10)
-            }
-            if (l > 0){
-                space.rotateUp(delta*l/10)
-                space.moveFixedUp(delta*l/10)
-            }
-            if (l < 0){
-                space.rotateDown(delta*(-1)*l/10)
-                space.moveFixedDown(delta*(-1)*l/10)
-            }
-             */
-
                 super.touchDragged(event, x, y, pointer)
             }
         })
@@ -446,7 +394,6 @@ class GuiButtons(space: Space) {
                 mirror(im)
             }
             bar.reverse = !bar.reverse
-
         }
     }
 }
