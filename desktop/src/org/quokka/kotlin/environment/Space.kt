@@ -483,16 +483,16 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
-        if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
             if(fixedCamera) {
-                zoomFixedCloser(delta/10000)
+                zoomFixedCloser(1f)
             } else {
                 moveForward(delta)
             }
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.F)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
             if(fixedCamera) {
-                zoomFixedAway(delta/10000)
+                zoomFixedAway(1f)
             } else {
                 moveBackward(delta)
             }
@@ -641,12 +641,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun rollRight(delta: Float) {
-        cam.rotate(cam.direction, -delta * rotationAngle)
+        cam.rotate(cam.direction, -delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
     fun rollLeft(delta: Float) {
-        cam.rotate(cam.direction, delta * rotationAngle)
+        cam.rotate(cam.direction, delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
