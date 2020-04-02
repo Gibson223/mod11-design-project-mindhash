@@ -8,7 +8,6 @@ import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.Environment
-import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
@@ -39,7 +38,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         const val FIXED_CAM_RADIUS_MIN = 5f
         const val FIXED_CAM_ANGLE_MIN = 0f
         const val FIXED_CAM_ANGLE_MAX = Math.PI.toFloat() * 0.49f
+        const val ZOOM_STEP_SIZE = 10f
+        const val CAM_SPEED = 0.03f
         const val AUTOMATIC_CAMERA_SPEED_MODIFIER = 3f
+        const val ROTATION_ANGLE_MODIFIER = 1f
     }
 
     private lateinit var plexer: InputMultiplexer
@@ -66,9 +68,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     private var fixedCamAzimuth = 0f
     private var fixedCamAngle = Math.PI.toFloat() * 0.3f
     private var fixedCamDistance = 70f
-    private val zoomStepSize = 10f
-    private val camSpeed = 0.03f
-    private val rotationAngle = 1f
 
 
     val settings = GameInitializer.settings
@@ -309,7 +308,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun zoomFixedCloser(delta: Float) {
-        fixedCamDistance -= zoomStepSize
+        fixedCamDistance -= ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
         if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
@@ -317,7 +316,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun zoomFixedAway(delta: Float) {
-        fixedCamDistance += zoomStepSize
+        fixedCamDistance += ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
         if (fixedCamDistance > FIXED_CAM_RADIUS_MAX)
@@ -325,17 +324,17 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun rotateFixedLeft(delta: Float) {
-        fixedCamAzimuth += delta * camSpeed
+        fixedCamAzimuth += delta * CAM_SPEED
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun rotateFixedRight(delta: Float) {
-        fixedCamAzimuth -= delta * camSpeed
+        fixedCamAzimuth -= delta * CAM_SPEED
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
     fun moveFixedUp(delta: Float) {
-        fixedCamAngle += delta * camSpeed
+        fixedCamAngle += delta * CAM_SPEED
 
         if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
             fixedCamAngle = FIXED_CAM_ANGLE_MAX
@@ -346,7 +345,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveFixedDown(delta: Float) {
-        fixedCamAngle -= delta * camSpeed
+        fixedCamAngle -= delta * CAM_SPEED
 
         if (fixedCamAngle > FIXED_CAM_ANGLE_MAX)
             fixedCamAngle = FIXED_CAM_ANGLE_MAX
@@ -522,54 +521,54 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun moveForward(delta: Float) {
         //cam.translate(Vector3(cam.direction).scl(delta * camSpeed * 100))
-        cam.translate(Vector3(cam.direction).scl(zoomStepSize))
+        cam.translate(Vector3(cam.direction).scl(ZOOM_STEP_SIZE))
         cam.update()
     }
 
     fun moveBackward(delta: Float) {
         //cam.translate(Vector3(cam.direction).scl(-delta * camSpeed * 100))
-        cam.translate(Vector3(cam.direction).scl(-zoomStepSize))
+        cam.translate(Vector3(cam.direction).scl(-ZOOM_STEP_SIZE))
         cam.update()
     }
 
     fun moveUp(delta: Float) {
-        cam.translate(Vector3(cam.up).scl(delta * camSpeed))
+        cam.translate(Vector3(cam.up).scl(delta * CAM_SPEED))
         cam.update()
     }
 
     fun moveDown(delta: Float) {
-        cam.translate(Vector3(cam.up).scl(-delta * camSpeed))
+        cam.translate(Vector3(cam.up).scl(-delta * CAM_SPEED))
         cam.update()
     }
 
     fun moveLeft(delta: Float) {
-        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * camSpeed))
+        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * CAM_SPEED))
         cam.update()
     }
 
     fun moveRight(delta: Float) {
-        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * camSpeed))
+        cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * CAM_SPEED))
         cam.update()
     }
 
     fun rotateUp(delta: Float) {
-        cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), delta * rotationAngle)
+        cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
 
     }
 
     fun rotateDown(delta: Float) {
-        cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), -delta * rotationAngle)
+        cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), -delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
     fun rotateLeft(delta: Float) {
-        cam.rotate(cam.up, delta * rotationAngle)
+        cam.rotate(cam.up, delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
     fun rotateRight(delta: Float) {
-        cam.rotate(cam.up, -delta * rotationAngle)
+        cam.rotate(cam.up, -delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
