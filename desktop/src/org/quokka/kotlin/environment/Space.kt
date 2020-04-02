@@ -71,8 +71,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     val settings = GameInitializer.settings
-
-            var pause = AtomicBoolean(false)
+    var pause = AtomicBoolean(false)
     val buffer: Buffer = PrerecordedBuffer(recordingId)
 
     // this is basically the timestamp
