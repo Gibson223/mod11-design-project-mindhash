@@ -470,15 +470,11 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
     override fun update(){
         buffer!!
         if  (button.listeners.first() is DragListener && !(button.listeners.first() as DragListener).isDragging) {
-            var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
-            if (perc < 0f)
-                perc = 0f
-            if (perc > 1f)
-                perc = 1f
+            var percentage = buffer.progress
             if (reverse) {
-                perc = 1 - perc
+                percentage = 1 - percentage
             }
-            val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.x
+            val newX =  percentage * (right_bound - left_bound) - button.width/2 + bars.x
             button.setPosition(newX, button.y)
         } else {
             if (!(button.listeners.first() as DragListener).isDragging) {
@@ -526,12 +522,8 @@ class sliderBar(stage: Stage, val buffer: Buffer? = null): bar{
 
     override fun update(){
         buffer!!
-        var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
-        if (perc < 0f)
-            perc = 0f
-        if (perc > 1f)
-            perc = 1f
-        slider.value = perc
+
+        slider.value = buffer.progress
     }
 
     override fun up(){

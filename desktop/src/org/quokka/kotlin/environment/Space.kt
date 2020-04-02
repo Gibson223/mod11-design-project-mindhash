@@ -74,7 +74,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     val settings = GameInitializer.settings
 
             var pause = AtomicBoolean(false)
-    val buffer = Buffer(recordingId)
+    val buffer: Buffer = PrerecordedBuffer(recordingId)
 
     // this is basically the timestamp
     private var framesIndex = Database.getRecording(recordingId)!!.minFrame
@@ -261,18 +261,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
                     }
                 }
             }
-
-            val maxframes = buffer.framesPerBuffer
-            // + 11 since actor 11 is left_bar
-            var frameDivider2: Int = 11;
-            if(maxframes != 0){
-                frameDivider2  = framesIndex / maxframes * 25 + 11
-            }
-
-//            if (frameDivider != frameDivider2){
-//                stage.clear()
-//                GuiButtons(this@Space, frameDivider2)
-//            }
         }
     }
 
@@ -410,7 +398,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         if (lidarFPS != lastFpsValue.getAndSet(lidarFPS)) {
             buffer?.let {
                 thread {
-                    it.skipTo(it.lastFrameIndex)
+                    it.clear()
                 }
             }
         }
