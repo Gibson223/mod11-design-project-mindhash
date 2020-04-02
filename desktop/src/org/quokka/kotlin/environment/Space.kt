@@ -1,4 +1,4 @@
-package com.mygdx.game.desktop
+package org.quokka.kotlin.environment
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
@@ -21,9 +21,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
-import org.quokka.kotlin.environment.Compression
-import org.quokka.kotlin.environment.GuiButtons
-import org.quokka.kotlin.environment.drawBar
 import org.quokka.kotlin.internals.*
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -36,44 +33,43 @@ import kotlin.math.*
 
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
-    lateinit var plexer: InputMultiplexer
-    val newLidarFps = AtomicBoolean(false)
+
+    companion object {
+        const val FIXED_CAM_RADIUS_MAX = 100f
+        const val FIXED_CAM_RADIUS_MIN = 5f
+        const val FIXED_CAM_ANGLE_MIN = 0f
+        const val FIXED_CAM_ANGLE_MAX = Math.PI.toFloat() * 0.49f
+    }
+
+    private lateinit var plexer: InputMultiplexer
+    private val newLidarFps = AtomicBoolean(false)
     /*
      * The frame fetching loop runs at a constant 20fps. These two numbers just determine how many of these frames
      * have to be skipped to achieve the desired framerate.
      * For example 20fps means 0 frames are skipped. 10fps however mean 1 frame is skipped and 5 fps means 3 frames
      * are skipped.
      */
-    val framesToSkip = AtomicInteger(0)
-    val frameFetchSkipCounter = AtomicInteger(0)
-    val lastFpsValue = AtomicInteger(0)
+    private val framesToSkip = AtomicInteger(0)
+    private val frameFetchSkipCounter = AtomicInteger(0)
+    private val lastFpsValue = AtomicInteger(0)
 
-    var fixedCamAzimuth = 0f
-    var fixedCamAngle = Math.PI.toFloat() * 0.3f
-    var fixedCamDistance = 70f
-    val zoomStepSize = 10f
-    val FIXED_CAM_RADIUS_MAX = 100f
-    val FIXED_CAM_RADIUS_MIN = 5f
-    val FIXED_CAM_ANGLE_MIN = 0f
-    val FIXED_CAM_ANGLE_MAX = Math.PI.toFloat() * 0.49f
-
-    val prefs = Gdx.app.getPreferences("My Preferences")
+    private val prefs = Gdx.app.getPreferences("My Preferences")
 
     //-------__Preferancess__---------
-    var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
-    var lidarFPStimer = 10
-    var playbackFPS = 0 // manually fix fps
+    private var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
+    private var playbackFPS = 0 // manually fix fps
     /*
      * TODO this should be implemented in the buffer class, right now it is a static 40 seconds.
      *  Just replace the 40 seconds constant in the companion object with a getter from the preferences.
      */
-    var memory = 0
-    var compresion = prefs.getInteger("COMPRESSION") //compression level
-    var gradualCompression = prefs.getBoolean("GRADUAL COMPRESSION")
-
     //camera setting, if the camera is closer the compression will decrease
-    var fixedCamera = prefs.getBoolean("FIXED CAMERA")
-    var resolution = Pair(Gdx.graphics.width, Gdx.graphics.height)
+    private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
+    private var fixedCamAzimuth = 0f
+    private var fixedCamAngle = Math.PI.toFloat() * 0.3f
+    private var fixedCamDistance = 70f
+    private val zoomStepSize = 10f
+    private val camSpeed = 0.03f
+    private val rotationAngle = 1f
 
 
     val settings = GameInitializer.settings
@@ -82,39 +78,36 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     val buffer = Buffer(recordingId)
 
     // this is basically the timestamp
-    var framesIndex = Database.getRecording(recordingId)!!.minFrame
+    private var framesIndex = Database.getRecording(recordingId)!!.minFrame
 
 
     var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
-    var camController = CameraInputController(cam)
+    private var camController = CameraInputController(cam)
 
+    private var modelBatch = ModelBatch()
 
-    var modelBatch = ModelBatch()
-
-
-    var environment = Environment()
-
+    private var environment = Environment()
 
     var stage: Stage = Stage()
-    var font: BitmapFont = BitmapFont()
-    var label = Label(" ", LabelStyle(font, Color.WHITE))
-    var string: StringBuilder = StringBuilder()
+    private var font: BitmapFont = BitmapFont()
+    private var label = Label(" ", LabelStyle(font, Color.WHITE))
+    private var string: StringBuilder = StringBuilder()
 
-    var decalBatch = DecalBatch(CameraGroupStrategy(cam))
+    private var decalBatch = DecalBatch(CameraGroupStrategy(cam))
 
 
-    val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
+    private val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
     var decalTextureRegion = TextureRegion(Texture(pix))
 
 
-    lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
+    private lateinit var localFrames: ConcurrentLinkedQueue<LidarFrame>
 
 
-    var decals: List<Decal> = listOf()
-    val axisDecals: ArrayList<Decal> = ArrayList(30)
+    private var decals: List<Decal> = listOf()
+    private val axisDecals: ArrayList<Decal> = ArrayList(30)
 
-    val blueRedFade = Array(256) { i ->
+    private val blueRedFade = Array(256) { i ->
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
         pix.setColor(i / 255f, 0f, 1 - i / 255f, 1f)
         pix.drawPixel(0, 0)
@@ -130,7 +123,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     )
 
     // List of timers which run in the background, these have to be discarded once the screen is over.
-    val timers = mutableListOf<Timer>()
+    private val timers = mutableListOf<Timer>()
 
     init {
         println("end of initializing space")
@@ -138,7 +131,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     lateinit var gui: GuiButtons
 
-    fun create() {
+    private fun create() {
         gui = GuiButtons(this)
         settings.updateSpace()
 
@@ -183,7 +176,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     override fun hide() {
         this.dispose()
-//        TODO("Not yet implemented")
     }
 
     override fun show() {
@@ -406,7 +398,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun changeLidarFPS(newLFPS: Int) {
         lidarFPS = newLFPS // There was an +2 here, not sure why?
-        initializeLidarspeed()
         newLidarFps.set(true)
         framesToSkip.set(MAX_LIDAR_FPS / lidarFPS - 1)
         // Reset the buffer to load new footage based on fps
@@ -438,15 +429,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         this.framesIndex -= 10
         buffer.skipBackward(5f)
     }
-
-    fun initializeLidarspeed() {
-        when (lidarFPS) {
-            7 -> lidarFPStimer = 20
-            12 -> lidarFPStimer = 10
-            22 -> lidarFPStimer = 5
-        }
-    }
-
 
     //------------------------------------------------
 
@@ -480,9 +462,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-    val camSpeed = 0.03f
-    val rotationAngle = 1f
-
 
    /*
    This method is used for testing,
@@ -506,27 +485,31 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         }
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             moveUp(delta)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             zoomFixedCloser(delta)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             moveDown(delta)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
             zoomFixedAway(delta)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             rotateUp(delta)
-            moveFixedUp(delta)
+            moveFixedUp(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.S)) {
             rotateDown(delta)
-            moveFixedDown(delta)
+            moveFixedDown(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             rotateLeft(delta)
-            rotateFixedLeft(delta)
+            rotateFixedLeft(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             rotateRight(delta)
-            rotateFixedRight(delta)
+            rotateFixedRight(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.R)) {
             resetCamera()

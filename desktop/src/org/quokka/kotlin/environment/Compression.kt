@@ -1,12 +1,7 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.graphics.Camera
-import com.badlogic.gdx.graphics.Pixmap
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.math.Vector3
-import com.mygdx.game.desktop.Space
 import org.quokka.kotlin.internals.LidarCoord
 import org.quokka.kotlin.internals.LidarFrame
 import java.util.HashMap

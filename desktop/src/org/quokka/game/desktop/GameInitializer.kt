@@ -5,7 +5,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.mygdx.game.desktop.Space
+import org.quokka.kotlin.environment.Space
 import org.quokka.Screens.IndexScreen
 import org.quokka.kotlin.environment.Settings
 
