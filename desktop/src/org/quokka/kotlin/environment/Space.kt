@@ -75,13 +75,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     var resolution = Pair(Gdx.graphics.width, Gdx.graphics.height)
 
-    /**
-     * dfcm distance from camera margin
-     * used in deciding how compressed the data is
-     * based on the point's distance from the camera
-     */
-    var dfcm = prefs.getInteger("DISTANCE")
-
 
     val settings = GameInitializer.settings
 
