@@ -39,6 +39,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         const val FIXED_CAM_RADIUS_MIN = 5f
         const val FIXED_CAM_ANGLE_MIN = 0f
         const val FIXED_CAM_ANGLE_MAX = Math.PI.toFloat() * 0.49f
+        const val AUTOMATIC_CAMERA_SPEED_MODIFIER = 3f
     }
 
     private lateinit var plexer: InputMultiplexer
@@ -55,15 +56,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     private val prefs = Gdx.app.getPreferences("My Preferences")
 
-    //-------__Preferancess__---------
+    //-------  Perferences  -------
     private var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
     private var playbackFPS = 0 // manually fix fps
-    /*
-     * TODO this should be implemented in the buffer class, right now it is a static 40 seconds.
-     *  Just replace the 40 seconds constant in the companion object with a getter from the preferences.
-     */
-    //camera setting, if the camera is closer the compression will decrease
+
+    //-------  Camera  -------
     private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
+    private var automaticCamera = prefs.getBoolean("AUTOMATIC CAMERA")
     private var fixedCamAzimuth = 0f
     private var fixedCamAngle = Math.PI.toFloat() * 0.3f
     private var fixedCamDistance = 70f
@@ -84,8 +83,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
     private var camController = CameraInputController(cam)
-
-    private var modelBatch = ModelBatch()
 
     private var environment = Environment()
 
@@ -188,8 +185,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         campButtonpress()
         gui.bar.update()
-        //if the camera is fixed that means it's always looking at the center of the environment
-        if (fixedCamera == true) {
+        // if the camera is fixed that means it's always looking at the center of the environment
+        // This is also triggers if the automatic camera is chosen
+        if (fixedCamera || automaticCamera) {
+            if (automaticCamera) {
+                moveAutomaticCamera(delta)
+            }
             updateFixedCamera()
         }
 
@@ -315,6 +316,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.update()
     }
 
+    fun moveAutomaticCamera(delta: Float) {
+        rotateFixedRight(delta * AUTOMATIC_CAMERA_SPEED_MODIFIER)
+    }
+
     fun zoomFixedCloser(delta: Float) {
         fixedCamDistance -= zoomStepSize
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
@@ -420,6 +425,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         this.fixedCamera = fixed
     }
 
+    fun switchAutomaticCamera(automatic: Boolean) {
+        this.automaticCamera = automatic
+    }
+
     fun skipForward10frames() {
         this.framesIndex += 10
         buffer.skipForward(5f)
@@ -433,7 +442,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     //------------------------------------------------
 
     override fun dispose() {
-        modelBatch.dispose()
         // Stop timer threads for frame fetching
         for (t in timers) {
             t.cancel()

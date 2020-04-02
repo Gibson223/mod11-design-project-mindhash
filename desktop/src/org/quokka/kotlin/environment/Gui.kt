@@ -32,19 +32,14 @@ class Settings {
     val lidarFPS = Label("LIDAR FPS", shared_style)
     val lidar_box = SelectBox<Int>(skin)
 
-
-    val playbackFPS = Label("PLAYBACK FPS", shared_style)
-    val playback_slider = Slider(1f, 60f, 5f, false, skin)
-
-
-    val memory = Label("MEMORY", shared_style)
+    val memory = Label("BUFFER SIZE", shared_style)
     val memory_box = SelectBox<Int>(skin)
 
     val resolution = Label("RESOLUTION", shared_style)
     val resolution_box = SelectBox<String>(skin)
 
 
-    val compression = Label("COMPRESSION", shared_style)
+    val compression = Label("COMPRESSION LEVEL", shared_style)
     val compression_box = SelectBox<Int>(skin)
 
 
@@ -57,6 +52,9 @@ class Settings {
 
     val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
+
+    val automaticCamera = Label("AUTOMATIC CAMERA", shared_style)
+    val automatic_camera_checkbox = CheckBox("", skin)
 
     val rotate_label = Label("ROTATE", shared_style)
     val rotate_box = CheckBox("", skin)
@@ -75,17 +73,16 @@ class Settings {
         memory_box.setItems(5, 10, 15, 20, 30, 60)
         memory_box.selected = prefs.getInteger("MEMORY", 30)
 
-        playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
         resolution_box.setItems("1920x1080", "1280x720", "FULLSCREEN")
         resolution_box.selected = prefs.getString("RESOLUTION", "1280x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
+        automatic_camera_checkbox.isChecked = prefs.getBoolean("AUTOMATIC CAMERA", false)
 
         compression_box.setItems(1, 4, 3, 2)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
 
-        camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", false)
         rotate_box.isChecked = prefs.getBoolean("ROTATE", false)
 
         dialog.setSize(200f, 250f)
@@ -100,9 +97,6 @@ class Settings {
         dialog.contentTable.add(lidarFPS)
         dialog.contentTable.add(lidar_box)
         dialog.contentTable.row()
-        dialog.contentTable.add(playbackFPS)
-        dialog.contentTable.add(playback_slider)
-        dialog.contentTable.row()
         dialog.contentTable.add(memory)
         dialog.contentTable.add(memory_box)
         dialog.contentTable.row()
@@ -114,6 +108,9 @@ class Settings {
         dialog.contentTable.row()
         dialog.contentTable.add(fixedCamera)
         dialog.contentTable.add(camera_checkbox)
+        dialog.contentTable.row()
+        dialog.contentTable.add(automaticCamera)
+        dialog.contentTable.add(automatic_camera_checkbox)
         dialog.contentTable.row()
         dialog.contentTable.add(distance)
         dialog.contentTable.add(distance_field).width(50f)
@@ -149,7 +146,6 @@ class Settings {
 
     fun updateSpace(){
         GameInitializer.space.changeLidarFPS(lidar_box.selected)
-        GameInitializer.space.changePlaybackFPS(playback_slider.value.toInt())
         if (resolution_box.selected == "FULLSCREEN") {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.displayMode)
         } else {
@@ -157,6 +153,7 @@ class Settings {
             GameInitializer.space.changeResolution(hei.toInt(), wi.toInt())
         }
         GameInitializer.space.switchFixedCamera(camera_checkbox.isChecked)
+        GameInitializer.space.switchAutomaticCamera(automatic_camera_checkbox.isChecked)
 
         GameInitializer.space.cmpss.changeCompression(compression_box.selected)
         GameInitializer.space.cmpss.switchGradualCompression(gradualBox.isChecked)
@@ -169,14 +166,13 @@ class Settings {
 
     private fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
-        prefs.putFloat("PLAYBACK FPS", playback_slider.value)
         prefs.putInteger("MEMORY", memory_box.selected)
         prefs.putString("RESOLUTION", resolution_box.selected)
         prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
+        prefs.putBoolean("AUTOMATIC CAMERA", automatic_camera_checkbox.isChecked)
 
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
-        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.putInteger("DFCM", distance_field.text.toInt())
 
         prefs.putBoolean("ROTATE", rotate_box.isChecked)
