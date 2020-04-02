@@ -1,12 +1,7 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.graphics.Camera
-import com.badlogic.gdx.graphics.Pixmap
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.math.Vector3
-import com.mygdx.game.desktop.Space
 import org.quokka.kotlin.internals.LidarCoord
 import org.quokka.kotlin.internals.LidarFrame
 import java.util.HashMap
@@ -187,10 +182,10 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, owner: Space?) {
         } else if (divisions == 3) {
             margin = .33f
             when (auxxx) {
-                in 0f..margin/2 -> result = a.toInt() * 1f
+                in 0f..margin/2 -> result = (a.toInt() - 1*sign(a) + margin * 3 * sign(a) )* 1f
                 in margin/2..margin*3/2 -> result = a.toInt() + margin * sign(a)
                 in margin*3/2..margin*5/2 -> result = a.toInt() + margin* 2 * sign(a)
-                in margin*5/2 ..1f -> result = (a.toInt() + 1* sign(a)) *1f
+                in margin*5/2 ..1f -> result = a.toInt() + margin * 3 * sign(a)
             }
 
         } else if (divisions == 4) {

@@ -27,6 +27,11 @@ task debug(dependsOn: classes, type: JavaExec) {
     debug = true
 }
 
+test {
+    dependsOn cleanTest
+    testLogging.showStandardStreams = true
+}
+
 task dist(type: Jar) {
     manifest {
         attributes 'Main-Class': project.mainClassName

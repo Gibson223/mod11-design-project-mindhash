@@ -6,29 +6,46 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 
-class Buffer(val recordingId: Int) {
+interface Buffer {
+    val lastFrameIndex: Int
+    val pastBufferSize: Int
+    val futureBufferSize: Int
+    val progress: Float
+    fun nextFrame(): LidarFrame?
+    fun prevFrame(): LidarFrame?
+    fun skipForward(seconds: Float)
+    fun skipBackward(seconds: Float)
+    fun skipTo(percentage: Float)
+    fun clear()
+}
+
+class PrerecordedBuffer(private val recordingId: Int) : Buffer {
     /**
      * Use this object to get access to all the meta data of the current buffer.
      */
-    val recordingMetaData: RecordingMeta
-
-    /**
-     * The current progress in the recording as a value between 0 and 1
-     */
-    val progress: Float
-        get() = playQueue.peekFirst()?.frameId?.toFloat() ?: recordingMetaData.maxFrame.toFloat()
+    private val recordingMetaData: RecordingMeta
 
     /**
      * These variables are for meta data on the current buffer and are updated every time a frame is retrieved.
      */
-    var lastFrameIndex: Int = 0
-    var futureBufferSize: Int = 0
-    var pastBufferSize: Int = 0
+    override var lastFrameIndex: Int = 0
+    override var futureBufferSize: Int = 0
+    override var pastBufferSize: Int = 0
+    override val progress: Float
+        get() {
+            var p = (lastFrameIndex - recordingMetaData.minFrame) / (recordingMetaData.maxFrame - recordingMetaData.minFrame).toFloat()
+            if (p < 0f)
+                p = 0f
+            if (p > 1f)
+                p = 1f
+            return p
+        }
+
 
     // How many frames to fetch with the fetch function
     @Volatile
     private var skipToFrameIndex: Int?
-    val framesPerBuffer: Int
+    private val framesPerBuffer: Int
         get() = BUFFER_SIZE_S * LIDAR_FPS
     private val playQueue = ConcurrentLinkedDeque<LidarFrame>()
     private val delQueue = ConcurrentLinkedDeque<LidarFrame>()
@@ -67,6 +84,7 @@ class Buffer(val recordingId: Int) {
 
     companion object {
         private val prefs = Gdx.app.getPreferences("My Preferences")
+
         // Number of frames to be queried per update. Defaults to 2 seconds of footage
         val FRAMES_PER_QUERY
             get() = LIDAR_FPS * 2
@@ -75,8 +93,8 @@ class Buffer(val recordingId: Int) {
             get() = prefs.getInteger("LIDAR FPS")
 
         // The maximum size of the buffer in seconds
-        // TODO this should be part of the preferences. Make getter like for LIDAR_FPS above.
-        const val BUFFER_SIZE_S = 40
+        val BUFFER_SIZE_S
+            get() = prefs.getInteger("MEMORY")
     }
 
     /**
@@ -84,7 +102,7 @@ class Buffer(val recordingId: Int) {
      *
      * @return The next frame in the buffer if it exists.
      */
-    fun nextFrame(): LidarFrame? {
+    override fun nextFrame(): LidarFrame? {
         try {
             skipLock.lock()
 
@@ -109,7 +127,7 @@ class Buffer(val recordingId: Int) {
      *
      * @return The previous frame in the buffer if it exists.
      */
-    fun prevFrame(): LidarFrame? {
+    override fun prevFrame(): LidarFrame? {
         try {
             skipLock.lock()
             val frame = delQueue.pollFirst()
@@ -129,7 +147,7 @@ class Buffer(val recordingId: Int) {
      *
      * @param seconds The number of seconds to skip.
      */
-    fun skipForward(seconds: Float) {
+    override fun skipForward(seconds: Float) {
         try {
             skipLock.lock()
 
@@ -162,7 +180,7 @@ class Buffer(val recordingId: Int) {
      *
      * @param seconds The number of seconds to skip.
      */
-    fun skipBackward(seconds: Float) {
+    override fun skipBackward(seconds: Float) {
         try {
             skipLock.lock()
             val framesToSkip = (seconds * LIDAR_FPS).toInt()
@@ -189,13 +207,17 @@ class Buffer(val recordingId: Int) {
         }
     }
 
+    override fun clear() {
+        skipTo(lastFrameIndex)
+    }
+
     /**
      * Skip to a specific frame index and reload the buffer. This may take a while and blocks the thread.
      * If the frameIndex value is not in the bounds, stuff may break.
      *
      * @param frameIndex Which frame to skip to.
      */
-    fun skipTo(frameIndex: Int) {
+    private fun skipTo(frameIndex: Int) {
         try {
             skipLock.lock()
             skipToFrameIndex = frameIndex
@@ -212,47 +234,22 @@ class Buffer(val recordingId: Int) {
      *
      * @param percentage The percentage of the recording to which the progress should be set.
      */
-    fun skipTo(percentage: Float) {
-        var perc = percentage
-        if (perc < 0f)
-            perc = 0f
-        if (perc > 1f)
-            perc = 1f
+    override fun skipTo(percentage: Float) {
+        var p = percentage
+        if (p < 0f)
+            p = 0f
+        if (p > 1f)
+            p = 1f
 
         val totalFrames = recordingMetaData.maxFrame - recordingMetaData.minFrame
-        skipTo((recordingMetaData.minFrame + totalFrames * perc).toInt())
+        skipTo((recordingMetaData.minFrame + totalFrames * p).toInt())
     }
 
     override fun toString(): String {
-        val s = "Buffer { recordingId=${recordingId}, playQueueSize=${playQueue.size}, delQueueSize=${delQueue.size}" +
+        return "Buffer { recordingId=$recordingId, playQueueSize=${playQueue.size}, delQueueSize=${delQueue.size}" +
                 ", framesPerBuffer=${LIDAR_FPS * BUFFER_SIZE_S}" +
                 ", lastFrameId=${playQueue.peekFirst()?.frameId}}"
-
-        return s
     }
-
-    /**
-     * Formats the frame id's of the current data in the buffer as a string.
-     *
-     * @return A string representing the current contents of the buffer.
-     */
-    fun bufferData(): String {
-        val nextBuf = StringBuilder()
-        val prevBuf = StringBuilder()
-        try {
-            queryLock.lock()
-            nextBuf.append(playQueue.joinToString(prefix = "{", postfix = "}") {
-                it.frameId.toString()
-            })
-            prevBuf.append(delQueue.joinToString(prefix = "{", postfix = "}") {
-                it.frameId.toString()
-            })
-        } finally {
-            queryLock.unlock()
-        }
-        return "Play Buffer: ${nextBuf}\nHistory Buffer: $prevBuf"
-    }
-
 
     /*
      * Private functions

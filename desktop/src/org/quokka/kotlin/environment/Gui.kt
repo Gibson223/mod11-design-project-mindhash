@@ -1,26 +1,20 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
-import com.badlogic.gdx.utils.Scaling
-import com.mygdx.game.desktop.Space
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.internals.Buffer
 import org.quokka.kotlin.internals.Database
-import kotlin.math.absoluteValue
-import kotlin.math.min
 
 
 class Settings {
@@ -39,18 +33,14 @@ class Settings {
     val lidarFPS = Label("LIDAR FPS", shared_style)
     val lidar_box = SelectBox<Int>(skin)
 
-
-    val playbackFPS = Label("PLAYBACK FPS", shared_style)
-    val playback_slider = Slider(1f, 60f, 5f, false, skin)
-
-
-    val memory = Label("MEMORY", shared_style)
+    val memory = Label("BUFFER SIZE", shared_style)
+    val memory_box = SelectBox<Int>(skin)
 
     val resolution = Label("RESOLUTION", shared_style)
     val resolution_box = SelectBox<String>(skin)
 
 
-    val compression = Label("COMPRESSION", shared_style)
+    val compression = Label("COMPRESSION LEVEL", shared_style)
     val compression_box = SelectBox<Int>(skin)
 
 
@@ -64,8 +54,14 @@ class Settings {
     val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
 
+    val automaticCamera = Label("AUTOMATIC CAMERA", shared_style)
+    val automatic_camera_checkbox = CheckBox("", skin)
+
     val rotate_label = Label("ROTATE", shared_style)
     val rotate_box = CheckBox("", skin)
+
+    val hide_hud = Label("HIDE HUD", shared_style)
+    val hud_box = CheckBox("", skin)
 
     val back_button = TextButton("BACK", skin)
     val save_button = TextButton("SAVE", skin)
@@ -78,18 +74,22 @@ class Settings {
         lidar_box.selected = prefs.getInteger("LIDAR FPS", 10)
         distance_field.textFieldFilter = TextField.TextFieldFilter.DigitsOnlyFilter()
 
-        playback_slider.value = prefs.getFloat("PLAYBACK FPS", 0f)
-        resolution_box.setItems("1920x1080", "1080x720", "FULLSCREEN")
-        resolution_box.selected = prefs.getString("RESOLUTION", "1080x720")
+        memory_box.setItems(5, 10, 15, 20, 30, 60)
+        memory_box.selected = prefs.getInteger("MEMORY", 30)
+
+        resolution_box.setItems("1920x1080", "1280x720", "FULLSCREEN")
+        resolution_box.selected = prefs.getString("RESOLUTION", "1280x720")
         camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", true)
+        automatic_camera_checkbox.isChecked = prefs.getBoolean("AUTOMATIC CAMERA", false)
 
         compression_box.setItems(1, 4, 3, 2)
         compression_box.selected = prefs.getInteger("COMPRESSION", 4)
         gradualBox.isChecked = prefs.getBoolean("GRADUAL COMPRESSION", false)
         distance_field.text = prefs.getInteger("DFCM",15).toString()
 
-        camera_checkbox.isChecked = prefs.getBoolean("FIXED CAMERA", false)
         rotate_box.isChecked = prefs.getBoolean("ROTATE", false)
+
+        hud_box.isChecked = prefs.getBoolean("HIDE HUD", false)
 
         dialog.setSize(200f, 250f)
         dialog.setPosition(Gdx.graphics.width / 2 - 100f, Gdx.graphics.height / 2 - 101f)
@@ -103,10 +103,8 @@ class Settings {
         dialog.contentTable.add(lidarFPS)
         dialog.contentTable.add(lidar_box)
         dialog.contentTable.row()
-        dialog.contentTable.add(playbackFPS)
-        dialog.contentTable.add(playback_slider)
-        dialog.contentTable.row()
         dialog.contentTable.add(memory)
+        dialog.contentTable.add(memory_box)
         dialog.contentTable.row()
         dialog.contentTable.add(resolution)
         dialog.contentTable.add(resolution_box)
@@ -117,6 +115,9 @@ class Settings {
         dialog.contentTable.add(fixedCamera)
         dialog.contentTable.add(camera_checkbox)
         dialog.contentTable.row()
+        dialog.contentTable.add(automaticCamera)
+        dialog.contentTable.add(automatic_camera_checkbox)
+        dialog.contentTable.row()
         dialog.contentTable.add(distance)
         dialog.contentTable.add(distance_field).width(50f)
         dialog.contentTable.row()
@@ -125,6 +126,9 @@ class Settings {
         dialog.contentTable.row()
         dialog.contentTable.add(rotate_label)
         dialog.contentTable.add(rotate_box)
+        dialog.contentTable.row()
+        dialog.contentTable.add(hide_hud)
+        dialog.contentTable.add(hud_box)
         dialog.contentTable.row()
 
         back_button.addListener(object : ClickListener() {
@@ -151,7 +155,6 @@ class Settings {
 
     fun updateSpace(){
         GameInitializer.space.changeLidarFPS(lidar_box.selected)
-        GameInitializer.space.changePlaybackFPS(playback_slider.value.toInt())
         if (resolution_box.selected == "FULLSCREEN") {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.displayMode)
         } else {
@@ -159,6 +162,7 @@ class Settings {
             GameInitializer.space.changeResolution(hei.toInt(), wi.toInt())
         }
         GameInitializer.space.switchFixedCamera(camera_checkbox.isChecked)
+        GameInitializer.space.switchAutomaticCamera(automatic_camera_checkbox.isChecked)
 
         GameInitializer.space.cmpss.changeCompression(compression_box.selected)
         GameInitializer.space.cmpss.switchGradualCompression(gradualBox.isChecked)
@@ -171,16 +175,17 @@ class Settings {
 
     private fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
-        prefs.putFloat("PLAYBACK FPS", playback_slider.value)
+        prefs.putInteger("MEMORY", memory_box.selected)
         prefs.putString("RESOLUTION", resolution_box.selected)
         prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
+        prefs.putBoolean("AUTOMATIC CAMERA", automatic_camera_checkbox.isChecked)
 
         prefs.putInteger("COMPRESSION", compression_box.selected)
         prefs.putBoolean("GRADUAL COMPRESSION", gradualBox.isChecked)
-        prefs.putBoolean("FIXED CAMERA", camera_checkbox.isChecked)
         prefs.putInteger("DFCM", distance_field.text.toInt())
 
         prefs.putBoolean("ROTATE", rotate_box.isChecked)
+        prefs.putBoolean("HIDE HUD", hud_box.isChecked)
 
         prefs.flush()
 
@@ -192,6 +197,7 @@ class GuiButtons(space: Space) {
     val settings = space.settings
 
     val home_button: Image = Image(Texture("Screen3D/home_button.png"))
+
     val settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
 
     val settings_dialog = settings.dialog
@@ -206,6 +212,7 @@ class GuiButtons(space: Space) {
     val minus = Image(Texture("Screen3D/minus.png"))
 
     var rotated = false
+    var hidden = false
 
     val bar = drawBar(space.stage, space.buffer)
 
@@ -281,25 +288,6 @@ class GuiButtons(space: Space) {
                 } else {
                     space.moveDown(-deltaY * 10)
                 }
-
-                /*
-            val o = x - 110
-            val l = y - 110
-            val delta = Gdx.graphics.deltaTime
-            if(o.absoluteValue < l.absoluteValue){
-                if(l>0){
-                    space.moveUp(delta)
-                } else {
-                    space.moveDown(delta)
-                }
-            } else {
-                if (o < 0){
-                    space.moveLeft(delta)
-                } else {
-                    space.moveRight(delta)
-                }
-            }
-             */
             }
         })
 
@@ -339,28 +327,6 @@ class GuiButtons(space: Space) {
                     space.rotateDown(-deltaY)
                     space.moveFixedDown(-deltaY)
                 }
-                /*
-            val o = x - 75
-            val l = y - 75
-            val delta = Gdx.graphics.deltaTime
-            if (o > 0){
-                space.rotateRight(delta*o/10)
-                space.rotateFixedRight(delta*o/10)
-            }
-            if (o < 0){
-                space.rotateLeft(delta*(-1)*o/10)
-                space.rotateFixedLeft(delta*(-1)*o/10)
-            }
-            if (l > 0){
-                space.rotateUp(delta*l/10)
-                space.moveFixedUp(delta*l/10)
-            }
-            if (l < 0){
-                space.rotateDown(delta*(-1)*l/10)
-                space.moveFixedDown(delta*(-1)*l/10)
-            }
-             */
-
                 super.touchDragged(event, x, y, pointer)
             }
         })
@@ -421,25 +387,31 @@ class GuiButtons(space: Space) {
 
 
     }
+
+    val images = listOf(
+            minus, plus
+            ,pause_button, bf_button,ff_button
+            ,home_button
+            ,earth_button,arrows_button
+            ,settings_button,reset_button, bar.bars, bar.button
+    )
     fun update(){
-        if (settings.rotate_box.isChecked == rotated) {
-            println("rotation matches current setting, so not updating")
-        } else {
+        if (!settings.rotate_box.isChecked == rotated) {
             println("rotation/setting mismatch")
             rotated = !rotated
             //mirroring gui
-            val arr = listOf(
-                    minus, plus
-                    ,pause_button, bf_button,ff_button
-                    ,home_button
-                    ,earth_button,arrows_button
-                    ,settings_button,reset_button, bar.bars
-            )
-            for (im in arr){
+
+            for (im in images){
                 mirror(im)
             }
-
+            bar.reverse = !bar.reverse
         }
+
+        if (!settings.hud_box.isChecked == hidden){
+            images.forEach {it.isVisible = !it.isVisible}
+            hidden = !hidden
+        }
+        settings_button.isVisible = true
     }
 }
 
@@ -510,16 +482,16 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
 
 
 
+    var reverse = false
 
     override fun update(){
         buffer!!
         if  (button.listeners.first() is DragListener && !(button.listeners.first() as DragListener).isDragging) {
-            var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
-            if (perc < 0f)
-                perc = 0f
-            if (perc > 1f)
-                perc = 1f
-            val newX =  perc * (right_bound - left_bound) - button.width/2 + bars.x
+            var percentage = buffer.progress
+            if (reverse) {
+                percentage = 1 - percentage
+            }
+            val newX =  percentage * (right_bound - left_bound) - button.width/2 + bars.x
             button.setPosition(newX, button.y)
         } else {
             if (!(button.listeners.first() as DragListener).isDragging) {
@@ -567,12 +539,8 @@ class sliderBar(stage: Stage, val buffer: Buffer? = null): bar{
 
     override fun update(){
         buffer!!
-        var perc = (buffer.lastFrameIndex - buffer.recordingMetaData.minFrame) /(buffer.recordingMetaData.maxFrame - buffer.recordingMetaData.minFrame).toFloat()
-        if (perc < 0f)
-            perc = 0f
-        if (perc > 1f)
-            perc = 1f
-        slider.value = perc
+
+        slider.value = buffer.progress
     }
 
     override fun up(){
