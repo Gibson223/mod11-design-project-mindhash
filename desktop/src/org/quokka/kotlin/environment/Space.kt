@@ -471,7 +471,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-
    /*
    This method is used for testing,
      it will be left in in case MindHash wants to use it
@@ -481,10 +480,18 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         val delta = Gdx.graphics.deltaTime
         if (Gdx.input.isKeyPressed(Input.Keys.R)) {
-            moveForward(delta)
+            if(fixedCamera) {
+                zoomFixedCloser(delta/10000)
+            } else {
+                moveForward(delta)
+            }
         }
         if (Gdx.input.isKeyPressed(Input.Keys.F)) {
-            moveBackward(delta)
+            if(fixedCamera) {
+                zoomFixedAway(delta/10000)
+            } else {
+                moveBackward(delta)
+            }
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
@@ -560,6 +567,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             } else {
                 resume()
             }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.COMMA)) {
+            skipBackwards10Frames()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PERIOD)) {
+            skipForward10frames()
         }
     }
 
