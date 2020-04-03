@@ -133,7 +133,6 @@ class Settings {
 
         back_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("quit settings menu")
                 updateSpace()
                 GameInitializer.space.resume()
                 dialog.hide()
@@ -143,7 +142,6 @@ class Settings {
 
         save_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("saved settings")
                 flushall()
             }
         })
@@ -169,7 +167,7 @@ class Settings {
         GameInitializer.space.cmpss.changeDFCM(distance_field.text.toInt())
 
         GameInitializer.space.gui.update()
-        println("updating settings")
+//        println("updating settings")
 
     }
 
@@ -221,7 +219,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(minus)
         minus.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked zoom out")
                 GameInitializer.click.play()
                 space.moveBackward(Gdx.graphics.deltaTime)
                 space.zoomFixedAway(Gdx.graphics.deltaTime)
@@ -232,7 +229,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(plus)
         plus.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked zoom in")
                 GameInitializer.click.play()
                 space.moveForward(Gdx.graphics.deltaTime)
                 space.zoomFixedCloser(Gdx.graphics.deltaTime)
@@ -242,7 +238,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(bf_button)
         bf_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked BF")
                 GameInitializer.click.play()
                 space.skipBackwards10Frames()
             }
@@ -251,7 +246,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(ff_button)
         ff_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked FF")
                 GameInitializer.click.play()
                 space.skipForward10frames()
             }
@@ -296,7 +290,6 @@ class GuiButtons(space: Space) {
         val earthLastPos = Vector2(0f, 0f)
         earth_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                println("earth clicked")
                 GameInitializer.click.play()
             }
 
@@ -335,7 +328,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(pause_button)
         pause_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked PAUSE")
                 GameInitializer.click.play()
                 space.pause.set(!space.pause.get())
             }
@@ -344,7 +336,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(reset_button)
         reset_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked RESET")
                 GameInitializer.click.play()
                 space.resetCamera()
                 space.resetFixed()
@@ -354,7 +345,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(settings_button)
         settings_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked SETTINGS and opened settings")
                 GameInitializer.click.play()
                 space.pause()
                 settings_dialog.show(space.stage)
@@ -365,7 +355,6 @@ class GuiButtons(space: Space) {
         space.stage.addActor(home_button)
         home_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                println("clicked HOME")
                 GameInitializer.click.play()
                 GameInitializer.screen = IndexScreen()
             }
@@ -450,7 +439,7 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
 
 
     init {
-        println("drawbar called")
+//        println("drawbar called")
         bars.width = Gdx.graphics.width*0.5f
         bars.setPosition(Gdx.graphics.width*0.25f, 10f)
         left_bound = bars.x - button.width / 2

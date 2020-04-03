@@ -22,6 +22,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.internals.*
@@ -474,7 +475,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-
    /*
    This method is used for testing,
      it will be left in in case MindHash wants to use it
@@ -483,49 +483,100 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            moveLeft(delta)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            if(fixedCamera) {
+                zoomFixedCloser(1f)
+            } else {
+                moveForward(delta)
+            }
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            moveRight(delta)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            if(fixedCamera) {
+                zoomFixedAway(1f)
+            } else {
+                moveBackward(delta)
+            }
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.I)) {
-            moveForward(delta)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.K)) {
-            moveBackward(delta)
-        }
+
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            moveUp(delta)
+            moveUp(delta*150)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             zoomFixedCloser(delta)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            moveDown(delta)
+            moveDown(delta*150)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            moveLeft(delta*150)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            moveRight(delta*150)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
             zoomFixedAway(delta)
         }
+
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            rotateUp(delta)
+            rotateUp(delta*50)
             moveFixedUp(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            rotateDown(delta)
+            rotateDown(delta*50)
             moveFixedDown(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            rotateLeft(delta)
+            rotateLeft(delta*50)
             rotateFixedLeft(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            rotateRight(delta)
+            rotateRight(delta*50)
             rotateFixedRight(delta * 50)
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
+            rollRight(delta*40)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.E)) {
+            rollLeft(delta*40)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.X)) {
             resetCamera()
             resetFixed()
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
+            switchAutomaticCamera(!automaticCamera)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
+            switchFixedCamera(!fixedCamera)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+            cmpss.changeCompression(1)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+            cmpss.changeCompression(2)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
+            cmpss.changeCompression(3)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
+            cmpss.changeCompression(4)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            GameInitializer.screen = IndexScreen()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            if(pause.get() == false ){
+                pause()
+            } else {
+                resume()
+            }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.COMMA)) {
+            skipBackwards10Frames()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PERIOD)) {
+            skipForward10frames()
         }
     }
 
@@ -586,6 +637,16 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun rotateRight(delta: Float) {
         cam.rotate(cam.up, -delta * ROTATION_ANGLE_MODIFIER)
+        cam.update()
+    }
+
+    fun rollRight(delta: Float) {
+        cam.rotate(cam.direction, -delta * ROTATION_ANGLE_MODIFIER)
+        cam.update()
+    }
+
+    fun rollLeft(delta: Float) {
+        cam.rotate(cam.direction, delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
