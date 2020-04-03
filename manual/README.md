@@ -112,11 +112,11 @@ Bindings for free camera only:
 | Roll left/right | Q, E                  |
 | Pan             | Arrow keys            |
 | Zoom            | R zoom in, F zoom out |
-| Reset           | X                     |
+| Reset Camera    | X                     |
 
 Bindings for fixed/automatic camera only:
 
 | Function | Hotkey                    |
 | -------- | ------------------------- |
-| Move     | WASD                      |
+| Move     | Arrow keys                |
 | Zoom     | UP zoom in, DOWN zoom out |

@@ -428,10 +428,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera = fixed
+        prefs.putBoolean("FIXED CAMERA",fixedCamera)
+
     }
 
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
+        prefs.putBoolean("AUTOMATIC CAMERA",fixedCamera)
     }
 
     fun skipForward10frames() {
@@ -552,15 +555,19 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
             cmpss.changeCompression(1)
+            prefs.putInteger("COMPRESSION",1)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
             cmpss.changeCompression(2)
+            prefs.putInteger("COMPRESSION",2)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
             cmpss.changeCompression(3)
+            prefs.putInteger("COMPRESSION",3)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
             cmpss.changeCompression(4)
+            prefs.putInteger("COMPRESSION",4)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             GameInitializer.screen = IndexScreen()
