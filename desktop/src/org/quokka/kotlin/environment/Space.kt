@@ -349,7 +349,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera = fixed
         prefs.putBoolean("FIXED CAMERA",fixedCamera)
-
+        settings.camera_checkbox.isChecked = fixed
     }
 
     /**
@@ -358,6 +358,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
         prefs.putBoolean("AUTOMATIC CAMERA",fixedCamera)
+        settings.automatic_camera_checkbox.isChecked = automatic
     }
 
     /**
@@ -503,18 +504,22 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
             cmpss.changeCompression(1)
             prefs.putInteger("COMPRESSION",1)
+            settings.compression_box.selected = 1
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
             cmpss.changeCompression(2)
             prefs.putInteger("COMPRESSION",2)
+            settings.compression_box.selected = 2
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
             cmpss.changeCompression(3)
             prefs.putInteger("COMPRESSION",3)
+            settings.compression_box.selected = 3
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
             cmpss.changeCompression(4)
             prefs.putInteger("COMPRESSION",4)
+            settings.compression_box.selected = 4
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             GameInitializer.screen = IndexScreen()
@@ -535,11 +540,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
        if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
            gui.hideHUD()
+           prefs.putBoolean("HIDE HUD", gui.hidden)
        }
 
        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
            cmpss.switchGradualCompression(!cmpss.gradualCompression)
+           settings.gradualBox.isChecked = cmpss.gradualCompression
        }
+
     }
 
 

@@ -171,7 +171,7 @@ class Settings {
 
     }
 
-    private fun flushall() {
+    fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
         prefs.putInteger("MEMORY", memory_box.selected)
         prefs.putString("RESOLUTION", resolution_box.selected)
@@ -399,13 +399,14 @@ class GuiButtons(space: Space) {
         if (!settings.hud_box.isChecked == hidden){
             hideHUD()
         }
-        settings_button.isVisible = true
     }
 
 
     fun hideHUD(){
         images.forEach {it.isVisible = !it.isVisible}
         hidden = !hidden
+        settings.hud_box.isChecked = hidden
+        settings_button.isVisible = true
     }
 }
 
