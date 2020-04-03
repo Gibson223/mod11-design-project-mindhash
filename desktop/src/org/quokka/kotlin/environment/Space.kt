@@ -37,7 +37,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 
-class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
+class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val mapsModel: Boolean = true) : Screen {
 
     companion object {
         const val FIXED_CAM_RADIUS_MAX = 100f
@@ -66,7 +66,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     //-------  Perferences  -------
     private var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
-    private var playbackFPS = 0 // manually fix fps
 
     //-------  Camera  -------
     private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
@@ -106,7 +105,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     private var decals: List<Decal> = listOf()
-    private val axisDecals: ArrayList<Decal> = ArrayList(30)
 
     private val blueRedFade = Array(256) { i ->
         val pix = Pixmap(1, 1, Pixmap.Format.RGB888)
@@ -171,7 +169,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         timers.add(initFrameUpdateThread())
 
-        // -----------Bottom Text--------
         stage.addActor(label)
 
         plexer = InputMultiplexer(stage, camController)
@@ -182,14 +179,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         instance = ModelInstance(model)
         instance!!.transform.rotate(Vector3.X,90f)
         modelBatch = ModelBatch()
-    }
-
-    override fun hide() {
-        this.dispose()
-    }
-
-    override fun show() {
-        create()
     }
 
 
@@ -218,22 +207,19 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             }
         }
 
-        if (axis == true) {
-            axisDecals.forEach { d ->
-                if (cam.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
-                    decalBatch.add(d)
-                }
-            }
-        }
 
         //render the decals
         decalBatch.flush()
 
-        modelBatch!!.begin(cam);
-        modelBatch!!.render(instance, environment);
-        modelBatch!!.end();
+        if(mapsModel == true) {
+            modelBatch!!.begin(cam);
+            modelBatch!!.render(instance, environment);
+            modelBatch!!.end();
+        }
 
-
+        // Lable situated at the bottom of the screen
+        // useful tool for debugging
+        // just add strings to the string object to be displayed
         string.setLength(0)
         string.append("fps = ")
                 .append(Gdx.graphics.framesPerSecond)
@@ -300,7 +286,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     /**
      * Fetches a new frame from either local or database source.
-     *
      * @return Null or a lidar frame
      */
     fun fetchNextFrame(): LidarFrame? {
@@ -310,6 +295,256 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             return buffer.nextFrame()
         }
     }
+
+    /**
+     * Helper function which changes the texture of a decal based on its Z coordinate.
+     * The percentage of its z coordinate on a relative scale is calculated and then the
+     * appropriate texture region is chosen.
+     * The effect works best if the array of textures is a color gradient.
+     *
+     * @param d The decal to be recolored.
+     * @param textures An array of texture regions to pick from. Must be non empty.
+     */
+    fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
+        val minZ = -10
+        val maxZ = 15
+        var perc = (d.position.z - minZ) / (maxZ - minZ)
+        if (perc < 0f)
+            perc = 0f
+        else if (perc > 1f)
+            perc = 1f
+        d.textureRegion = textures.get((perc * (textures.size - 1)).toInt())
+    }
+
+    /**
+     * this methods updates the LidarFPS
+     * LidarFPS being the rate at which data is loaded
+     * default is 10, the other two options are 5 and 20
+     */
+    fun changeLidarFPS(newLFPS: Int) {
+        lidarFPS = newLFPS // There was an +2 here, not sure why?
+        newLidarFps.set(true)
+        framesToSkip.set(MAX_LIDAR_FPS / lidarFPS - 1)
+        // Reset the buffer to load new footage based on fps
+        // Do not remove the ?. For some reason buffer can be null even though it is initialized as a val at creation.
+        if (lidarFPS != lastFpsValue.getAndSet(lidarFPS)) {
+            buffer?.let {
+                thread {
+                    it.clear()
+                }
+            }
+        }
+    }
+
+    /**
+     * updates the resolution of the application
+     */
+    fun changeResolution(height: Int, width: Int) {
+        Gdx.graphics.setWindowedMode(width, height);
+    }
+
+    /**
+     * switch Fixed Camera
+     */
+    fun switchFixedCamera(fixed: Boolean) {
+        this.fixedCamera = fixed
+        prefs.putBoolean("FIXED CAMERA",fixedCamera)
+
+    }
+
+    /**
+     * switch atomatic camera
+     */
+    fun switchAutomaticCamera(automatic: Boolean) {
+        this.automaticCamera = automatic
+        prefs.putBoolean("AUTOMATIC CAMERA",fixedCamera)
+    }
+
+    /**
+     * skip 10 frames forwards
+     */
+    fun skipForward10frames() {
+        this.framesIndex += 10
+        buffer.skipForward(5f)
+    }
+
+
+    /**
+     * skip 10 frames backwards
+     */
+    fun skipBackwards10Frames() {
+        this.framesIndex -= 10
+        buffer.skipBackward(5f)
+    }
+
+
+    override fun dispose() {
+        for (t in timers) {
+            t.cancel()
+        }
+        decalBatch.dispose()
+    }
+
+    override fun resume() {
+        pause.set(false)
+    }
+
+    override fun resize(width: Int, height: Int) {
+        stage.getViewport()?.update(width, height, true);
+    }
+
+    override fun pause() {
+        pause.set(true)
+    }
+
+    override fun hide() {
+        this.dispose()
+    }
+
+    override fun show() {
+        create()
+    }
+
+
+
+    //-------Revised Camera Control Methods-----------------------
+
+   /**
+    * This method was used for testing initially,
+    * it transformed into the main keyboard observer
+    * all the buttons work with the HUD on
+    * but it is mainly intended for use with the HUD turned off
+    */
+    fun campButtonpress() {
+
+        val delta = Gdx.graphics.deltaTime
+
+       if(fixedCamera == false && automaticCamera == false ) {
+
+           //rotation of camera button
+           if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+               rotateUp(delta * 50)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+               rotateDown(delta * 50)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+               rotateLeft(delta * 50)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+               rotateRight(delta * 50)
+           }
+
+
+           //movement of camera buttons
+           if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+               moveUp(delta*200)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+               moveDown(delta*200)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+               moveLeft(delta*200)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+               moveRight(delta*200)
+           }
+
+           if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+               moveForward(delta)
+           }
+           if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+               moveBackward((delta))
+           }
+
+           if (Gdx.input.isKeyPressed(Input.Keys.X)) {
+               resetCamera()
+           }
+       } else {
+           //move buttons while camera is fixed
+           if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+               moveFixedUp(delta * 50)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+               moveFixedDown(delta * 50)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+               rotateFixedLeft(delta * 50)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+               rotateFixedRight(delta * 50)
+           }
+
+           if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+               zoomFixedCloser()
+           }
+           if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+               zoomFixedAway()
+           }
+
+           if (Gdx.input.isKeyPressed(Input.Keys.X)) {
+               resetFixed()
+           }
+       }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
+            rollRight(delta*40)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.E)) {
+            rollLeft(delta*40)
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
+            switchAutomaticCamera(!automaticCamera)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
+            switchFixedCamera(!fixedCamera)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+            cmpss.changeCompression(1)
+            prefs.putInteger("COMPRESSION",1)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+            cmpss.changeCompression(2)
+            prefs.putInteger("COMPRESSION",2)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
+            cmpss.changeCompression(3)
+            prefs.putInteger("COMPRESSION",3)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
+            cmpss.changeCompression(4)
+            prefs.putInteger("COMPRESSION",4)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            GameInitializer.screen = IndexScreen()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            if(pause.get() == false ){
+                pause()
+            } else {
+                resume()
+            }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.COMMA)) {
+            skipBackwards10Frames()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PERIOD)) {
+            skipForward10frames()
+        }
+
+       if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
+           gui.hideHUD()
+       }
+
+       if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
+           cmpss.switchGradualCompression(!cmpss.gradualCompression)
+       }
+    }
+
+
+
+    //----------TIll camera controls---------
 
     fun updateFixedCamera() {
         val x = fixedCamDistance * cos(fixedCamAzimuth) * cos(fixedCamAngle)
@@ -379,213 +614,15 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         fixedCamDistance = 70f
     }
 
-    /**
-     * Helper function which changes the texture of a decal based on its Z coordinate.
-     * The percentage of its z coordinate on a relative scale is calculated and then the
-     * appropriate texture region is chosen.
-     * The effect works best if the array of textures is a color gradient.
-     *
-     * @param d The decal to be recolored.
-     * @param textures An array of texture regions to pick from. Must be non empty.
-     */
-    fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
-        val minZ = -10
-        val maxZ = 15
-        var perc = (d.position.z - minZ) / (maxZ - minZ)
-        if (perc < 0f)
-            perc = 0f
-        else if (perc > 1f)
-            perc = 1f
-        d.textureRegion = textures.get((perc * (textures.size - 1)).toInt())
-    }
 
+    //----------Robert camera controls------------
 
-    //--------Buttons methods-------------
-
-    fun changeResolution(height: Int, width: Int) {
-        Gdx.graphics.setWindowedMode(width, height);
-    }
-
-    fun changeLidarFPS(newLFPS: Int) {
-        lidarFPS = newLFPS // There was an +2 here, not sure why?
-        newLidarFps.set(true)
-        framesToSkip.set(MAX_LIDAR_FPS / lidarFPS - 1)
-        // Reset the buffer to load new footage based on fps
-        // Do not remove the ?. For some reason buffer can be null even though it is initialized as a val at creation.
-        if (lidarFPS != lastFpsValue.getAndSet(lidarFPS)) {
-            buffer?.let {
-                thread {
-                    it.clear()
-                }
-            }
-        }
-    }
-
-    fun changePlaybackFPS(newFPS: Int) {
-        this.playbackFPS = newFPS
-        //TODO !!!!
-    }
-
-    fun switchFixedCamera(fixed: Boolean) {
-        this.fixedCamera = fixed
-        prefs.putBoolean("FIXED CAMERA",fixedCamera)
-
-    }
-
-    fun switchAutomaticCamera(automatic: Boolean) {
-        this.automaticCamera = automatic
-        prefs.putBoolean("AUTOMATIC CAMERA",fixedCamera)
-    }
-
-    fun skipForward10frames() {
-        this.framesIndex += 10
-        buffer.skipForward(5f)
-    }
-
-    fun skipBackwards10Frames() {
-        this.framesIndex -= 10
-        buffer.skipBackward(5f)
-    }
-
-    //------------------------------------------------
-
-    override fun dispose() {
-        // Stop timer threads for frame fetching
-        for (t in timers) {
-            t.cancel()
-        }
-//        bottomBlock?.dispose()
-    }
-
-    override fun resume() {
-        pause.set(false)
-    }
-
-    override fun resize(width: Int, height: Int) {
-        stage.getViewport()?.update(width, height, true);
-    }
-
-    override fun pause() {
-        pause.set(true)
-    }
-
-
-    /**
+    /*
      * @author Robert
      *  here methods for the camera controls can be found
      *  they make use of the camera's up and direction vector
      *  to rotate and move it
      */
-    //-------Revised Camera Control Methods-----------------------
-
-   /*
-   This method is used for testing,
-     it will be left in in case MindHash wants to use it
-   It binds camera movements to keyboard keys for easy testing
-    */
-    fun campButtonpress() {
-
-        val delta = Gdx.graphics.deltaTime
-        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
-            if(fixedCamera) {
-                zoomFixedCloser()
-            } else {
-                moveForward(delta)
-            }
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            if(fixedCamera) {
-                zoomFixedAway()
-            } else {
-                moveBackward(delta)
-            }
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            moveUp(delta*150)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            zoomFixedCloser()
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            moveDown(delta*150)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            moveLeft(delta*150)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            moveRight(delta*150)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            zoomFixedAway()
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            rotateUp(delta*50)
-            moveFixedUp(delta * 50)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            rotateDown(delta*50)
-            moveFixedDown(delta * 50)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            rotateLeft(delta*50)
-            rotateFixedLeft(delta * 50)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            rotateRight(delta*50)
-            rotateFixedRight(delta * 50)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
-            rollRight(delta*40)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.E)) {
-            rollLeft(delta*40)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.X)) {
-            resetCamera()
-            resetFixed()
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
-            switchAutomaticCamera(!automaticCamera)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
-            switchFixedCamera(!fixedCamera)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
-            cmpss.changeCompression(1)
-            prefs.putInteger("COMPRESSION",1)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
-            cmpss.changeCompression(2)
-            prefs.putInteger("COMPRESSION",2)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
-            cmpss.changeCompression(3)
-            prefs.putInteger("COMPRESSION",3)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
-            cmpss.changeCompression(4)
-            prefs.putInteger("COMPRESSION",4)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            GameInitializer.screen = IndexScreen()
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            if(pause.get() == false ){
-                pause()
-            } else {
-                resume()
-            }
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.COMMA)) {
-            skipBackwards10Frames()
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PERIOD)) {
-            skipForward10frames()
-        }
-    }
 
     fun resetCamera() {
         cam.position[0f, 0f] = 30f
@@ -595,13 +632,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     fun moveForward(delta: Float) {
-        //cam.translate(Vector3(cam.direction).scl(delta * camSpeed * 100))
         cam.translate(Vector3(cam.direction).scl(ZOOM_STEP_SIZE))
         cam.update()
     }
 
     fun moveBackward(delta: Float) {
-        //cam.translate(Vector3(cam.direction).scl(-delta * camSpeed * 100))
         cam.translate(Vector3(cam.direction).scl(-ZOOM_STEP_SIZE))
         cam.update()
     }

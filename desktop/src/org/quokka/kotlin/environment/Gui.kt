@@ -397,12 +397,18 @@ class GuiButtons(space: Space) {
         }
 
         if (!settings.hud_box.isChecked == hidden){
-            images.forEach {it.isVisible = !it.isVisible}
-            hidden = !hidden
+            hideHUD()
         }
         settings_button.isVisible = true
     }
+
+
+    fun hideHUD(){
+        images.forEach {it.isVisible = !it.isVisible}
+        hidden = !hidden
+    }
 }
+
 
 fun mirror(im: Image) {
     im.setOrigin(im.width/2f, im.height/2)
