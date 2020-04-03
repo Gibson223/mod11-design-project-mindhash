@@ -22,7 +22,7 @@ The screen contains a drop down menu giving a choice to you to select one of the
 After selecting one of the recordings or uploading your own data , you can press the big green button which will start the main screen of the application.
 While in the Starting Screen, it is possible to close the application by pressing Esc on the keyboard or by closing the Windows window.
 
-![Image: Screenshot of the starting screen with descriptions](image2.png)
+![Image: Screenshot of the starting screen with descriptions](image4.png)
 
 ## Recording Screen
 
@@ -88,7 +88,7 @@ The available settings are summarised below, in order of appearance from the top
   This setting flips the screen 180 degrees.
   This feature is set for use specifically for the touch table.
 
-![Image: Screenshot of the settings screen with descriptions](image4.png)
+![Image: Screenshot of the settings screen with descriptions](image2.png)
 
 ## Hotkeys
 
