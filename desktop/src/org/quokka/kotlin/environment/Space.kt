@@ -325,7 +325,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         rotateFixedRight(delta * AUTOMATIC_CAMERA_SPEED_MODIFIER)
     }
 
-    fun zoomFixedCloser(delta: Float) {
+    fun zoomFixedCloser() {
         fixedCamDistance -= ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
@@ -333,7 +333,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             fixedCamDistance = FIXED_CAM_RADIUS_MAX
     }
 
-    fun zoomFixedAway(delta: Float) {
+    fun zoomFixedAway() {
         fixedCamDistance += ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
@@ -485,14 +485,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         val delta = Gdx.graphics.deltaTime
         if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
             if(fixedCamera) {
-                zoomFixedCloser(1f)
+                zoomFixedCloser()
             } else {
                 moveForward(delta)
             }
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
             if(fixedCamera) {
-                zoomFixedAway(1f)
+                zoomFixedAway()
             } else {
                 moveBackward(delta)
             }
@@ -502,7 +502,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             moveUp(delta*150)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            zoomFixedCloser(delta)
+            zoomFixedCloser()
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             moveDown(delta*150)
@@ -514,7 +514,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             moveRight(delta*150)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            zoomFixedAway(delta)
+            zoomFixedAway()
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {

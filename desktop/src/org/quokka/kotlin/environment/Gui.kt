@@ -221,7 +221,7 @@ class GuiButtons(space: Space) {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
                 space.moveBackward(Gdx.graphics.deltaTime)
-                space.zoomFixedAway(Gdx.graphics.deltaTime)
+                space.zoomFixedAway()
             }
         })
 
@@ -231,7 +231,7 @@ class GuiButtons(space: Space) {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
                 space.moveForward(Gdx.graphics.deltaTime)
-                space.zoomFixedCloser(Gdx.graphics.deltaTime)
+                space.zoomFixedCloser()
             }
         })
 
