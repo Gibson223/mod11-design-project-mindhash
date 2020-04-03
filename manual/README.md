@@ -23,6 +23,7 @@ After selecting one of the recordings or uploading your own data , you can press
 While in the Starting Screen, it is possible to close the application by pressing Esc on the keyboard or by closing the Windows window.
 
 ![Image: Screenshot of the starting screen with descriptions](image4.png)
+![Image: Screenshot of the starting screen with descriptions](mainS.png)
 
 ## Recording Screen
 
@@ -48,7 +49,7 @@ There are also a lot of buttons on the screen:
 - The **Camera** button, found in the top right corner, just below the setting button, is a camera reset.
   When pressed, the camera will be moved at the starting position in the environment.
 
-![Image: Screenshot of the recording screen with descriptions](image3.png)
+![Image: Screenshot of the recording screen with descriptions](mainS.png)
 
 ## Settings Screen
 
@@ -89,6 +90,7 @@ The available settings are summarised below, in order of appearance from the top
   This feature is set for use specifically for the touch table.
 
 ![Image: Screenshot of the settings screen with descriptions](image2.png)
+![Image: Screenshot of the settings screen with descriptions](settingS.png)
 
 ## Hotkeys
 
