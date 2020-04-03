@@ -118,5 +118,5 @@ Bindings for fixed/automatic camera only:
 
 | Function | Hotkey                    |
 | -------- | ------------------------- |
-| Move     | Arrow keys                |
+| Move     | WASD                      |
 | Zoom     | UP zoom in, DOWN zoom out |
