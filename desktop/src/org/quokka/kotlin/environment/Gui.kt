@@ -171,7 +171,7 @@ class Settings {
 
     }
 
-    private fun flushall() {
+    fun flushall() {
         prefs.putInteger("LIDAR FPS", lidar_box.selected)
         prefs.putInteger("MEMORY", memory_box.selected)
         prefs.putString("RESOLUTION", resolution_box.selected)
@@ -221,7 +221,7 @@ class GuiButtons(space: Space) {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
                 space.moveBackward(Gdx.graphics.deltaTime)
-                space.zoomFixedAway(Gdx.graphics.deltaTime)
+                space.zoomFixedAway()
             }
         })
 
@@ -231,7 +231,7 @@ class GuiButtons(space: Space) {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
                 space.moveForward(Gdx.graphics.deltaTime)
-                space.zoomFixedCloser(Gdx.graphics.deltaTime)
+                space.zoomFixedCloser()
             }
         })
 
@@ -397,12 +397,19 @@ class GuiButtons(space: Space) {
         }
 
         if (!settings.hud_box.isChecked == hidden){
-            images.forEach {it.isVisible = !it.isVisible}
-            hidden = !hidden
+            hideHUD()
         }
+    }
+
+
+    fun hideHUD(){
+        images.forEach {it.isVisible = !it.isVisible}
+        hidden = !hidden
+        settings.hud_box.isChecked = hidden
         settings_button.isVisible = true
     }
 }
+
 
 fun mirror(im: Image) {
     im.setOrigin(im.width/2f, im.height/2)

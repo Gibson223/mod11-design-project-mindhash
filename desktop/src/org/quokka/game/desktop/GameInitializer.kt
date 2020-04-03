@@ -31,7 +31,7 @@ object GameInitializer : Game() {
     }
 
     fun updateUsedSpace(recordingId: Int, local: Boolean, axis: Boolean){
-        space = Space(recordingId = recordingId, local = local, axis = axis)
+        space = Space(recordingId = recordingId, local = local, mapsModel = axis)
         this.setScreen(space)
     }
 
