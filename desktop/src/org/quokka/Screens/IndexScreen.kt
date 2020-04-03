@@ -67,12 +67,10 @@ class IndexScreen : Screen {
         Gdx.input.inputProcessor = stage
     }
 
-    lateinit var bar: drawBar
     override fun show() {
         Gdx.gl.glClearColor(1f, 1f, 1f, 1f)
         Gdx.input.inputProcessor = stage
         println("openend indexscreen")
-        bar = drawBar(this.stage)
 
     }
 

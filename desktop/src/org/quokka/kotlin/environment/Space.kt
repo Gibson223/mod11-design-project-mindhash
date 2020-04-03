@@ -8,16 +8,21 @@ import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.Model
+import com.badlogic.gdx.graphics.g3d.ModelBatch
+import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
+import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.internals.*
@@ -28,7 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 import kotlin.concurrent.timer
-import kotlin.math.*
+import kotlin.math.cos
+import kotlin.math.sin
 
 
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val axis: Boolean = false) : Screen {
@@ -71,8 +77,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     val settings = GameInitializer.settings
-
-            var pause = AtomicBoolean(false)
+    var pause = AtomicBoolean(false)
     val buffer: Buffer = PrerecordedBuffer(recordingId)
 
     // this is basically the timestamp
@@ -121,6 +126,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     // List of timers which run in the background, these have to be discarded once the screen is over.
     private val timers = mutableListOf<Timer>()
 
+    var modelBatch: ModelBatch? = null
+    var instance : ModelInstance?  = null
+
     init {
         println("end of initializing space")
     }
@@ -133,7 +141,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
         //-----------Camera Creation------------------
-        cam.position[0f, 0f] = 30f
+        cam.position[0f, 0f ] = 30f
         cam.lookAt(0f, 0f, 0f)
         cam.near = .01f
         cam.far = 1000f
@@ -168,6 +176,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         plexer = InputMultiplexer(stage, camController)
         Gdx.input.inputProcessor = plexer
+
+        val loader = ObjLoader()
+        var model = loader.loadModel(Gdx.files.internal("ma_place.obj"));
+        instance = ModelInstance(model)
+        instance!!.transform.rotate(Vector3.X,90f)
+        modelBatch = ModelBatch()
     }
 
     override fun hide() {
@@ -214,6 +228,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         //render the decals
         decalBatch.flush()
+
+        modelBatch!!.begin(cam);
+        modelBatch!!.render(instance, environment);
+        modelBatch!!.end();
 
 
         string.setLength(0)
@@ -307,7 +325,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         rotateFixedRight(delta * AUTOMATIC_CAMERA_SPEED_MODIFIER)
     }
 
-    fun zoomFixedCloser(delta: Float) {
+    fun zoomFixedCloser() {
         fixedCamDistance -= ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
@@ -315,7 +333,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             fixedCamDistance = FIXED_CAM_RADIUS_MAX
     }
 
-    fun zoomFixedAway(delta: Float) {
+    fun zoomFixedAway() {
         fixedCamDistance += ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
             fixedCamDistance = FIXED_CAM_RADIUS_MIN
@@ -457,7 +475,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     //-------Revised Camera Control Methods-----------------------
 
-
    /*
    This method is used for testing,
      it will be left in in case MindHash wants to use it
@@ -466,49 +483,100 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            moveLeft(delta)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            if(fixedCamera) {
+                zoomFixedCloser()
+            } else {
+                moveForward(delta)
+            }
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            moveRight(delta)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            if(fixedCamera) {
+                zoomFixedAway()
+            } else {
+                moveBackward(delta)
+            }
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.I)) {
-            moveForward(delta)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.K)) {
-            moveBackward(delta)
-        }
+
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            moveUp(delta)
+            moveUp(delta*150)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            zoomFixedCloser(delta)
+            zoomFixedCloser()
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            moveDown(delta)
+            moveDown(delta*150)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            moveLeft(delta*150)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            moveRight(delta*150)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            zoomFixedAway(delta)
+            zoomFixedAway()
         }
+
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            rotateUp(delta)
+            rotateUp(delta*50)
             moveFixedUp(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            rotateDown(delta)
+            rotateDown(delta*50)
             moveFixedDown(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            rotateLeft(delta)
+            rotateLeft(delta*50)
             rotateFixedLeft(delta * 50)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            rotateRight(delta)
+            rotateRight(delta*50)
             rotateFixedRight(delta * 50)
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.R)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
+            rollRight(delta*40)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.E)) {
+            rollLeft(delta*40)
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.X)) {
             resetCamera()
             resetFixed()
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
+            switchAutomaticCamera(!automaticCamera)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
+            switchFixedCamera(!fixedCamera)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+            cmpss.changeCompression(1)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+            cmpss.changeCompression(2)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
+            cmpss.changeCompression(3)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
+            cmpss.changeCompression(4)
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            GameInitializer.screen = IndexScreen()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            if(pause.get() == false ){
+                pause()
+            } else {
+                resume()
+            }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.COMMA)) {
+            skipBackwards10Frames()
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PERIOD)) {
+            skipForward10frames()
         }
     }
 
@@ -569,6 +637,16 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     fun rotateRight(delta: Float) {
         cam.rotate(cam.up, -delta * ROTATION_ANGLE_MODIFIER)
+        cam.update()
+    }
+
+    fun rollRight(delta: Float) {
+        cam.rotate(cam.direction, -delta * ROTATION_ANGLE_MODIFIER)
+        cam.update()
+    }
+
+    fun rollLeft(delta: Float) {
+        cam.rotate(cam.direction, delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
