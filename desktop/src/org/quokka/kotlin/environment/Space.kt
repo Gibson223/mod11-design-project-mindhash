@@ -36,7 +36,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 
-class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val mapsModel: Boolean = true) : Screen {
+class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag") : Screen {
 
     companion object {
         const val FIXED_CAM_RADIUS_MAX = 100f
@@ -69,6 +69,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     //-------  Camera  -------
     private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     private var automaticCamera = prefs.getBoolean("AUTOMATIC CAMERA")
+    private var gpsEnv = prefs.getBoolean("GPS ENVIRONMENT",false)
     private var fixedCamAzimuth = 0f
     private var fixedCamAngle = Math.PI.toFloat() * 0.3f
     private var fixedCamDistance = 70f
@@ -224,11 +225,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         val material = Material(TextureAttribute.createDiffuse(pink))
         val modelBuilder = ModelBuilder()
 
-        if(mapsModel == true) {
-            modelBatch.begin(cam);
-            modelBatch.render(instance, environment);
-            modelBatch.end();
-        }
 
 
         val vec = globeUpdate()
@@ -396,7 +392,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
-        prefs.putBoolean("AUTOMATIC CAMERA",fixedCamera)
+        prefs.putBoolean("AUTOMATIC CAMERA",automaticCamera)
         settings.automatic_camera_checkbox.isChecked = automatic
     }
 
@@ -406,6 +402,20 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun skipForward10frames() {
         this.framesIndex += 10
         buffer.skipForward(5f)
+    }
+
+    /**
+    * toggle gps env
+    */
+    fun toggleGPS(toggle : Boolean) {
+        this.gpsEnv = toggle
+        prefs.putBoolean("GPS ENVIRONMENT",toggle)
+//        settings.gps_environment_checkbox.isChecked = toggle
+        if(toggle){
+            rendableObjects.add(instance)
+        } else {
+            rendableObjects.remove(instance)
+        }
     }
 
 
@@ -587,6 +597,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
            settings.gradualBox.isChecked = cmpss.gradualCompression
        }
 
+       if(Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+           toggleGPS(!gpsEnv)
+       }
+
     }
 
 
@@ -741,14 +755,23 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
     fun globeUpdate():Vector3{
-        val y = Vector3(cam.up).rotate(cam.direction, 90f).scl(4.4f)
+        val forwardScalar = 5f
+        var rightScalar = 4.4f
+        var downwardsScalar = 2.3f
+
+        if (gui.rotated){
+            rightScalar = -4.4f
+            downwardsScalar = -2.3f
+        }
+
+        val rightWard = Vector3(cam.up).rotate(cam.direction, 90f).scl(rightScalar)
         val ground = Vector3(cam.position)
-        val x = Vector3(cam.direction)
-        val z = Vector3(cam.up).rotate(cam.direction, 180f).scl(2.3f)
-        x.scl(5f)
-        var result = x.add(y)
-        result = result.add(ground).add(z)
-        return  result
+        val forWard = Vector3(cam.direction).scl(forwardScalar)
+        val downWard = Vector3(cam.up).scl(-1*downwardsScalar)
+        ground.add(forWard)
+        ground.add(rightWard)
+        ground.add(downWard)
+        return  ground
     }
 }
 
