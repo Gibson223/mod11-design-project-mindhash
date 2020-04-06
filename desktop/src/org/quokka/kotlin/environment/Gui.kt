@@ -194,8 +194,6 @@ class GuiButtons(space: Space) {
 //http://soundbible.com/1705-Click2.html
     val settings = space.settings
 
-    val stage = Stage()
-
     val home_button: Image = Image(Texture("Screen3D/home_button.png"))
 
     val settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
@@ -218,7 +216,7 @@ class GuiButtons(space: Space) {
 
     init {
 
-        stage.addActor(minus)
+        space.stage.addActor(minus)
         minus.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -228,7 +226,7 @@ class GuiButtons(space: Space) {
         })
 
         plus.setPosition(minus.x, minus.y + minus.height)
-        stage.addActor(plus)
+        space.stage.addActor(plus)
         plus.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -237,7 +235,7 @@ class GuiButtons(space: Space) {
             }
         })
 
-        stage.addActor(bf_button)
+        space.stage.addActor(bf_button)
         bf_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -245,7 +243,7 @@ class GuiButtons(space: Space) {
             }
         })
 
-        stage.addActor(ff_button)
+        space.stage.addActor(ff_button)
         ff_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -253,7 +251,7 @@ class GuiButtons(space: Space) {
             }
         })
 
-        stage.addActor(arrows_button)
+        space.stage.addActor(arrows_button)
         val arrowsLastPos = Vector2(0f, 0f)
         arrows_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -288,7 +286,7 @@ class GuiButtons(space: Space) {
         })
 
 
-        stage.addActor(earth_button)
+        space.stage.addActor(earth_button)
         val earthLastPos = Vector2(0f, 0f)
         earth_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -327,7 +325,7 @@ class GuiButtons(space: Space) {
         })
 
 
-        stage.addActor(pause_button)
+        space.stage.addActor(pause_button)
         pause_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -335,7 +333,7 @@ class GuiButtons(space: Space) {
             }
         })
 
-        stage.addActor(reset_button)
+        space.stage.addActor(reset_button)
         reset_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -344,17 +342,17 @@ class GuiButtons(space: Space) {
             }
         })
 
-        stage.addActor(settings_button)
+        space.stage.addActor(settings_button)
         settings_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
                 space.pause()
-                settings_dialog.show(stage)
+                settings_dialog.show(space.stage)
             }
         })
 
 
-        stage.addActor(home_button)
+        space.stage.addActor(home_button)
         home_button.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 GameInitializer.click.play()
@@ -379,12 +377,6 @@ class GuiButtons(space: Space) {
 
     }
 
-    fun render() {
-        bar.update()
-        stage.draw()
-        stage.act()
-    }
-
     val images = listOf(
             minus, plus
             ,pause_button, bf_button,ff_button
@@ -402,7 +394,6 @@ class GuiButtons(space: Space) {
             for (im in images){
                 mirror(im)
             }
-            mirror(settings_dialog)
             bar.reverse = !bar.reverse
         }
 
@@ -422,24 +413,6 @@ class GuiButtons(space: Space) {
 
 
 fun mirror(im: Image) {
-    im.setOrigin(im.width/2f, im.height/2)
-    im.rotateBy(180f)
-    println("${im.x}, ${im.y}, ${im.isVisible}")
-
-    if ( im.x < Gdx.graphics.width/2) {
-        im.x = Gdx.graphics.width/2 + (Gdx.graphics.width/2 - im.x) - im.width
-    } else {
-        im.x = Gdx.graphics.width/2 - (im.x - Gdx.graphics.width/2) - im.width
-    }
-
-    if ( im.y < Gdx.graphics.height/2) {
-        im.y = Gdx.graphics.height/2 + (Gdx.graphics.height/2 - im.y) - im.height
-    } else {
-        im.y = Gdx.graphics.height/2 - (im.y - Gdx.graphics.height/2) - im.height
-    }
-}
-
-fun mirror(im: Dialog) {
     im.setOrigin(im.width/2f, im.height/2)
     im.rotateBy(180f)
     println("${im.x}, ${im.y}, ${im.isVisible}")

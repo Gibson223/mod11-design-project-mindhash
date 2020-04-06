@@ -171,7 +171,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         stage.addActor(label)
 
-        plexer = InputMultiplexer(stage, gui.stage)
+        plexer = InputMultiplexer(stage)
         Gdx.input.inputProcessor = plexer
 
 
@@ -195,6 +195,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
 
         campButtonpress()
+        gui.bar.update()
         // if the camera is fixed that means it's always looking at the center of the environment
         // This is also triggers if the automatic camera is chosen
         if (fixedCamera || automaticCamera) {
@@ -259,8 +260,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
-
-        gui.render()
     }
 
     /**
