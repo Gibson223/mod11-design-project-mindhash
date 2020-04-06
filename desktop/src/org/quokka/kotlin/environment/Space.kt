@@ -1,9 +1,6 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
-import com.badlogic.gdx.InputMultiplexer
-import com.badlogic.gdx.Screen
+import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
@@ -69,7 +66,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     //-------  Camera  -------
     private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     private var automaticCamera = prefs.getBoolean("AUTOMATIC CAMERA")
-    private var gpsEnv = prefs.getBoolean("GPS ENVIRONMENT",false)
+    private var gpsEnv = AtomicBoolean(prefs.getBoolean("GPS ENVIRONMENT",false))
     private var fixedCamAzimuth = 0f
     private var fixedCamAngle = Math.PI.toFloat() * 0.3f
     private var fixedCamDistance = 70f
@@ -85,7 +82,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
-    private var camController = CameraInputController(cam)
+//    private var camController = CameraInputController(cam)
 
     private var environment = Environment()
 
@@ -174,7 +171,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         stage.addActor(label)
 
-        plexer = InputMultiplexer(stage, camController)
+        plexer = InputMultiplexer(stage)
         Gdx.input.inputProcessor = plexer
 
 
@@ -251,12 +248,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         string.setLength(0)
         string.append("fps = ")
                 .append(Gdx.graphics.framesPerSecond)
-                .append(" x = ")
-                .append(cam.position.x)
-                .append(" y = ")
-                .append(cam.position.y)
-                .append(" z = ")
-                .append(cam.position.z)
 
 //                .append(", paused = ")
 //                .append(pause)
@@ -408,10 +399,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     * toggle gps env
     */
     fun toggleGPS(toggle : Boolean) {
-        this.gpsEnv = toggle
-        prefs.putBoolean("GPS ENVIRONMENT",toggle)
+        this.gpsEnv.set(toggle)
+        prefs.putBoolean("GPS ENVIRONMENT",gpsEnv.get())
 //        settings.gps_environment_checkbox.isChecked = toggle
-        if(toggle){
+        if(gpsEnv.get()){
             rendableObjects.add(instance)
         } else {
             rendableObjects.remove(instance)
@@ -598,7 +589,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
        }
 
        if(Gdx.input.isKeyJustPressed(Input.Keys.M)) {
-           toggleGPS(!gpsEnv)
+           toggleGPS(!gpsEnv.get())
        }
 
     }
