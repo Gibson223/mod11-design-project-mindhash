@@ -238,8 +238,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         rendableObjects.add(globe)
 
         modelBatch.begin(cam);
-        println("Objects to render:")
-        println(rendableObjects)
         modelBatch.render(rendableObjects, environment);
         modelBatch.end();
         rendableObjects.remove(globe)
