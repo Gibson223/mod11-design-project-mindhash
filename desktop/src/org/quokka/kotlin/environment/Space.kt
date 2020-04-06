@@ -48,6 +48,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     private lateinit var plexer: InputMultiplexer
     private val newLidarFps = AtomicBoolean(false)
+
     /*
      * The frame fetching loop runs at a constant 20fps. These two numbers just determine how many of these frames
      * have to be skipped to achieve the desired framerate.
@@ -66,7 +67,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     //-------  Camera  -------
     private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     private var automaticCamera = prefs.getBoolean("AUTOMATIC CAMERA")
-    private var gpsEnv = AtomicBoolean(prefs.getBoolean("GPS ENVIRONMENT",false))
+    private var gpsEnv = AtomicBoolean(prefs.getBoolean("GPS ENVIRONMENT", false))
     private var fixedCamAzimuth = 0f
     private var fixedCamAngle = Math.PI.toFloat() * 0.3f
     private var fixedCamDistance = 70f
@@ -121,11 +122,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     // List of timers which run in the background, these have to be discarded once the screen is over.
     private val timers = mutableListOf<Timer>()
 
-    lateinit var modelBatch: ModelBatch
-    lateinit var rendableObjects: ArrayList<ModelInstance>
-    lateinit var instance : ModelInstance
-    lateinit var globe :ModelInstance
-    lateinit var pink :Texture
+    private lateinit var modelBatch: ModelBatch
+    private lateinit var rendableObjects: ArrayList<ModelInstance>
+    private lateinit var instance: ModelInstance
+    private lateinit var globe: ModelInstance
+    private lateinit var pink: Texture
 
     init {
         println("end of initializing space")
@@ -139,12 +140,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
         //-----------Camera Creation------------------
-        cam.position[0f, 0f ] = 30f
+        cam.position[0f, 0f] = 30f
         cam.lookAt(0f, 0f, 0f)
         cam.near = .01f
         cam.far = 1000f
         cam.update()
-
 
 
         //---------Environment Creation --------
@@ -181,13 +181,15 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         val load = ObjLoader()
         val model = load.loadModel(Gdx.files.internal("ma_place.obj"));
         instance = ModelInstance(model)
-        instance.transform.rotate(Vector3.X,90f)
+        instance.transform.rotate(Vector3.X, 90f)
 
 
-        pink = Texture(Gdx.files.internal("yeet.jpeg"),false)
+        pink = Texture(Gdx.files.internal("yeet.jpeg"), false)
 
         rendableObjects = ArrayList(2)
-        rendableObjects.add(instance)
+        if (gpsEnv.get()) {
+            rendableObjects.add(instance)
+        }
     }
 
 
@@ -209,7 +211,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
         decals.forEach { d ->
-            if (cam.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
+            if (cam.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f)) {
                 decalBatch.add(d)
                 d.lookAt(cam.position, cam.up)
             }
@@ -222,16 +224,15 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         val modelBuilder = ModelBuilder()
 
 
-
         val vec = globeUpdate()
 
 //        var vec = cam.direction.mul(cam.position)
 
-        globe = ModelInstance(modelBuilder.createSphere(1f,1f,1f,15,15,
+        globe = ModelInstance(modelBuilder.createSphere(1f, 1f, 1f, 15, 15,
                 material,
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()),
-                vec.x,vec.y,vec.z)
-        globe.transform.rotate(Vector3.X,90F)
+                vec.x, vec.y, vec.z)
+        globe.transform.rotate(Vector3.X, 90F)
         //render city and earth
         rendableObjects.add(globe)
 
@@ -270,7 +271,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * which is both a List<Decal>
      * @author Robert, Till
      */
-    fun initFrameUpdateThread(): Timer {
+    private fun initFrameUpdateThread(): Timer {
         return timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {
             // Skip frames according to fps
             if (frameFetchSkipCounter.incrementAndGet() > framesToSkip.get()) {
@@ -300,7 +301,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      *
      * @author Till
      */
-    fun initLocalFileThread(): Timer {
+    private fun initLocalFileThread(): Timer {
         return timer("File Parser", period = 2000) {
             if (localFrames.size < 60) {
                 val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 12)
@@ -315,7 +316,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * Fetches a new frame from either local or database source.
      * @return Null or a lidar frame
      */
-    fun fetchNextFrame(): LidarFrame? {
+    private fun fetchNextFrame(): LidarFrame? {
         if (local) {
             return localFrames.poll()
         } else {
@@ -332,7 +333,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * @param d The decal to be recolored.
      * @param textures An array of texture regions to pick from. Must be non empty.
      */
-    fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
+    private fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
         val minZ = -10
         val maxZ = 15
         var perc = (d.position.z - minZ) / (maxZ - minZ)
@@ -375,7 +376,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera = fixed
-        prefs.putBoolean("FIXED CAMERA",fixedCamera)
+        prefs.putBoolean("FIXED CAMERA", fixedCamera)
         settings.camera_checkbox.isChecked = fixed
     }
 
@@ -384,7 +385,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
-        prefs.putBoolean("AUTOMATIC CAMERA",automaticCamera)
+        prefs.putBoolean("AUTOMATIC CAMERA", automaticCamera)
         settings.automatic_camera_checkbox.isChecked = automatic
     }
 
@@ -397,13 +398,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     /**
-    * toggle gps env
-    */
-    fun toggleGPS(toggle : Boolean) {
+     * toggle gps env
+     */
+    fun toggleGPS(toggle: Boolean) {
         this.gpsEnv.set(toggle)
-        prefs.putBoolean("GPS ENVIRONMENT",gpsEnv.get())
+        prefs.putBoolean("GPS ENVIRONMENT", gpsEnv.get())
 //        settings.gps_environment_checkbox.isChecked = toggle
-        if(gpsEnv.get()){
+        if (gpsEnv.get()) {
             rendableObjects.add(instance)
         } else {
             rendableObjects.remove(instance)
@@ -448,92 +449,91 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
 
-
     //-------Revised Camera Control Methods-----------------------
 
-   /**
-    * This method was used for testing initially,
-    * it transformed into the main keyboard observer
-    * all the buttons work with the HUD on
-    * but it is mainly intended for use with the HUD turned off
-    */
-    fun campButtonpress() {
+    /**
+     * This method was used for testing initially,
+     * it transformed into the main keyboard observer
+     * all the buttons work with the HUD on
+     * but it is mainly intended for use with the HUD turned off
+     */
+    private fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
 
-       if(fixedCamera == false && automaticCamera == false ) {
+        if (!fixedCamera && !automaticCamera ) {
 
-           //rotation of camera button
-           if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-               rotateUp(delta * 50)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-               rotateDown(delta * 50)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-               rotateLeft(delta * 50)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-               rotateRight(delta * 50)
-           }
+            //rotation of camera button
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                rotateUp(delta * 50)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                rotateDown(delta * 50)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                rotateLeft(delta * 50)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                rotateRight(delta * 50)
+            }
 
 
-           //movement of camera buttons
-           if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-               moveUp(delta*200)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-               moveDown(delta*200)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-               moveLeft(delta*200)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-               moveRight(delta*200)
-           }
+            //movement of camera buttons
+            if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+                moveUp(delta * 200)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                moveDown(delta * 200)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+                moveLeft(delta * 200)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+                moveRight(delta * 200)
+            }
 
-           if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
-               moveForward(delta)
-           }
-           if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-               moveBackward((delta))
-           }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+                moveForward(delta)
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+                moveBackward((delta))
+            }
 
-           if (Gdx.input.isKeyPressed(Input.Keys.X)) {
-               resetCamera()
-           }
-       } else {
-           //move buttons while camera is fixed
-           if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-               moveFixedUp(delta * 50)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-               moveFixedDown(delta * 50)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-               rotateFixedLeft(delta * 50)
-           }
-           if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-               rotateFixedRight(delta * 50)
-           }
+            if (Gdx.input.isKeyPressed(Input.Keys.X)) {
+                resetCamera()
+            }
+        } else {
+            //move buttons while camera is fixed
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                moveFixedUp(delta * 50)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                moveFixedDown(delta * 50)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                rotateFixedLeft(delta * 50)
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                rotateFixedRight(delta * 50)
+            }
 
-           if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-               zoomFixedCloser()
-           }
-           if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-               zoomFixedAway()
-           }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+                zoomFixedCloser()
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+                zoomFixedAway()
+            }
 
-           if (Gdx.input.isKeyPressed(Input.Keys.X)) {
-               resetFixed()
-           }
-       }
+            if (Gdx.input.isKeyPressed(Input.Keys.X)) {
+                resetFixed()
+            }
+        }
 
         if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
-            rollRight(delta*40)
+            rollRight(delta * 40)
         }
         if (Gdx.input.isKeyPressed(Input.Keys.E)) {
-            rollLeft(delta*40)
+            rollLeft(delta * 40)
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
@@ -544,29 +544,29 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
             cmpss.changeCompression(1)
-            prefs.putInteger("COMPRESSION",1)
+            prefs.putInteger("COMPRESSION", 1)
             settings.compression_box.selected = 1
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
             cmpss.changeCompression(2)
-            prefs.putInteger("COMPRESSION",2)
+            prefs.putInteger("COMPRESSION", 2)
             settings.compression_box.selected = 2
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
             cmpss.changeCompression(3)
-            prefs.putInteger("COMPRESSION",3)
+            prefs.putInteger("COMPRESSION", 3)
             settings.compression_box.selected = 3
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
             cmpss.changeCompression(4)
-            prefs.putInteger("COMPRESSION",4)
+            prefs.putInteger("COMPRESSION", 4)
             settings.compression_box.selected = 4
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             GameInitializer.screen = IndexScreen()
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            if(pause.get() == false ){
+            if (!pause.get()) {
                 pause()
             } else {
                 resume()
@@ -579,27 +579,26 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             skipForward10frames()
         }
 
-       if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
-           gui.hideHUD()
-           prefs.putBoolean("HIDE HUD", gui.hidden)
-       }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
+            gui.hideHUD()
+            prefs.putBoolean("HIDE HUD", gui.hidden)
+        }
 
-       if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
-           cmpss.switchGradualCompression(!cmpss.gradualCompression)
-           settings.gradualBox.isChecked = cmpss.gradualCompression
-       }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
+            cmpss.switchGradualCompression(!cmpss.gradualCompression)
+            settings.gradualBox.isChecked = cmpss.gradualCompression
+        }
 
-       if(Gdx.input.isKeyJustPressed(Input.Keys.M)) {
-           toggleGPS(!gpsEnv.get())
-       }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+            toggleGPS(!gpsEnv.get())
+        }
 
     }
 
 
-
     //----------TIll camera controls---------
 
-    fun updateFixedCamera() {
+    private fun updateFixedCamera() {
         val x = fixedCamDistance * cos(fixedCamAzimuth) * cos(fixedCamAngle)
         val y = -fixedCamDistance * sin(fixedCamAzimuth) * cos(fixedCamAngle)
         val z = fixedCamDistance * sin(fixedCamAngle)
@@ -609,7 +608,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.update()
     }
 
-    fun moveAutomaticCamera(delta: Float) {
+    private fun moveAutomaticCamera(delta: Float) {
         rotateFixedRight(delta * AUTOMATIC_CAMERA_SPEED_MODIFIER)
     }
 
@@ -746,12 +745,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
 
-    fun globeUpdate():Vector3{
+    private fun globeUpdate(): Vector3 {
         val forwardScalar = 5f
         var rightScalar = 4.4f
         var downwardsScalar = 2.3f
 
-        if (gui.rotated){
+        if (gui.rotated) {
             rightScalar = -4.4f
             downwardsScalar = -2.3f
         }
@@ -759,11 +758,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         val rightWard = Vector3(cam.up).rotate(cam.direction, 90f).scl(rightScalar)
         val ground = Vector3(cam.position)
         val forWard = Vector3(cam.direction).scl(forwardScalar)
-        val downWard = Vector3(cam.up).scl(-1*downwardsScalar)
+        val downWard = Vector3(cam.up).scl(-1 * downwardsScalar)
         ground.add(forWard)
         ground.add(rightWard)
         ground.add(downWard)
-        return  ground
+        return ground
     }
 }
 
