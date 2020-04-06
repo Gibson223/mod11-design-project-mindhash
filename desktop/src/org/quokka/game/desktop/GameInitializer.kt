@@ -30,8 +30,8 @@ object GameInitializer : Game() {
         super.render() //important!
     }
 
-    fun updateUsedSpace(recordingId: Int, local: Boolean, axis: Boolean){
-        space = Space(recordingId = recordingId, local = local, mapsModel = axis)
+    fun updateUsedSpace(recordingId: Int, local: Boolean){
+        space = Space(recordingId = recordingId, local = local)
         this.setScreen(space)
     }
 

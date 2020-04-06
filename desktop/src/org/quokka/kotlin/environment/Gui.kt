@@ -202,7 +202,7 @@ class GuiButtons(space: Space) {
     val reset_button = Image(Texture("Screen3D/reset_button.png"))
 
     val pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
-    val earth_button: Image = Image(Texture("Screen3D/earth_button.png"))
+    val earth_button: Image = Image(Texture("Screen3D/transparent.png"))
     val arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
     val ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
     val bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
@@ -381,7 +381,8 @@ class GuiButtons(space: Space) {
             minus, plus
             ,pause_button, bf_button,ff_button
             ,home_button
-            ,earth_button,arrows_button
+            ,earth_button
+            ,arrows_button
             ,settings_button,reset_button, bar.bars, bar.button
     )
     fun update(){

@@ -1,23 +1,19 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
-import com.badlogic.gdx.InputMultiplexer
-import com.badlogic.gdx.Screen
+import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.graphics.g3d.Environment
-import com.badlogic.gdx.graphics.g3d.Model
-import com.badlogic.gdx.graphics.g3d.ModelBatch
-import com.badlogic.gdx.graphics.g3d.ModelInstance
+import com.badlogic.gdx.graphics.g3d.*
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
 import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
@@ -37,7 +33,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 
-class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag", val mapsModel: Boolean = true) : Screen {
+class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag") : Screen {
 
     companion object {
         const val FIXED_CAM_RADIUS_MAX = 100f
@@ -70,6 +66,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     //-------  Camera  -------
     private var fixedCamera = prefs.getBoolean("FIXED CAMERA")
     private var automaticCamera = prefs.getBoolean("AUTOMATIC CAMERA")
+    private var gpsEnv = AtomicBoolean(prefs.getBoolean("GPS ENVIRONMENT",false))
     private var fixedCamAzimuth = 0f
     private var fixedCamAngle = Math.PI.toFloat() * 0.3f
     private var fixedCamDistance = 70f
@@ -85,7 +82,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
-    private var camController = CameraInputController(cam)
+//    private var camController = CameraInputController(cam)
 
     private var environment = Environment()
 
@@ -124,8 +121,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     // List of timers which run in the background, these have to be discarded once the screen is over.
     private val timers = mutableListOf<Timer>()
 
-    var modelBatch: ModelBatch? = null
-    var instance : ModelInstance?  = null
+    lateinit var modelBatch: ModelBatch
+    lateinit var rendableObjects: ArrayList<ModelInstance>
+    lateinit var instance : ModelInstance
+    lateinit var globe :ModelInstance
+    lateinit var pink :Texture
 
     init {
         println("end of initializing space")
@@ -171,14 +171,23 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         stage.addActor(label)
 
-        plexer = InputMultiplexer(stage, camController)
+        plexer = InputMultiplexer(stage)
         Gdx.input.inputProcessor = plexer
 
-        val loader = ObjLoader()
-        var model = loader.loadModel(Gdx.files.internal("ma_place.obj"));
-        instance = ModelInstance(model)
-        instance!!.transform.rotate(Vector3.X,90f)
+
+        //--------Earth and City-------
         modelBatch = ModelBatch()
+
+        val load = ObjLoader()
+        val model = load.loadModel(Gdx.files.internal("ma_place.obj"));
+        instance = ModelInstance(model)
+        instance.transform.rotate(Vector3.X,90f)
+
+
+        pink = Texture(Gdx.files.internal("yeet.jpeg"),false)
+
+        rendableObjects = ArrayList(2)
+        rendableObjects.add(instance)
     }
 
 
@@ -210,12 +219,28 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         //render the decals
         decalBatch.flush()
+        val material = Material(TextureAttribute.createDiffuse(pink))
+        val modelBuilder = ModelBuilder()
 
-        if(mapsModel == true) {
-            modelBatch!!.begin(cam);
-            modelBatch!!.render(instance, environment);
-            modelBatch!!.end();
-        }
+
+
+        val vec = globeUpdate()
+
+//        var vec = cam.direction.mul(cam.position)
+
+        globe = ModelInstance(modelBuilder.createSphere(1f,1f,1f,15,15,
+                material,
+                (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()),
+                vec.x,vec.y,vec.z)
+        globe.transform.rotate(Vector3.X,90F)
+        //render city and earth
+        rendableObjects.add(globe)
+
+        modelBatch.begin(cam);
+        modelBatch.render(rendableObjects, environment);
+        modelBatch.end();
+        rendableObjects.remove(globe)
+
 
         // Lable situated at the bottom of the screen
         // useful tool for debugging
@@ -223,14 +248,15 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         string.setLength(0)
         string.append("fps = ")
                 .append(Gdx.graphics.framesPerSecond)
-                .append(", paused = ")
-                .append(pause)
-                .append(", frame_index = ")
-                .append(buffer.lastFrameIndex)
-                .append(", past_buffer_size  = ")
-                .append(buffer.pastBufferSize)
-                .append(", future_buffer_size  = ")
-                .append(buffer.futureBufferSize)
+
+//                .append(", paused = ")
+//                .append(pause)
+//                .append(", frame_index = ")
+//                .append(buffer.lastFrameIndex)
+//                .append(", past_buffer_size  = ")
+//                .append(buffer.pastBufferSize)
+//                .append(", future_buffer_size  = ")
+//                .append(buffer.futureBufferSize)
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
@@ -357,7 +383,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      */
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
-        prefs.putBoolean("AUTOMATIC CAMERA",fixedCamera)
+        prefs.putBoolean("AUTOMATIC CAMERA",automaticCamera)
         settings.automatic_camera_checkbox.isChecked = automatic
     }
 
@@ -367,6 +393,20 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     fun skipForward10frames() {
         this.framesIndex += 10
         buffer.skipForward(5f)
+    }
+
+    /**
+    * toggle gps env
+    */
+    fun toggleGPS(toggle : Boolean) {
+        this.gpsEnv.set(toggle)
+        prefs.putBoolean("GPS ENVIRONMENT",gpsEnv.get())
+//        settings.gps_environment_checkbox.isChecked = toggle
+        if(gpsEnv.get()){
+            rendableObjects.add(instance)
+        } else {
+            rendableObjects.remove(instance)
+        }
     }
 
 
@@ -548,6 +588,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
            settings.gradualBox.isChecked = cmpss.gradualCompression
        }
 
+       if(Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+           toggleGPS(!gpsEnv.get())
+       }
+
     }
 
 
@@ -700,6 +744,26 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.update()
     }
 
+
+    fun globeUpdate():Vector3{
+        val forwardScalar = 5f
+        var rightScalar = 4.4f
+        var downwardsScalar = 2.3f
+
+        if (gui.rotated){
+            rightScalar = -4.4f
+            downwardsScalar = -2.3f
+        }
+
+        val rightWard = Vector3(cam.up).rotate(cam.direction, 90f).scl(rightScalar)
+        val ground = Vector3(cam.position)
+        val forWard = Vector3(cam.direction).scl(forwardScalar)
+        val downWard = Vector3(cam.up).scl(-1*downwardsScalar)
+        ground.add(forWard)
+        ground.add(rightWard)
+        ground.add(downWard)
+        return  ground
+    }
 }
 
 

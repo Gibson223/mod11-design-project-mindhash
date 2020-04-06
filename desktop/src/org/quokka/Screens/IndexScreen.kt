@@ -59,7 +59,7 @@ class IndexScreen : Screen {
         badge.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 println("Clicked!")
-                updateUsedSpace(settings.files.getValue(selectBox.selected), local = false, axis = false)
+                updateUsedSpace(settings.files.getValue(selectBox.selected), local = false)
             }
         })
 

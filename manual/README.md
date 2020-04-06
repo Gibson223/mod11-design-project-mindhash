@@ -87,6 +87,9 @@ The available settings are summarised below, in order of appearance from the top
 - **Rotate**
   This setting flips the screen 180 degrees.
   This feature is set for use specifically for the touch table.
+- **GPS Model**
+  This setting toggles the presance of the GPS model. The LiDAR cameras come with GPS coodrinates =
+  This feature is set for use specifically for the touch table.
 
 ![Image: Screenshot of the settings screen with descriptions](settingSS.png)
 
@@ -98,13 +101,14 @@ Bindings for hotkeys when the program is used with a keyboard.
 | ------------------- | ---------- |
 | Home                | Esc        |
 | Pause/Play          | Space      |
-| Change progression  | 1, 2, 3, 4 |
+| Change compression  | 1, 2, 3, 4 |
 | Switch gradual compression  | C  |
 | Toggle fixed camera | L          |
 | Toggle auto camera  | K          |
 | Skip backward       | , <        |
 | Skip forward        | . >        |
 | Hide Hood           | H       |
+| Hide GPS Model           | M       |
 
 Bindings for free camera only:
 
