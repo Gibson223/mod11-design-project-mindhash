@@ -187,7 +187,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         pink = Texture(Gdx.files.internal("yeet.jpeg"),false)
 
         rendableObjects = ArrayList(2)
-        rendableObjects.add(instance)
+        if (gpsEnv.get()) {
+            rendableObjects.add(instance)
+        }
+        
     }
 
 
