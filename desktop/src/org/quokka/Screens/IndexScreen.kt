@@ -72,7 +72,7 @@ class IndexScreen : Screen {
         img.setPosition(0f, stage.viewport.screenHeight - img.height)
         img2.setPosition(stage.viewport.screenWidth - img2.width, stage.viewport.screenHeight - img2.height)
         badge.setPosition(stage.viewport.screenWidth /2 - badge.width / 2, stage.viewport.screenHeight*0.05f)
-        selectBox.setPosition(Gdx.graphics.width/2f - selectBox.width/2,Gdx.graphics.height /2f + selectBox.height/2)
+        selectBox.setPosition(stage.viewport.screenWidth/2f - selectBox.width/2,stage.viewport.screenHeight /2f + selectBox.height/2)
     }
 
     override fun show() {
@@ -87,8 +87,8 @@ class IndexScreen : Screen {
     override fun render(delta: Float) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
         GameInitializer.batch.begin()
-        val glyph = GlyphLayout(font,"Press escape to exit the application" )
-        font.draw(GameInitializer.batch, glyph, Gdx.graphics.width/2 - glyph.width/2, img.y + img.height/2 )
+//        val glyph = GlyphLayout(font,"Press escape to exit the application" )
+//        font.draw(GameInitializer.batch, glyph, stage.viewport.screenWidth/2 - glyph.width/2, img.y + img.height/2 )
         GameInitializer.batch.end()
         stage.act()
         stage.draw()
