@@ -460,11 +460,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     override fun show() {
-        println("called show")
-        println(stage.viewport.screenWidth)
-        println(stage.viewport.screenHeight)
-        println(Gdx.graphics.width)
-        println(Gdx.graphics.height)
         changeResolution(720,1280)
         create()
         stage.viewport.update(Gdx.graphics.width,Gdx.graphics.height)
