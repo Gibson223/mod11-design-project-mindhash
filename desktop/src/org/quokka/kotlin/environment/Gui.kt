@@ -361,7 +361,7 @@ class GuiButtons(val space: Space) {
         })
 
         draw()
-        space.stage.isDebugAll = true
+//        space.stage.isDebugAll = true
 
     }
     fun draw(){
