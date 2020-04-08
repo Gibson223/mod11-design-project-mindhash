@@ -190,7 +190,7 @@ class Settings {
     }
 }
 
-class GuiButtons(space: Space) {
+class GuiButtons(val space: Space) {
 //http://soundbible.com/1705-Click2.html
     val settings = space.settings
 
@@ -360,20 +360,23 @@ class GuiButtons(space: Space) {
             }
         })
 
-        minus.setPosition(Gdx.graphics.width - minus.width, Gdx.graphics.height * 0.3f)
+        draw()
+        space.stage.isDebugAll = true
+
+    }
+    fun draw(){
+        minus.setPosition(space.stage.viewport.screenWidth - minus.width, space.stage.viewport.screenHeight * 0.3f)
         plus.setPosition(minus.x, minus.y + minus.height)
 
-        pause_button.setPosition(Gdx.graphics.width / 2 - (pause_button.width / 2), 50f)
+        pause_button.setPosition(space.stage.viewport.screenWidth / 2 - (pause_button.width / 2), 50f)
         bf_button.setPosition(pause_button.x - bf_button.width, 50f)
         ff_button.setPosition(pause_button.x + pause_button.width, 50f)
 
         arrows_button.setPosition(0f, 0f)
-        earth_button.setPosition(Gdx.graphics.width * 0.95f - earth_button.width, Gdx.graphics.height * (1 / 12f))
-        home_button.setPosition(0f, Gdx.graphics.height - home_button.height)
-        settings_button.setPosition(Gdx.graphics.width - settings_button.width, Gdx.graphics.height - settings_button.height)
+        earth_button.setPosition(space.stage.viewport.screenWidth * 0.95f - earth_button.width, space.stage.viewport.screenHeight * (1 / 12f))
+        home_button.setPosition(0f, space.stage.viewport.screenHeight - home_button.height)
+        settings_button.setPosition(space.stage.viewport.screenWidth - settings_button.width, space.stage.viewport.screenHeight - settings_button.height)
         reset_button.setPosition(settings_button.x, settings_button.y - reset_button.height)
-
-
 
     }
 

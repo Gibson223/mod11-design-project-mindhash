@@ -1,10 +1,16 @@
 package org.quokka.kotlin.environment
 
-import com.badlogic.gdx.*
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
+import com.badlogic.gdx.InputMultiplexer
+import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.graphics.g3d.*
+import com.badlogic.gdx.graphics.g3d.Environment
+import com.badlogic.gdx.graphics.g3d.Material
+import com.badlogic.gdx.graphics.g3d.ModelBatch
+import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy
@@ -12,12 +18,14 @@ import com.badlogic.gdx.graphics.g3d.decals.Decal
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
-import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
+import com.badlogic.gdx.utils.Scaling
+import com.badlogic.gdx.utils.viewport.FitViewport
+import com.badlogic.gdx.utils.viewport.ScalingViewport
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.config.MAX_LIDAR_FPS
@@ -86,7 +94,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     private var environment = Environment()
 
-    var stage: Stage = Stage()
+//    var stage: Stage = Stage()
+    var stage: Stage = Stage(ScalingViewport(Scaling.stretch, 1280f, 720f))
+//    var stage: Stage = Stage(FitViewport( Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat()))
     private var font: BitmapFont = BitmapFont()
     private var label = Label(" ", LabelStyle(font, Color.WHITE))
     private var string: StringBuilder = StringBuilder()
@@ -205,7 +215,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             updateFixedCamera()
         }
 
-        Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
+//        Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
@@ -431,7 +441,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     override fun resize(width: Int, height: Int) {
-        stage.getViewport()?.update(width, height, true);
+        stage.clear()
+        stage.viewport.update(1280, 720, true)
+        gui.images.forEach { stage.addActor(it) }
+        gui.draw()
+        stage.viewport.update(width, height, true);
     }
 
     override fun pause() {
@@ -443,7 +457,15 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     override fun show() {
+        println("called show")
+        println(stage.viewport.screenWidth)
+        println(stage.viewport.screenHeight)
+        println(Gdx.graphics.width)
+        println(Gdx.graphics.height)
+        changeResolution(720,1280)
         create()
+        stage.viewport.update(Gdx.graphics.width,Gdx.graphics.height)
+//        changeResolution(Gdx.graphics.height, Gdx.graphics.width)
     }
 
 
