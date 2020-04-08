@@ -97,18 +97,18 @@ The available settings are summarised below, in order of appearance from the top
 
 Bindings for hotkeys when the program is used with a keyboard.
 
-| Function            | Hotkey     |
-| ------------------- | ---------- |
-| Home                | Esc        |
-| Pause/Play          | Space      |
-| Change compression  | 1, 2, 3, 4 |
-| Switch gradual compression  | C  |
-| Toggle fixed camera | L          |
-| Toggle auto camera  | K          |
-| Skip backward       | , <        |
-| Skip forward        | . >        |
-| Hide Hood           | H       |
-| Hide GPS Model           | M       |
+| Function                   | Hotkey     |
+| -------------------------- | ---------- |
+| Home                       | Esc        |
+| Pause/Play                 | Space      |
+| Change compression         | 1, 2, 3, 4 |
+| Switch gradual compression | C          |
+| Toggle fixed camera        | L          |
+| Toggle auto camera         | K          |
+| Skip backward              | , <        |
+| Skip forward               | . >        |
+| Hide HUD                   | H          |
+| Hide GPS Model             | M          |
 
 Bindings for free camera only:
 
