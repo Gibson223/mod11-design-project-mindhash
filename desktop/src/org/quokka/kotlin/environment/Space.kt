@@ -197,10 +197,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         pink = Texture(Gdx.files.internal("yeet.jpeg"),false)
 
         rendableObjects = ArrayList(2)
-        if (gpsEnv.get()) {
+        if(gpsEnv.get()) {
             rendableObjects.add(instance)
         }
-        
     }
 
 
@@ -392,7 +391,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     /**
-     * switch atomatic camera
+     * switch automatic camera
      */
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
