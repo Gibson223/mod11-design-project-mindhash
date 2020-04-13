@@ -11,7 +11,7 @@ import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 // Constants for setting up database connection
-const val DATABASE_URL = "jdbc:postgresql://nyx.student.utwente.nl/lidar"
+const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
 const val DATABASE_USERNAME = "lidar"
 const val DATABASE_PASSWORD = "mindhash"
 // TODO the fps field needs a set of functions that can change it
