@@ -16,7 +16,12 @@ import org.quokka.game.desktop.GameInitializer
 import org.quokka.kotlin.internals.Buffer
 import org.quokka.kotlin.internals.Database
 
-
+/**
+ * @author Gibson
+ * This method is used to save and update settings,
+ * it also triggers relevant changes to be applied to
+ * the Space object class.
+*/
 class Settings {
     val font = BitmapFont()
     val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
@@ -189,6 +194,7 @@ class Settings {
 
     }
 }
+
 
 class GuiButtons(val space: Space) {
 //http://soundbible.com/1705-Click2.html
@@ -433,13 +439,20 @@ fun mirror(im: Image) {
     }
 }
 
-
+/**
+ * interface meant to make changing the bottom bar
+ * easier. However, not elaborated on more as the second
+ * try seemed to work well enough.
+ */
 interface bar {
     fun rotate()
     fun update()
     fun up()
 }
 
+/**
+*
+*/
 class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
     val button = Image(Texture("Screen3D/slider_button.png"))
     val bars = Image(Texture("Screen3D/middle_bar.png"))
@@ -513,6 +526,11 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
 
 }
 
+/**
+ * @author Gibson
+ * bottom bar attempt by reworking a slider from libgdx
+ * did not work fluently
+ */
 class sliderBar(stage: Stage, val buffer: Buffer? = null): bar{
 
     var slider = Slider(0f,1f,0.01f,false,Skin(Gdx.files.internal("Skins/glassy-ui.json")))
