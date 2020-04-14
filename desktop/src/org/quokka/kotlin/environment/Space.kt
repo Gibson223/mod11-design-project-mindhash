@@ -66,9 +66,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     private val frameFetchSkipCounter = AtomicInteger(0)
     private val lastFpsValue = AtomicInteger(0)
 
+    //settings are stored in a Preferences libgdx object, it is a hashmap
     private val prefs = Gdx.app.getPreferences("My Preferences")
 
-    //-------  Perferences  -------
+
     private var lidarFPS = prefs.getInteger("LIDAR FPS") //lidar fps 5/10/20
 
     //-------  Camera  -------
@@ -131,11 +132,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     // List of timers which run in the background, these have to be discarded once the screen is over.
     private val timers = mutableListOf<Timer>()
 
+    //variables used in the rendering of the globe and 3d gps coords
     lateinit var modelBatch: ModelBatch
     lateinit var rendableObjects: ArrayList<ModelInstance>
-    lateinit var instance : ModelInstance
+    lateinit var gpsobj : ModelInstance
     lateinit var globe :ModelInstance
-    lateinit var pink :Texture
+    lateinit var globeTexture :Texture
 
     init {
         println("end of initializing space")
@@ -190,15 +192,15 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         val load = ObjLoader()
         val model = load.loadModel(Gdx.files.internal("ma_place.obj"));
-        instance = ModelInstance(model)
-        instance.transform.rotate(Vector3.X,90f)
+        gpsobj = ModelInstance(model)
+        gpsobj.transform.rotate(Vector3.X,90f)
 
 
-        pink = Texture(Gdx.files.internal("yeet.jpeg"),false)
+        globeTexture = Texture(Gdx.files.internal("yeet.jpeg"),false)
 
         rendableObjects = ArrayList(2)
         if(gpsEnv.get()) {
-            rendableObjects.add(instance)
+            rendableObjects.add(gpsobj)
         }
     }
 
@@ -221,6 +223,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
 
+        //Frustum culling. Objects are only rendered if they are visible to the camera
         decals.forEach { d ->
             if (cam.frustum.boundsInFrustum(d.x, d.y, d.z, .3f, .3f, .3f) == true) {
                 decalBatch.add(d)
@@ -231,23 +234,23 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         //render the decals
         decalBatch.flush()
-        val material = Material(TextureAttribute.createDiffuse(pink))
+        val material = Material(TextureAttribute.createDiffuse(globeTexture))
         val modelBuilder = ModelBuilder()
 
 
 
-        val vec = globeUpdate()
-
-//        var vec = cam.direction.mul(cam.position)
-
+        val globePositions = globeUpdate()
+        //create globe object with new camera position
         globe = ModelInstance(modelBuilder.createSphere(1f,1f,1f,15,15,
                 material,
                 (VertexAttributes.Usage.Position or VertexAttributes.Usage.TextureCoordinates or VertexAttributes.Usage.Normal.toLong().toInt()).toLong()),
-                vec.x,vec.y,vec.z)
+                globePositions.x,globePositions.y,globePositions.z)
+        //rotate globe object so its texture, an image of earth, has its north on the z axis
         globe.transform.rotate(Vector3.X,90F)
         //render city and earth
         rendableObjects.add(globe)
 
+        //render 3d objects, globe and if active, 3d map of gps coords
         modelBatch.begin(cam);
         modelBatch.render(rendableObjects, environment);
         modelBatch.end();
@@ -260,15 +263,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         string.setLength(0)
         string.append("fps = ")
                 .append(Gdx.graphics.framesPerSecond)
-
-//                .append(", paused = ")
-//                .append(pause)
-//                .append(", frame_index = ")
-//                .append(buffer.lastFrameIndex)
-//                .append(", past_buffer_size  = ")
-//                .append(buffer.pastBufferSize)
-//                .append(", future_buffer_size  = ")
-//                .append(buffer.futureBufferSize)
         label.setText(string)
         stage.act(Gdx.graphics.getDeltaTime())
         stage.draw()
@@ -415,9 +409,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         prefs.putBoolean("GPS ENVIRONMENT",gpsEnv.get())
 //        settings.gps_environment_checkbox.isChecked = toggle
         if(gpsEnv.get()){
-            rendableObjects.add(instance)
+            rendableObjects.add(gpsobj)
         } else {
-            rendableObjects.remove(instance)
+            rendableObjects.remove(gpsobj)
         }
     }
 
@@ -470,6 +464,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     //-------Revised Camera Control Methods-----------------------
 
    /**
+    * @author Robert
     * This method was used for testing initially,
     * it transformed into the main keyboard observer
     * all the buttons work with the HUD on
@@ -494,7 +489,12 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
            if (Gdx.input.isKeyPressed(Input.Keys.D)) {
                rotateRight(delta * 50)
            }
-
+           if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
+               rollRight(delta*40)
+           }
+           if (Gdx.input.isKeyPressed(Input.Keys.E)) {
+               rollLeft(delta*40)
+           }
 
            //movement of camera buttons
            if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
@@ -509,7 +509,6 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
                moveRight(delta*200)
            }
-
            if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
                moveForward(delta)
            }
@@ -547,13 +546,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
            }
        }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.Q)) {
-            rollRight(delta*40)
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.E)) {
-            rollLeft(delta*40)
-        }
-
+       //other kye bindings
         if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
             switchAutomaticCamera(!automaticCamera)
         }
@@ -615,7 +608,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
 
 
-    //----------TIll camera controls---------
+    //----------Till's fixed camera controls---------
 
     fun updateFixedCamera() {
         val x = fixedCamDistance * cos(fixedCamAzimuth) * cos(fixedCamAngle)
@@ -686,7 +679,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
 
-    //----------Robert camera controls------------
+    //----------Robert's free camera controls------------
 
     /*
      * @author Robert
@@ -764,6 +757,16 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
 
+    /**
+     * this methods calculates the position of the globe object
+     * based on the camera's position
+     * the position of the globa has to be bottom right fo the camera
+     * so the globe is moved forward, left and downwards
+     * from the center of the camera
+     * the bottom and right move are done upwards and to the left
+     * if the application is rotated
+     * @author Robert
+     */
     fun globeUpdate():Vector3{
         val forwardScalar = 5f
         var rightScalar = 4.4f
@@ -774,13 +777,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             downwardsScalar = -2.3f
         }
 
+        val ground = Vector3(cam.position) //start from the center of camera
         val rightWard = Vector3(cam.up).rotate(cam.direction, 90f).scl(rightScalar)
-        val ground = Vector3(cam.position)
         val forWard = Vector3(cam.direction).scl(forwardScalar)
         val downWard = Vector3(cam.up).scl(-1*downwardsScalar)
-        ground.add(forWard)
-        ground.add(rightWard)
-        ground.add(downWard)
+        ground.add(forWard)//move forwards
+        ground.add(rightWard)//move to right (or left if rotated)
+        ground.add(downWard)//move down (or up if rotated)
+
         return  ground
     }
 }
