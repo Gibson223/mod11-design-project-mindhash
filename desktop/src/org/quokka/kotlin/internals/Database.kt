@@ -11,10 +11,6 @@ import kotlin.system.exitProcess
 import kotlin.system.measureTimeMillis
 
 // Constants for setting up database connection
-const val DATABASE_URL = "jdbc:postgresql://localhost/lidar"
-const val DATABASE_USERNAME = "lidar"
-const val DATABASE_PASSWORD = "mindhash"
-// TODO the fps field needs a set of functions that can change it
 const val CREATE_DB_QUERY = """
 CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
  minframe integer DEFAULT 0,
@@ -44,28 +40,33 @@ const val FLOATS_PER_POINT = 3
  */
 object DbConnectionPool {
     private val config: HikariConfig = HikariConfig()
-    private var ds: HikariDataSource? = null
+    lateinit private var ds: HikariDataSource
+    private var setup = false
 
-    init {
-        config.jdbcUrl = DATABASE_URL
-        config.username = DATABASE_USERNAME
-        config.password = DATABASE_PASSWORD
+    fun setup(url: String = "jdbc:postgresql://localhost/lidar", username: String = "lidar", password: String = "mindhash") {
+        if (setup)
+            return
+        config.jdbcUrl = url
+        config.username = username
+        config.password = password
         config.addDataSourceProperty("cachePrepStmts", "true")
         config.addDataSourceProperty("prepStmtCacheSize", "250")
         config.addDataSourceProperty("prepStmtSqlLimit", "2048")
         try {
+            println("Initializing database ${username}@${url}")
             ds = HikariDataSource(config)
         } catch (e: Exception) {
             Gdx.app?.let {
                 it.error("Database", "No connection to database, shutting down.")
                 it.exit()
             }
+            println("No connection to database")
             exitProcess(-1)
         }
     }
 
     val connection: Connection
-        get() = ds!!.connection
+        get() = ds.connection
 }
 
 /**

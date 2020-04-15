@@ -2,6 +2,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.BeforeClass
 import org.quokka.kotlin.internals.Database
+import org.quokka.kotlin.internals.DbConnectionPool
 import org.quokka.kotlin.internals.RecordingMeta
 import kotlin.system.measureTimeMillis
 
@@ -17,6 +18,7 @@ class DatabaseTests {
         @BeforeClass
         @JvmStatic
         fun warmupDatabase() {
+            DbConnectionPool.setup()
             val testMeta = Database.recordings.first()
             val testStartFrame = testMeta.minFrame + (testMeta.maxFrame - testMeta.minFrame) / 3
             for (i in 0 until 10) {
