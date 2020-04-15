@@ -15,6 +15,55 @@ The next screen follows after the selection of data and it is the **recording sc
 Within this screen users can open a third and final screen, the **settings screen**, where the settings of the application can be changed.
 How these screens work will be further explained in the rest of this manual.
 
+## Installation
+
+The project is built with gradle.
+Additional dependencies are not needed and will be pulled in by gradle during the build process.
+
+To build the project and run tests run
+
+```
+gradle build
+```
+
+or
+
+```
+gradle test
+```
+
+Note that for the tests the default parameters are used for the database connection.
+Thus this test may fail.
+
+To compile the project to a jar file run
+
+```
+gradle desktop:dist
+```
+
+The generated jar file is located in `desktop/build/libs/desktop-1.0.jar`
+
+## Command Line Args
+
+The database connection defaults to `lidar@localhost/lidar` with password `mindhash`.
+If you want to use a different database arguments have to passed.
+
+- `-a/--address`: Address of the database. Defaults to `localhost`
+- `-n/--name`: Name of the database. Defaults to `lidar`
+- `-u/--username`: Username for login. Defaults to `lidar`
+- `-p/--password`: Password for login. Defaults to `mindhash`
+
+Examples:
+
+```
+gradle desktop:run --args='--address 192.168.0.2 --username alice --password abc --name mindhash'
+
+java -XX:+UseG1GC -jar desktop/build/libs/desktop-1.0.jar --address 192.168.0.3
+```
+
+Note the `-XX:+UseG1GC` flag for the jvm.
+For best performance this flag should be used for changing the garbage collector to a concurrent low impact one.
+
 ## Starting Screen
 
 When the application is opened, it starts with the **Starting Screen** (figure 1).
@@ -126,3 +175,16 @@ Bindings for fixed/automatic camera only:
 | -------- | ------------------------- |
 | Move     | WASD                      |
 | Zoom     | UP zoom in, DOWN zoom out |
+
+## Upload Data With CLI
+
+A cli is provided in the `lidar_parser_rs` directory.
+To compile this rust is required.
+Just run `cargo build --release` in the directory.
+This will compile a binary to `target/release/lidar_parser`.
+
+Before uploading the data the main application has to be run once with the database connected.
+This will initialize the necessary table structures.
+For more information on how to use the tool to upload data run `lidar_parser --help`.
+
+As an alternative the `Database` class in `orq.quokka.kotlin.internals` contains methods to upload data extracted from `.bag` files.
