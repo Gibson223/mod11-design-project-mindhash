@@ -140,7 +140,7 @@ The available settings are summarised below, in order of appearance from the top
   This setting toggles the presance of the GPS model. The LiDAR cameras come with GPS coodrinates =
   This feature is set for use specifically for the touch table.
 
-![Image: Screenshot of the settings screen with descriptions](settingSS.png)
+![Image: Screenshot of the settings screen with descriptions](settingS.png)
 
 ## Hotkeys
 
