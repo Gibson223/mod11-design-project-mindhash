@@ -24,11 +24,9 @@ import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle
 import com.badlogic.gdx.utils.Scaling
-import com.badlogic.gdx.utils.viewport.FitViewport
 import com.badlogic.gdx.utils.viewport.ScalingViewport
 import org.quokka.Screens.IndexScreen
 import org.quokka.game.desktop.GameInitializer
-import org.quokka.kotlin.config.MAX_LIDAR_FPS
 import org.quokka.kotlin.internals.*
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -41,6 +39,10 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 
+/**
+ * A screen instantiation which renders the point cloud.
+ * The main meat of the application which shows the main screen, controls the flow of data and connects to the backend.
+ */
 class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag") : Screen {
 
     companion object {
@@ -52,6 +54,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         const val CAM_SPEED = 0.03f
         const val AUTOMATIC_CAMERA_SPEED_MODIFIER = 3f
         const val ROTATION_ANGLE_MODIFIER = 1f
+        const val MAX_LIDAR_FPS = 20
     }
 
     private lateinit var plexer: InputMultiplexer
@@ -91,13 +94,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     var cam = PerspectiveCamera(67F, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
-//    private var camController = CameraInputController(cam)
-
     private var environment = Environment()
 
-//    var stage: Stage = Stage()
     var stage: Stage = Stage(ScalingViewport(Scaling.stretch, 1280f, 720f))
-//    var stage: Stage = Stage(FitViewport( Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat()))
     private var font: BitmapFont = BitmapFont()
     private var label = Label(" ", LabelStyle(font, Color.WHITE))
     private var string: StringBuilder = StringBuilder()
@@ -121,8 +120,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         TextureRegion(Texture(pix))
     }
 
-    //compression class initialization
-    var cmpss = Compression(
+    /**
+     * The compression level to be used. Contains information about the level, gradual compression and at what distance
+     * it should trigger.
+     */
+    var compressionLevel = Compression(
             prefs.getInteger("COMPRESSION"),
             prefs.getBoolean("GRADUAL COMPRESSION"),
             prefs.getInteger("DISTANCE"),
@@ -133,11 +135,11 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     private val timers = mutableListOf<Timer>()
 
     //variables used in the rendering of the globe and 3d gps coords
-    lateinit var modelBatch: ModelBatch
-    lateinit var rendableObjects: ArrayList<ModelInstance>
-    lateinit var gpsobj : ModelInstance
-    lateinit var globe :ModelInstance
-    lateinit var globeTexture :Texture
+    private lateinit var modelBatch: ModelBatch
+    private lateinit var renderableObjects: ArrayList<ModelInstance>
+    private lateinit var gpsobj : ModelInstance
+    private lateinit var globe :ModelInstance
+    private lateinit var globeTexture :Texture
 
     init {
         println("end of initializing space")
@@ -198,9 +200,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
         globeTexture = Texture(Gdx.files.internal("yeet.jpeg"),false)
 
-        rendableObjects = ArrayList(2)
+        renderableObjects = ArrayList(2)
         if(gpsEnv.get()) {
-            rendableObjects.add(gpsobj)
+            renderableObjects.add(gpsobj)
         }
     }
 
@@ -248,13 +250,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         //rotate globe object so its texture, an image of earth, has its north on the z axis
         globe.transform.rotate(Vector3.X,90F)
         //render city and earth
-        rendableObjects.add(globe)
+        renderableObjects.add(globe)
 
         //render 3d objects, globe and if active, 3d map of gps coords
         modelBatch.begin(cam);
-        modelBatch.render(rendableObjects, environment);
+        modelBatch.render(renderableObjects, environment);
         modelBatch.end();
-        rendableObjects.remove(globe)
+        renderableObjects.remove(globe)
 
 
         // Lable situated at the bottom of the screen
@@ -275,14 +277,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * which is both a List<Decal>
      * @author Robert, Till
      */
-    fun initFrameUpdateThread(): Timer {
+    private fun initFrameUpdateThread(): Timer {
         return timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {
             // Skip frames according to fps
             if (frameFetchSkipCounter.incrementAndGet() > framesToSkip.get()) {
                 frameFetchSkipCounter.set(0)
                 if (!pause.get()) {
-                    if (cmpss.compressionLevel != 1) {
-                        decals = fetchNextFrame()?.let { cmpss.compressPoints(it) } ?: decals
+                    if (compressionLevel.compressionLevel != 1) {
+                        decals = fetchNextFrame()?.let { compressionLevel.compressPoints(it) } ?: decals
                         decals.forEach { colorDecal(it, blueRedFade) }
                     } else {
                         fetchNextFrame()?.let { f ->
@@ -305,7 +307,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      *
      * @author Till
      */
-    fun initLocalFileThread(): Timer {
+    private fun initLocalFileThread(): Timer {
         return timer("File Parser", period = 2000) {
             if (localFrames.size < 60) {
                 val frames = LidarReader().readLidarFramesInterval(path = filepath, start = framesIndex, end = framesIndex + 12)
@@ -320,7 +322,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * Fetches a new frame from either local or database source.
      * @return Null or a lidar frame
      */
-    fun fetchNextFrame(): LidarFrame? {
+    private fun fetchNextFrame(): LidarFrame? {
         if (local) {
             return localFrames.poll()
         } else {
@@ -337,7 +339,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * @param d The decal to be recolored.
      * @param textures An array of texture regions to pick from. Must be non empty.
      */
-    fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
+    private fun colorDecal(d: Decal, textures: Array<TextureRegion>) {
         val minZ = -10
         val maxZ = 15
         var perc = (d.position.z - minZ) / (maxZ - minZ)
@@ -369,14 +371,14 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     /**
-     * updates the resolution of the application
+     * Updates the resolution of the application
      */
     fun changeResolution(height: Int, width: Int) {
         Gdx.graphics.setWindowedMode(width, height);
     }
 
     /**
-     * switch Fixed Camera
+     * Switch Fixed Camera
      */
     fun switchFixedCamera(fixed: Boolean) {
         this.fixedCamera = fixed
@@ -385,7 +387,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     /**
-     * switch automatic camera
+     * Switch automatic camera
      */
     fun switchAutomaticCamera(automatic: Boolean) {
         this.automaticCamera = automatic
@@ -394,7 +396,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     /**
-     * skip 10 frames forwards
+     * Skip 10 frames forwards
      */
     fun skipForward10frames() {
         this.framesIndex += 10
@@ -402,22 +404,22 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     }
 
     /**
-    * toggle gps env
+    * Toggle gps env
     */
-    fun toggleGPS(toggle : Boolean) {
+    private fun toggleGPS(toggle : Boolean) {
         this.gpsEnv.set(toggle)
         prefs.putBoolean("GPS ENVIRONMENT",gpsEnv.get())
 //        settings.gps_environment_checkbox.isChecked = toggle
         if(gpsEnv.get()){
-            rendableObjects.add(gpsobj)
+            renderableObjects.add(gpsobj)
         } else {
-            rendableObjects.remove(gpsobj)
+            renderableObjects.remove(gpsobj)
         }
     }
 
 
     /**
-     * skip 10 frames backwards
+     * Skip 10 frames backwards
      */
     fun skipBackwards10Frames() {
         this.framesIndex -= 10
@@ -470,7 +472,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
     * all the buttons work with the HUD on
     * but it is mainly intended for use with the HUD turned off
     */
-    fun campButtonpress() {
+    private fun campButtonpress() {
 
         val delta = Gdx.graphics.deltaTime
 
@@ -554,22 +556,22 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             switchFixedCamera(!fixedCamera)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
-            cmpss.changeCompression(1)
+            compressionLevel.changeCompression(1)
             prefs.putInteger("COMPRESSION",1)
             settings.compression_box.selected = 1
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
-            cmpss.changeCompression(2)
+            compressionLevel.changeCompression(2)
             prefs.putInteger("COMPRESSION",2)
             settings.compression_box.selected = 2
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
-            cmpss.changeCompression(3)
+            compressionLevel.changeCompression(3)
             prefs.putInteger("COMPRESSION",3)
             settings.compression_box.selected = 3
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_4)) {
-            cmpss.changeCompression(4)
+            compressionLevel.changeCompression(4)
             prefs.putInteger("COMPRESSION",4)
             settings.compression_box.selected = 4
         }
@@ -596,8 +598,8 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
        }
 
        if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
-           cmpss.switchGradualCompression(!cmpss.gradualCompression)
-           settings.gradualBox.isChecked = cmpss.gradualCompression
+           compressionLevel.switchGradualCompression(!compressionLevel.gradualCompression)
+           settings.gradualBox.isChecked = compressionLevel.gradualCompression
        }
 
        if(Gdx.input.isKeyJustPressed(Input.Keys.M)) {
@@ -610,7 +612,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
 
     //----------Till's fixed camera controls---------
 
-    fun updateFixedCamera() {
+    private fun updateFixedCamera() {
         val x = fixedCamDistance * cos(fixedCamAzimuth) * cos(fixedCamAngle)
         val y = -fixedCamDistance * sin(fixedCamAzimuth) * cos(fixedCamAngle)
         val z = fixedCamDistance * sin(fixedCamAngle)
@@ -620,10 +622,13 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.update()
     }
 
-    fun moveAutomaticCamera(delta: Float) {
+    private fun moveAutomaticCamera(delta: Float) {
         rotateFixedRight(delta * AUTOMATIC_CAMERA_SPEED_MODIFIER)
     }
 
+    /**
+     * Zoom in closer for the fixed camera only with a fixed ZOOM_STEP_SIZE.
+     */
     fun zoomFixedCloser() {
         fixedCamDistance -= ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
@@ -632,6 +637,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             fixedCamDistance = FIXED_CAM_RADIUS_MAX
     }
 
+    /**
+     * Zoom out further for the fixed camera only with a fixed ZOOM_STEP_SIZE.
+     */
     fun zoomFixedAway() {
         fixedCamDistance += ZOOM_STEP_SIZE
         if (fixedCamDistance < FIXED_CAM_RADIUS_MIN)
@@ -640,16 +648,28 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
             fixedCamDistance = FIXED_CAM_RADIUS_MAX
     }
 
+    /**
+     * Rotate the fixed camera left according to the delta. Modify the CAM_SPEED constant to change how fast the
+     * rotation should be.
+     */
     fun rotateFixedLeft(delta: Float) {
         fixedCamAzimuth += delta * CAM_SPEED
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
+    /**
+     * Rotate the fixed camera right according to the delta. Modify the CAM_SPEED constant to change how fast the
+     * rotation should be.
+     */
     fun rotateFixedRight(delta: Float) {
         fixedCamAzimuth -= delta * CAM_SPEED
         fixedCamAzimuth %= Math.PI.toFloat() * 2
     }
 
+    /**
+     * Change the angle higher up for the fixed camera only. Modify the CAM_SPEED constant to change how fast the
+     * change should be.
+     */
     fun moveFixedUp(delta: Float) {
         fixedCamAngle += delta * CAM_SPEED
 
@@ -661,6 +681,10 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         fixedCamAngle %= Math.PI.toFloat() * 2
     }
 
+    /**
+     * Change the angle to be lower for the fixed camera only. Modify the CAM_SPEED constant to change how fast the
+     * change should be.
+     */
     fun moveFixedDown(delta: Float) {
         fixedCamAngle -= delta * CAM_SPEED
 
@@ -672,6 +696,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         fixedCamAngle %= Math.PI.toFloat() * 2
     }
 
+    /**
+     * Reset the fixed camera only.
+     */
     fun resetFixed() {
         fixedCamAngle = Math.PI.toFloat() * 0.3f
         fixedCamAzimuth = 30f
@@ -688,6 +715,9 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      *  to rotate and move it
      */
 
+    /**
+     * Resets the normal camera.
+     */
     fun resetCamera() {
         cam.position[0f, 0f] = 30f
         cam.lookAt(0f, 0f, 0f)
@@ -695,70 +725,100 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
         cam.update()
     }
 
+    /**
+     * Move the normal camera forward a fixed amount based on ZOOM_STEP_SIZE.
+     */
     fun moveForward(delta: Float) {
         cam.translate(Vector3(cam.direction).scl(ZOOM_STEP_SIZE))
         cam.update()
     }
 
+    /**
+     * Move the normal camera backwards a fixed amount based on ZOOM_STEP_SIZE.
+     */
     fun moveBackward(delta: Float) {
         cam.translate(Vector3(cam.direction).scl(-ZOOM_STEP_SIZE))
         cam.update()
     }
 
+    /**
+     * Pan the normal camera up based on CAM_SPEED and the current delta.
+     */
     fun moveUp(delta: Float) {
         cam.translate(Vector3(cam.up).scl(delta * CAM_SPEED))
         cam.update()
     }
 
+    /**
+     * Pan the normal camera down based on CAM_SPEED and the current delta.
+     */
     fun moveDown(delta: Float) {
         cam.translate(Vector3(cam.up).scl(-delta * CAM_SPEED))
         cam.update()
     }
 
+    /**
+     * Pan the normal camera left based on CAM_SPEED and the current delta.
+     */
     fun moveLeft(delta: Float) {
         cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(-delta * CAM_SPEED))
         cam.update()
     }
 
+    /**
+     * Pan the normal camera right based on CAM_SPEED and the current delta.
+     */
     fun moveRight(delta: Float) {
         cam.translate(Vector3(cam.up).rotate(cam.direction, 90f).scl(delta * CAM_SPEED))
         cam.update()
     }
 
+    /**
+     * Rotate the normal camera up based on ROTATION_ANGLE_MODIFIER and the current delta.
+     */
     fun rotateUp(delta: Float) {
         cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
 
     }
 
+    /**
+     * Rotate the normal camera down based on ROTATION_ANGLE_MODIFIER and the current delta.
+     */
     fun rotateDown(delta: Float) {
         cam.rotate(Vector3(cam.up).rotate(cam.direction, 90f), -delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
+    /**
+     * Rotate the normal camera left based on ROTATION_ANGLE_MODIFIER and the current delta.
+     */
     fun rotateLeft(delta: Float) {
         cam.rotate(cam.up, delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
+    /**
+     * Rotate the normal camera right based on ROTATION_ANGLE_MODIFIER and the current delta.
+     */
     fun rotateRight(delta: Float) {
         cam.rotate(cam.up, -delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
-    fun rollRight(delta: Float) {
+    private fun rollRight(delta: Float) {
         cam.rotate(cam.direction, -delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
-    fun rollLeft(delta: Float) {
+    private fun rollLeft(delta: Float) {
         cam.rotate(cam.direction, delta * ROTATION_ANGLE_MODIFIER)
         cam.update()
     }
 
 
     /**
-     * this methods calculates the position of the globe object
+     * This methods calculates the position of the globe object
      * based on the camera's position
      * the position of the globa has to be bottom right fo the camera
      * so the globe is moved forward, left and downwards
@@ -767,7 +827,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * if the application is rotated
      * @author Robert
      */
-    fun globeUpdate():Vector3{
+    private fun globeUpdate():Vector3{
         val forwardScalar = 5f
         var rightScalar = 4.4f
         var downwardsScalar = 2.3f

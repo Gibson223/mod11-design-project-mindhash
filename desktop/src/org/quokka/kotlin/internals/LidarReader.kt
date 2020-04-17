@@ -14,7 +14,6 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.system.measureTimeMillis
 
 /**
  * The LidarReader class provides an interface to read LiDAR data from a file and translate it to XYZ coordinates
@@ -219,6 +218,26 @@ data class LidarReader(private val beamAzimuthAngles: Array<Double> = arrayOf(
 
         return arr.filter { lc -> lc != LidarCoord.ZeroCoord }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as LidarReader
+
+        if (!beamAzimuthAngles.contentEquals(other.beamAzimuthAngles)) return false
+        if (!beamAltitudeAngles.contentEquals(other.beamAltitudeAngles)) return false
+        if (file != other.file) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = beamAzimuthAngles.contentHashCode()
+        result = 31 * result + beamAltitudeAngles.contentHashCode()
+        result = 31 * result + (file?.hashCode() ?: 0)
+        return result
+    }
 }
 
 /**
@@ -290,34 +309,3 @@ data class LidarMetaData(
         val frameInterval: Pair<Int, Int>,
         val filePath: String
 )
-
-// Parse a file and puts the frames into individual ply files
-fun main(args: Array<String>) {
-    if (args.size < 4) {
-        println("Usage: [Path to .bag file] [Path to target directory] [Startnig Frame] [Number of frames to extract]")
-        return
-    }
-
-    val reader = LidarReader()
-
-    val filePath = args[0]
-    val baseDirectory = args[1]
-    val baseFrame = Integer.parseInt(args[2])
-    val numberOfFrames = Integer.parseInt(args[3])
-
-    println("Reading frames in '$filePath'")
-
-    var frames: List<LidarFrame>? = null
-    val time = measureTimeMillis {
-        frames = reader.readLidarFramesInterval(filePath, baseFrame, baseFrame + numberOfFrames - 1)
-    }
-    println("Time taken: ${time}ms")
-    println("Number of frames in interval: ${frames?.size}")
-    println("Total number of points: ${frames?.map { f -> f.coords.size }?.sum()}")
-
-    var c = 0
-    frames?.forEach { f ->
-        f.generatePly("${baseDirectory}/${c}.ply")
-        c++
-    }
-}

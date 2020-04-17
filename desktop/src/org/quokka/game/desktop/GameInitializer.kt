@@ -10,9 +10,12 @@ import org.quokka.Screens.IndexScreen
 import org.quokka.kotlin.environment.Settings
 
 
+/**
+ * Utility singleton which connects the components.
+ */
 object GameInitializer : Game() {
     lateinit var batch: SpriteBatch
-    lateinit var font: BitmapFont
+    private lateinit var font: BitmapFont
     lateinit var space : Space
     lateinit var settings : Settings
     lateinit var click : Sound
@@ -34,18 +37,6 @@ object GameInitializer : Game() {
         space = Space(recordingId = recordingId, local = local)
         this.setScreen(space)
     }
-
-//    override fun pause() {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun resume() {
-//        TODO("Not yet implemented")
-//    }
-//
-//    override fun resize(width: Int, height: Int) {
-//        TODO("Not yet implemented")
-//    }
 
     override fun dispose() {
         batch.dispose()

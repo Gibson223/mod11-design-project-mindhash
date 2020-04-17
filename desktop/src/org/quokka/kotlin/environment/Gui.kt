@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
@@ -23,53 +22,53 @@ import org.quokka.kotlin.internals.Database
  * the Space object class.
 */
 class Settings {
-    val font = BitmapFont()
-    val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
+    private val font = BitmapFont()
+    private val skin = Skin(Gdx.files.internal("Skins/glassy-ui.json"))
 
     // Swap these if no database connection, but why would you use these if you don't have one?
     // val files = mapOf<String, Int>("Train passby" to 1, "intersection" to 2, "road" to 3)
     val files = Database.recordings.associateBy({it.title}, {it.id})
 
-    val shared_style = Label.LabelStyle(font, Color.WHITE)
+    private val shared_style = Label.LabelStyle(font, Color.WHITE)
 
     // labels
-    val prefs = Gdx.app.getPreferences("My Preferences")
+    private val prefs = Gdx.app.getPreferences("My Preferences")
 
-    val lidarFPS = Label("LIDAR FPS", shared_style)
+    private val lidarFPS = Label("LIDAR FPS", shared_style)
     val lidar_box = SelectBox<Int>(skin)
 
-    val memory = Label("BUFFER SIZE", shared_style)
+    private val memory = Label("BUFFER SIZE", shared_style)
     val memory_box = SelectBox<Int>(skin)
 
-    val resolution = Label("RESOLUTION", shared_style)
+    private val resolution = Label("RESOLUTION", shared_style)
     val resolution_box = SelectBox<String>(skin)
 
 
-    val compression = Label("COMPRESSION LEVEL", shared_style)
+    private val compression = Label("COMPRESSION LEVEL", shared_style)
     val compression_box = SelectBox<Int>(skin)
 
 
-    val gradualCompression = Label("GRADUAL COMPRESSION", shared_style)
+    private val gradualCompression = Label("GRADUAL COMPRESSION", shared_style)
     val gradualBox = CheckBox("", skin)
 
 
-    val distance = Label("DISTANCE (DFCM)", shared_style)
-    val distance_field = TextField("", skin) // Todo: dfcm
+    private val distance = Label("DISTANCE (DFCM)", shared_style)
+    private val distance_field = TextField("", skin) // Todo: dfcm
 
-    val fixedCamera = Label("FIXED CAMERA", shared_style)
+    private val fixedCamera = Label("FIXED CAMERA", shared_style)
     val camera_checkbox = CheckBox("", skin)
 
-    val automaticCamera = Label("AUTOMATIC CAMERA", shared_style)
+    private val automaticCamera = Label("AUTOMATIC CAMERA", shared_style)
     val automatic_camera_checkbox = CheckBox("", skin)
 
-    val rotate_label = Label("ROTATE", shared_style)
+    private val rotate_label = Label("ROTATE", shared_style)
     val rotate_box = CheckBox("", skin)
 
-    val hide_hud = Label("HIDE HUD", shared_style)
+    private val hide_hud = Label("HIDE HUD", shared_style)
     val hud_box = CheckBox("", skin)
 
-    val back_button = TextButton("BACK", skin)
-    val save_button = TextButton("SAVE", skin)
+    private val back_button = TextButton("BACK", skin)
+    private val save_button = TextButton("SAVE", skin)
 
 
     val dialog = Dialog("", skin)
@@ -167,9 +166,9 @@ class Settings {
         GameInitializer.space.switchFixedCamera(camera_checkbox.isChecked)
         GameInitializer.space.switchAutomaticCamera(automatic_camera_checkbox.isChecked)
 
-        GameInitializer.space.cmpss.changeCompression(compression_box.selected)
-        GameInitializer.space.cmpss.switchGradualCompression(gradualBox.isChecked)
-        GameInitializer.space.cmpss.changeDFCM(distance_field.text.toInt())
+        GameInitializer.space.compressionLevel.changeCompression(compression_box.selected)
+        GameInitializer.space.compressionLevel.switchGradualCompression(gradualBox.isChecked)
+        GameInitializer.space.compressionLevel.changeDFCM(distance_field.text.toInt())
 
         GameInitializer.space.gui.update()
 //        println("updating settings")
@@ -198,27 +197,27 @@ class Settings {
 
 class GuiButtons(val space: Space) {
 //http://soundbible.com/1705-Click2.html
-    val settings = space.settings
+    private val settings = space.settings
 
-    val home_button: Image = Image(Texture("Screen3D/home_button.png"))
+    private val home_button: Image = Image(Texture("Screen3D/home_button.png"))
 
-    val settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
+    private val settings_button: Image = Image(Texture("Screen3D/setting_button.png"))
 
-    val settings_dialog = settings.dialog
-    val reset_button = Image(Texture("Screen3D/reset_button.png"))
+    private val settings_dialog = settings.dialog
+    private val reset_button = Image(Texture("Screen3D/reset_button.png"))
 
-    val pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
-    val earth_button: Image = Image(Texture("Screen3D/transparent.png"))
-    val arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
-    val ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
-    val bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
+    private val pause_button: Image = Image(Texture("Screen3D/pause_button.png"))
+    private val earth_button: Image = Image(Texture("Screen3D/transparent.png"))
+    private val arrows_button: Image = Image(Texture("Screen3D/arrows_button.png"))
+    private val ff_button: Image = Image(Texture("Screen3D/ff_button.png"))
+    private val bf_button: Image = Image(Texture("Screen3D/bf_button.png"))
     val plus = Image(Texture("Screen3D/plus.png"))
     val minus = Image(Texture("Screen3D/minus.png"))
 
     var rotated = false
     var hidden = false
 
-    val bar = drawBar(space.stage, space.buffer)
+    val bar = DrawBar(space.stage, space.buffer)
 
     init {
 
@@ -276,7 +275,6 @@ class GuiButtons(val space: Space) {
                 val deltaY = y - arrowsLastPos.y
                 arrowsLastPos.set(x, y)
 
-                // TODO magic number 10
                 if (deltaX > 0) {
                     space.moveRight(deltaX * 10)
                 } else {
@@ -444,7 +442,7 @@ fun mirror(im: Image) {
  * easier. However, not elaborated on more as the second
  * try seemed to work well enough.
  */
-interface bar {
+interface Bar {
     fun rotate()
     fun update()
     fun up()
@@ -453,7 +451,7 @@ interface bar {
 /**
 *
 */
-class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
+class DrawBar(stage: Stage, val buffer: Buffer? = null): Bar{
     val button = Image(Texture("Screen3D/slider_button.png"))
     val bars = Image(Texture("Screen3D/middle_bar.png"))
 
@@ -472,18 +470,18 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
         stage.addActor(button)
         button.addListener(object : DragListener() {
             override fun drag(event: InputEvent?, x: Float, y: Float, pointer: Int) {
-                val new_center = this@drawBar.button.x - this@drawBar.button.width / 2 + x
+                val new_center = this@DrawBar.button.x - this@DrawBar.button.width / 2 + x
                 if (new_center < left_bound || new_center > right_bound) {
                     println("out of bars")
                 } else {
-                    this@drawBar.button.moveBy(x - this@drawBar.button.width / 2, 0f);
+                    this@DrawBar.button.moveBy(x - this@DrawBar.button.width / 2, 0f);
                 }
             }
 
             override fun dragStop(event: InputEvent?, x: Float, y: Float, pointer: Int) {
                 buffer!!
-                println("dropped, $x, $y, ${this@drawBar.button.x}, ${this@drawBar.button.y}")
-                var progress = this@drawBar.button.x + this@drawBar.button.width / 2 // current center button
+                println("dropped, $x, $y, ${this@DrawBar.button.x}, ${this@DrawBar.button.y}")
+                var progress = this@DrawBar.button.x + this@DrawBar.button.width / 2 // current center button
                 progress = (progress - left_bound) / (right_bound - left_bound)
                 buffer.skipTo(progress)
             }
@@ -521,54 +519,5 @@ class drawBar(stage: Stage, val buffer: Buffer? = null): bar{
     override fun rotate() {
         mirror(bars)
     }
-
-
-
 }
 
-/**
- * @author Gibson
- * bottom bar attempt by reworking a slider from libgdx
- * did not work fluently
- */
-class sliderBar(stage: Stage, val buffer: Buffer? = null): bar{
-
-    var slider = Slider(0f,1f,0.01f,false,Skin(Gdx.files.internal("Skins/glassy-ui.json")))
-
-    init {
-        slider.width = Gdx.graphics.width*0.6f
-        slider.setPosition(Gdx.graphics.width*0.2f,15f)
-        stage.addActor(slider)
-        slider.addListener(object : DragListener() {
-            override fun drag(event: InputEvent?, x: Float, y: Float, pointer: Int) {
-                if (x/slider.width + slider.percent < 0 || x/slider.width + slider.percent > 1) {
-                    println("out of bounds")
-                } else {
-                    slider.value += x / slider.width
-                }
-            }
-            override fun dragStop(event: InputEvent?, x: Float, y: Float, pointer: Int) {
-                buffer!!
-                buffer.skipTo(slider.value)
-            }
-        })
-
-    }
-
-    override fun update(){
-        buffer!!
-
-        slider.value = buffer.progress
-    }
-
-    override fun up(){
-        slider.value += 0.01f
-    }
-
-    override fun rotate() {
-        TODO("Not yet implemented, because it likely wont")
-    }
-
-
-
-}

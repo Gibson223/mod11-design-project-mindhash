@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -15,7 +14,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Scaling
 import com.badlogic.gdx.utils.viewport.ScalingViewport
 import org.quokka.game.desktop.GameInitializer
@@ -23,7 +21,6 @@ import org.quokka.game.desktop.GameInitializer.settings
 import org.quokka.game.desktop.GameInitializer.updateUsedSpace
 import java.util.*
 import kotlin.system.exitProcess
-import org.quokka.kotlin.environment.drawBar
 
 class IndexScreen : Screen {
     val img = Image(Texture("UTLogo.jpg"))

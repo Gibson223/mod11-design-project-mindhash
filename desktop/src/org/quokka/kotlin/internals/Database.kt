@@ -8,41 +8,22 @@ import java.lang.Exception
 import java.nio.ByteBuffer
 import java.sql.*
 import kotlin.system.exitProcess
-import kotlin.system.measureTimeMillis
-
-// Constants for setting up database connection
-const val CREATE_DB_QUERY = """
-CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
- minframe integer DEFAULT 0,
- maxframe integer DEFAULT 0,
- fps integer DEFAULT 10,
- maxpoints integer
-);
- CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id)
- ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));
-"""
-const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
-const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
-const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
-const val SELECT_RECORDINGS = """
-SELECT minframe, maxframe, id, title, COUNT(frameid) as numberofframes, fps, maxpoints FROM recording,
- frame WHERE recid = id GROUP BY id;
-"""
-const val SELECT_SINGLE_RECORDING = "SELECT * FROM recording WHERE id = ?;"
-const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? ORDER BY frameid ASC LIMIT ?;"
-const val SELECT_RECORDING_FPS = "SELECT fps FROM recording WHERE id = ?;"
-const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxpoints = ? WHERE id = ?;"
-const val FLOAT_BYTE_SIZE = 4
-const val FLOATS_PER_POINT = 3
 
 /**
  * Singleton object which manages multiple database connections.
  */
 object DbConnectionPool {
     private val config: HikariConfig = HikariConfig()
-    lateinit private var ds: HikariDataSource
+    private lateinit var ds: HikariDataSource
     private var setup = false
 
+    /**
+     * Initiate the database connection. This should not be done statically as the user may want to change these properties.
+     *
+     * @param url The url of the database. Should be in 'jdbc:postgresql://${address}/${name}' format
+     * @param username The username to login with.
+     * @param password Password associated with the username.
+     */
     fun setup(url: String = "jdbc:postgresql://localhost/lidar", username: String = "lidar", password: String = "mindhash") {
         if (setup)
             return
@@ -65,6 +46,9 @@ object DbConnectionPool {
         }
     }
 
+    /**
+     * Property to retrieve a new unused connection.
+     */
     val connection: Connection
         get() = ds.connection
 }
@@ -112,6 +96,30 @@ object DbConnectionPool {
  * }
  */
 object Database {
+    private const val CREATE_DB_QUERY = """
+CREATE TABLE IF NOT EXISTS recording (id SERIAL PRIMARY KEY, title varchar(255),
+ minframe integer DEFAULT 0,
+ maxframe integer DEFAULT 0,
+ fps integer DEFAULT 10,
+ maxpoints integer
+);
+ CREATE TABLE IF NOT EXISTS frame (frameid integer, recid integer REFERENCES recording(id)
+ ON DELETE CASCADE, points bytea, PRIMARY KEY (frameid, recid));
+"""
+    private const val DELETE_DB_QUERY = "DROP TABLE IF EXISTS frame CASCADE; DROP TABLE IF EXISTS recording CASCADE;"
+    private const val INSERT_FRAME = "INSERT INTO frame (frameid, recid, points) VALUES (?, ?, ?);"
+    private const val INSERT_RECORDING = "INSERT INTO recording (title) VALUES (?) RETURNING id;"
+    private const val SELECT_RECORDINGS = """
+SELECT minframe, maxframe, id, title, COUNT(frameid) as numberofframes, fps, maxpoints FROM recording,
+ frame WHERE recid = id GROUP BY id;
+"""
+    private const val SELECT_SINGLE_RECORDING = "SELECT * FROM recording WHERE id = ?;"
+    private const val SELECT_POINTS = "SELECT frameid, points FROM frame WHERE frameid = ANY (?) AND recid = ? ORDER BY frameid ASC LIMIT ?;"
+    private const val SELECT_RECORDING_FPS = "SELECT fps FROM recording WHERE id = ?;"
+    private const val UPDATE_RECORDING_FRAMES = "UPDATE recording SET minframe = ?, maxframe = ?, maxpoints = ? WHERE id = ?;"
+    private const val FLOAT_BYTE_SIZE = 4
+    private const val FLOATS_PER_POINT = 3
+
     /**
      * Returns a list of all recordings and their meta data.
      * Refer to the RecordingMeta class for more info on fields and data about recordings.
@@ -140,6 +148,12 @@ object Database {
             return recs
         }
 
+    /**
+     * Retrieve the meta data for a recording based on its ID.
+     *
+     * @param id The id associated with a recording.
+     * @return Meta data about the recording.
+     */
     fun getRecording(id: Int): RecordingMeta? {
         val conn = DbConnectionPool.connection
         val st = conn.prepareStatement(SELECT_SINGLE_RECORDING).apply { setInt(1, id) }
@@ -411,27 +425,3 @@ data class RecordingMeta(
         val fps: Int,
         val maxNumberOfPoints: Int
 )
-
-
-fun main() {
-    //Database.initTables()
-
-    //db.getFrames(2, 2500, 1).forEach {
-    //    it.generatePly("/home/nyx/downloads/test3.ply")
-    //}
-
-    for (i in 0 until 40) {
-        val nFrames = 50
-        val time = measureTimeMillis {
-            Database.getFrames(1, 2000 + nFrames * i, nFrames, framerate = 10)
-        }
-        println("Time to take $nFrames frames: $time")
-    }
-
-    // Create reading with default LidarReader
-    //db.recordingFromFile(
-    //        path = "/home/nyx/downloads/2019-03-26-10-54-38.bag",
-    //        title = "all the points"
-    //        //,filterFun = { lc -> (sqrt(lc.x.pow(2f) + lc.y.pow(2f))) < 24 }
-    //)
-}

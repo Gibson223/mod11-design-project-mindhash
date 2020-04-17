@@ -19,6 +19,12 @@ interface Buffer {
     fun clear()
 }
 
+/**
+ * Implementation of the Buffer interface.
+ * It is backed by a database which contains information about the point clouds at each individual frame.
+ *
+ * @param recordingId The recordingId associated with the desired recording in the database.
+ */
 class PrerecordedBuffer(private val recordingId: Int) : Buffer {
     /**
      * Use this object to get access to all the meta data of the current buffer.
@@ -332,4 +338,7 @@ class PrerecordedBuffer(private val recordingId: Int) : Buffer {
     }
 }
 
+/**
+ * Exception to be thrown when there is no recording present with a given ID.
+ */
 class NoRecordingException(msg: String) : Exception(msg)
