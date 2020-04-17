@@ -130,3 +130,5 @@ Thumbs.db
 desktop/src/org/quokka/kotlin/Auxxxx.kt
 
 desktop/src/org/quokka/kotlin/JobMe.kt
+
+desktop/src/org/quokka/kotlin/environment/take.kt
