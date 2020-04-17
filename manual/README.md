@@ -188,3 +188,7 @@ This will initialize the necessary table structures.
 For more information on how to use the tool to upload data run `lidar_parser --help`.
 
 As an alternative the `Database` class in `orq.quokka.kotlin.internals` contains methods to upload data extracted from `.bag` files.
+
+## Building Docs
+
+Run `gradle desktop:dokka` to build the dokka documentation and generate to `desktop/build/dokka/desktop/index.html`.
