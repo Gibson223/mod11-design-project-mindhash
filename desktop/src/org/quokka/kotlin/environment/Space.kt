@@ -275,7 +275,7 @@ class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: 
      * to load new data in the environment by changing
      * the global variable decal
      * which is both a List<Decal>
-     * @author Robert, Till
+     * @author Till, Robert
      */
     private fun initFrameUpdateThread(): Timer {
         return timer("Frame Fetcher", period = 1000 / MAX_LIDAR_FPS.toLong(), initialDelay = 1000 / MAX_LIDAR_FPS.toLong()) {

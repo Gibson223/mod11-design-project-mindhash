@@ -39,13 +39,13 @@ class Compression(comprLVL: Int, gradual: Boolean, disnta: Int, owner: Space?) {
      * then gives the remaining points a suitably sized decal
      * based on the amount of points which are compressed into that point
      * all the decals are place in the objects variable which is returned
+     * @param crtFrame is the current LidarFrame to be compressed
      */
     fun compressPoints(crtFrame: LidarFrame ): ArrayList<Decal>? {
         val objects = ArrayList<Decal>(15) //end result of the method
 
-        val map = HashMap<LidarCoord, Int>()
         //map containing the coordinates as key and the number of points approximated to that point as value
-
+        val map = HashMap<LidarCoord, Int>()
 
         // Return null if no new frame is available
         if (crtFrame == null) {
