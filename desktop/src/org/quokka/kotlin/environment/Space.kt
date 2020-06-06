@@ -43,7 +43,7 @@ import kotlin.math.sin
  * A screen instantiation which renders the point cloud.
  * The main meat of the application which shows the main screen, controls the flow of data and connects to the backend.
  */
-class Space(val recordingId: Int = 1, val local: Boolean = false, val filepath: String = "core/assets/sample.bag") : Screen {
+class Space(val recordingId: Int = 1, val local: Boolean = true, val filepath: String = "core/assets/sample.bag") : Screen {
 
     companion object {
         const val FIXED_CAM_RADIUS_MAX = 100f
