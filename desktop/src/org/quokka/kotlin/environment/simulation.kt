@@ -12,7 +12,7 @@ fun main(){
 
 //    aux.runMe(5000f, 1000000f, 60f, 1.6f,1)
 
-    aux.aneaw(1000f, 100000f, 60f, 1.6f,1)
+    aux.aneaw(740f, 100000f, 60f, 1.6f,1)
 }
 
 
@@ -351,10 +351,13 @@ class Simulation() {
         var flo_in_plasma = 0f
         var flo_in_cancer = 0f
 
-        var  detection_time = 0f
-        var empty_time = 0f
+        var  detection_time = 0
+        var empty_time = 0
         var flag_detecte = 0
         var flag_empty = 0
+
+        var snapp_plasma = 0f
+        var snapp_cancer = 0f
 
         var prev_flag = 0
 
@@ -363,9 +366,15 @@ class Simulation() {
         var transfer = 0f
 
         var prodtime = prod_time
+
         for (tik in 0..1000) {
             prodtime--
             transfer = KV * (Ct - Cp) * cancer_vol
+
+            if(prodtime == 0){
+                snapp_plasma = flo_in_plasma
+                snapp_cancer = flo_in_cancer
+            }
 
             if (prodtime > 0) {
                 flo_in_cancer += prod_rate*cancer_vol
@@ -392,18 +401,14 @@ class Simulation() {
  //       Vt *Ct/t = m Cb Vt - kv Vt (Ct-Cp)
 //        Vp Cp/t = kv Vt (Ct- Cp) - Ke Cp Vp
 
-
-
-
-
-            if (flo_in_plasma >= min_detectable) {
-                detection_time = tik.toFloat()
-                flag_detecte = 1
-            } else {
-                flag_detecte = 0
-            }
-
-            if(flag_detecte == 1 && flag_detecte == prev_flag ){
+            if(flag_detecte == 0) {
+                if (flo_in_plasma >= min_detectable) {
+                    detection_time = tik
+                    flag_detecte = 1
+                } else {
+                    flag_detecte = 0
+                }
+            } else if (flag_detecte == prev_flag ){
                 empty_time++
             }
 
@@ -411,15 +416,20 @@ class Simulation() {
 
         }
 
-
-        var days = detection_time/24
-        var hours = detection_time % 24
-        println("Detectable at $days days , $hours h")
-        days = empty_time/24
-        hours = empty_time % 24
-        println("Florecent stayed up for $empty_time h or $days days , $hours h ")
-        println("Final flo_plamsa : ${Cp * plasma}")
-        println("Final flo_plamsa : ${flo_in_plasma}")
+        if(flag_detecte == 1) {
+            var days = detection_time / 24
+            var hours = detection_time % 24
+            println("Detectable at $days days , $hours h")
+            days = empty_time / 24
+            hours = empty_time % 24
+            println("Florecent stayed up for $empty_time h or $days days , $hours h ")
+            println("Final flo_plamsa : ${flo_in_plasma}")
+        } else {
+            println("it did not overcome")
+            println("End of prod flo_plasma: $snapp_plasma")
+            println("End of prod flo_cancer: $snapp_cancer")
+            println("End of sim flo_cancer: $flo_in_cancer")
+        }
 
 
     }
