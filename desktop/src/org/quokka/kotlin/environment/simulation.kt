@@ -434,6 +434,26 @@ class Simulation() {
 
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
     //            println("flo in plamsa $flo_in_plasma at time $tik")
 
 //            for (i in 0..X_size) {
